@@ -36,7 +36,7 @@ apps/
 tooling/                 # registry builder, melos config, CI scripts
 ```
 
-- Dependency resolution: **pub workspaces** (`resolution: workspace` in each `pubspec.yaml`). Task running / versioning / publishing: **Melos**.
+- Dependency resolution: **pub workspaces** (`resolution: workspace` in each `pubspec.yaml`). Task running / versioning / publishing: **Melos** — the intended cross-package runner, adopted once the workspace holds multiple packages. While `flutterwindcss` is the only package, use plain `flutter`/`dart` per-package (see §10).
 - The site (`apps/docs`) is **TypeScript**. The packages and CLI are **Dart**. Keep the boundary clean (see §7).
 
 ---
@@ -47,11 +47,11 @@ These encode hard-won decisions. Violating any of them is a review failure.
 
 1. **Semantic tokens only in components.** A `flutterbits` component MUST reference `context.fw.colors.<semantic>` (e.g. `primary`, `mutedForeground`, `border`). It MUST NOT hardcode `Color(0x...)` or reach for a raw Tailwind palette swatch for anything themeable. The only allowed literal color is fully transparent (`Color(0x00000000)`) for "no fill".
 
-2. **Accumulator styling model.** Utilities collect into a single immutable `FwStyle` and render as **one** widget. Conflicts are **last-wins** (`.px(4).px(2)` ⇒ padding 2). You MUST NOT hand-nest style wrappers (`Padding(child: DecoratedBox(child: ...))`) in component code — express styling through `.tw`. Canonical implementation: `packages/flutterwindcss/lib/src/style.dart`. Imitate it.
+2. **Accumulator styling model.** Single-box utilities collect into one immutable `FwStyle` and render as a single styled node *in component code*. Internally that node is a fixed, documented chain of widgets-layer primitives (`ConstrainedBox`/`DecoratedBox`/`Padding`/…) — **not** literally one Element. The win is **last-wins conflict resolution** + emitting no duplicate wrappers, not flatness (`.px(4).px(2)` ⇒ padding 2 units). `FwStyle` is a **lazy resolver**: it resolves against the active interaction states and the viewport/container size, so `hover:`/`focus:`/`pressed:`/`disabled:` and `sm:`/`md:`/container-query variants are first-class, not bolted on. You MUST NOT hand-nest style wrappers (`Padding(child: DecoratedBox(child: ...))`) in component code — express single-box styling through `.tw`. **Multi-child layout is NOT `.tw`:** flex direction/alignment, `gap`, positioning/`inset`, and `z-index` live in dedicated layout widgets (`FwRow`/`FwColumn`/`FwWrap`/`FwStack`/`FwPositioned`/`FwGrid`), because a single-child wrapper structurally cannot express them. Canonical implementation: `packages/flutterwindcss/lib/src/style/`. Imitate it.
 
 3. **Directional by default.** All spacing/alignment/radius MUST use the directional variants: `EdgeInsetsDirectional`, `AlignmentDirectional`, `BorderRadiusDirectional`. Never `EdgeInsets.only(left:/right:)` or `Alignment.centerLeft`. This is what makes RTL free; retrofitting it later is expensive.
 
-4. **Provider-agnostic token access.** Components read tokens ONLY via `context.fw`. They MUST NOT call `Theme.of(context)` directly. `context.fw` resolves the Material-free `FwTheme` first and falls back to `FwThemeExtension`, so the same component works in a bare `WidgetsApp` and inside a `MaterialApp`. See `packages/flutterwindcss/lib/src/theme.dart`.
+4. **Provider-agnostic token access.** Components read tokens ONLY via `context.fw`. They MUST NOT call `Theme.of(context)` directly. `context.fw` resolves the Material-free `FwTheme` first and falls back to `FwThemeExtension`, so the same component works in a bare `WidgetsApp` and inside a `MaterialApp`. See `packages/flutterwindcss/lib/src/theme/`.
 
 5. **No Material in components.** `flutterbits` component files MUST NOT import `package:flutter/material.dart`. Use `package:flutter/widgets.dart`. State styling uses `WidgetState`/`FocusableActionDetector` (widgets layer), not `InkWell`/`MaterialState`. The *only* sanctioned Material touch in the whole repo is the `FwThemeExtension` bridge in `flutterwindcss`.
 
@@ -83,7 +83,8 @@ Semantic colors (the shadcn set — this list is the contract the generator targ
 - Radius is derived from one base value (shadcn `--radius`): `sm = ×0.6, md = ×0.8, lg = ×1, xl = ×1.4`. Components use `t.radii.md` etc., never a literal radius.
 - Spacing scale: **1 utility unit = 4 logical pixels** (`fwSpace`). `.px(4)` ⇒ 16 px.
 - Two `FwTokens` instances exist per theme (light + dark). Theme switching is the host app's job; transitions animate via `FwTokens.lerp`.
-- To add a new semantic token: add the field to `FwColors` (+ `lerp`), add it to the generator's parse map (§7), and document it. Adding a token is additive and safe.
+- The semantic set is not the whole token system. A `FwTokens` bundle carries `colors` (the 19 above), `radii`, `shadows` (`FwShadows`), and `typography`. **Theme-independent** scales live on their own types: the raw Tailwind v4 palette (`FwPalette`, baked — used to *build* themes, never referenced directly by components), the Tailwind named radius/typography/shadow/blur scales, and scalar scales for opacity, border-width, z-index, and breakpoints. The interaction-state and breakpoint enums (`FwState`, `FwBreakpoint`) are a **frozen API contract** — exhaustive `switch`es depend on them, so adding a value is a breaking change, not additive.
+- To add a new semantic token: add the field to `FwColors` (+ `copyWith`, `lerp`, `==`/`hashCode`), wire it into the `FwTokens.light`/`dark` defaults, add it to the generator's parse map (§7), and document it. Adding a *semantic color* is additive and safe; adding an `FwState`/`FwBreakpoint` enum value is **not** (see above).
 
 ---
 
@@ -130,8 +131,8 @@ If a desired behavior genuinely cannot be done in Flutter, do not fake it — ad
 
 This is the safety net that makes a solo, wave-by-wave rollout survivable.
 
-- **Golden tests** for every component, every variant × size × brightness, in `apps/example`. Use `matchesGoldenFile`.
-- CI pins a **fixed font** and platform so goldens are deterministic across machines. A golden diff on CI is a failing build, not a nuisance.
+- **Golden tests** use `matchesGoldenFile`. **`flutterwindcss` engine goldens live in-package** (`packages/flutterwindcss/test/golden/`) — a library tests its own widgets. **Component goldens** (every variant × size × brightness) live in `apps/example`, which is also the registry compile target.
+- CI pins a **fixed font** and platform so goldens are deterministic across machines, and **CI (Linux) is the authoritative golden platform** — goldens are generated/verified there, and a local `--update-goldens` on a dev box is *not* authoritative. A golden diff on CI is a failing build, not a nuisance.
 - Update goldens only intentionally: `flutter test --update-goldens`, and review the image diff before committing.
 - `flutterwindcss` gets unit tests for `FwStyle` resolution — especially **last-wins conflict behavior** and that chaining produces a single resolved widget.
 - Before marking any task done: `flutter analyze` (zero warnings) AND `flutter test` (green) AND the registry compiles in `apps/example`.
@@ -142,17 +143,26 @@ This is the safety net that makes a solo, wave-by-wave rollout survivable.
 
 Adjust paths if the layout drifts; keep this section current.
 
+**Current commands** (while `flutterwindcss` is the only package — use plain `flutter`/`dart`):
+
 | Task | Command |
 |---|---|
-| Bootstrap workspace | `melos bootstrap` |
-| Analyze everything | `melos run analyze` (or `flutter analyze` per package) |
-| Format | `dart format .` |
-| Run all tests | `melos run test` |
-| Update goldens | `cd apps/example && flutter test --update-goldens` |
+| Resolve workspace deps | `flutter pub get` |
+| Analyze (zero-warning bar) | `cd packages/flutterwindcss && flutter analyze --fatal-infos --fatal-warnings` |
+| Format (100-col) | `dart format --line-length 100 .` |
+| Run tests | `cd packages/flutterwindcss && flutter test` |
+| Update goldens (local = non-authoritative; CI is the source of truth) | `cd packages/flutterwindcss && flutter test --update-goldens` |
+| Bake Tailwind palette (regenerate `palette.g.dart`) | `dart run tooling/bake_palette.dart` |
+
+**Planned commands** (once the corresponding products exist):
+
+| Task | Command |
+|---|---|
 | Build registry manifests | `dart run tooling/build_registry.dart` |
-| Bake Tailwind palette (regenerate palette.g.dart) | `dart run tooling/bake_palette.dart` |
 | Run docs site / generator | `cd apps/docs && pnpm dev` |
 | Run showcase app | `cd apps/example && flutter run` |
+
+Once the workspace holds multiple packages, **Melos** wraps the per-package commands (`melos bootstrap`, `melos run analyze`, `melos run test`); adopt it then, not before.
 
 ---
 
@@ -170,7 +180,7 @@ Everything else — sticky (slivers), container queries (`LayoutBuilder`), backd
 
 ## 12. Agent operating rules
 
-- **Read before you edit.** Open the canonical files (`style.dart`, `theme.dart`, `registry/button.dart`) and match their patterns before writing new code.
+- **Read before you edit.** Open the canonical sources (`lib/src/style/`, `lib/src/theme/`, `lib/src/tokens/`, and once it exists `registry/button.dart`) and match their patterns before writing new code.
 - **Small, focused changes.** One component or one utility group per change. Don't refactor unrelated code in passing.
 - **No new dependencies without justification.** Prefer the framework's widgets layer. Known sanctioned deps: `lucide_icons_flutter` (icons), `flutter_animate` (animation). Anything else needs a reason in the PR description.
 - **Don't invent APIs.** If unsure whether a Flutter symbol exists in the widgets layer, verify before using it. Do not assume Material symbols are available.
@@ -183,7 +193,7 @@ Everything else — sticky (slivers), container queries (`LayoutBuilder`), backd
 ## 13. Glossary
 
 - **Semantic token** — a role-named design value (`primary`) resolved by the active theme; the unit of theming.
-- **Accumulator model** — utilities merge into one `FwStyle`, rendered as a single widget; last-wins on conflicts.
+- **Accumulator model** — single-box utilities merge into one immutable `FwStyle` that resolves lazily (against interaction states + viewport/container size) to a fixed chain of widgets-layer primitives; last-wins on conflicts. Multi-child layout (`FwRow`/`FwColumn`/`FwStack`/`FwGrid`) is separate widgets, not `.tw`.
 - **`.tw`** — the entry getter that begins a style chain on any widget. Distinct from `context.fw` (token access).
 - **Copy-paste / registry model** — components are source the developer owns, fetched via the CLI, not a versioned dependency.
 - **Pure path / interop path** — Material-free app (`FwTheme` + `WidgetsApp`) vs. Material app (`FwThemeExtension` on `ThemeData`).

@@ -268,7 +268,9 @@ Per AGENTS.md §4: `Fw`-prefixed public types; `const` wherever the analyzer all
 
 ---
 
-## 10. Testing strategy (`test/` + `apps/example` golden harness)
+## 10. Testing strategy (in-package `test/` + golden harness)
+
+> Refinement (locked during planning): **engine goldens live in-package** at `packages/flutterwindcss/test/golden/` — a library tests its own widgets, and this avoids a premature cross-package app dependency. `apps/example` is the **component** compile + golden target (a later sub-project), not the engine's.
 
 Every module is **done only when** unit + golden tests are green and `flutter analyze` is clean.
 
@@ -280,7 +282,7 @@ Every module is **done only when** unit + golden tests are green and `flutter an
   - `context.fw` resolves `FwTheme`; falls back to `FwThemeExtension` inside a `MaterialApp`; throws the clear error when neither exists.
   - Token `lerp` midpoints (colors, radii, shadows, typography, full `FwTokens.lerp`).
   - Palette/scale values spot-checked against the documented Tailwind v4 numbers.
-- **Golden tests** (in `apps/example`, the compile+golden target): representative styled widgets per module, **light + dark**, **LTR + RTL**, plus interaction states pumped (hover/focus/pressed/disabled). Uses `matchesGoldenFile`.
+- **Golden tests** (in-package, `packages/flutterwindcss/test/golden/`): representative styled widgets per module, **light + dark**, **LTR + RTL**, plus interaction states pumped (hover/focus/pressed/disabled). Uses `matchesGoldenFile`.
 - **Deterministic golden harness (built in module 1, not deferred):** goldens are generated and verified **only in a pinned Linux CI container** with a bundled fixed font (Tailwind v4 font rendering differs across Windows/macOS/Linux — see Risk R1). `flutter_test_config.dart` loads the fixed font and disables shadow rasterization variance. Local `--update-goldens` on Windows is documented as non-authoritative; CI is the source of truth. This resolves the AGENTS.md §9 "deterministic across machines" requirement with a concrete mechanism rather than a claim.
 
 ---
@@ -317,4 +319,4 @@ The architecture above is fixed up front. Implementation lands as modules, **eac
 
 Modules 4–9 each also add their utilities' **state + responsive + container** variants (the nested layering engine from module 3 makes this uniform, not per-utility work).
 
-**Definition of done (whole engine):** every module merged; `flutter analyze` zero warnings; `flutter test` green; all goldens reviewed; the public barrel (§8) stable; a smoke example in `apps/example` renders a fully-`.tw`-styled widget in both a bare `WidgetsApp` and a `MaterialApp`, light/dark, LTR/RTL.
+**Definition of done (whole engine):** every module merged; `flutter analyze` zero warnings; `flutter test` green; all goldens reviewed; the public barrel (§8) stable; an in-package smoke test renders a fully-`.tw`-styled widget in both a bare `WidgetsApp` and a `MaterialApp`, light/dark, LTR/RTL (a richer showcase in `apps/example` follows with the component sub-project).
