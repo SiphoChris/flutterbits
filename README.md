@@ -6,8 +6,8 @@
 
 [![CI](https://github.com/SiphoChris/flutterbits/actions/workflows/ci.yaml/badge.svg)](https://github.com/SiphoChris/flutterbits/actions/workflows/ci.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Flutter](https://img.shields.io/badge/Flutter-%E2%89%A53.24-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-%5E3.11-0175C2?logo=dart&logoColor=white)](https://dart.dev)
+[![Flutter](https://img.shields.io/badge/Flutter-%E2%89%A53.27-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-%E2%89%A53.6-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Material‑free](https://img.shields.io/badge/Material‑free-yes-success)](#mental-model)
 [![Status](https://img.shields.io/badge/status-early%20development-orange)](#project-status)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
@@ -73,7 +73,7 @@ Dependency resolution uses **pub workspaces** (`resolution: workspace`).
 
 ## Getting started (development)
 
-> Requires the Flutter SDK (≥ 3.24; CI pins 3.41.9 for deterministic goldens).
+> Requires **Flutter ≥ 3.27 / Dart ≥ 3.6** (the floor for the wide‑gamut `Color` API and the `Flex` spacing param). CI verifies this floor on a pinned 3.27 job, and pins 3.41.9 for deterministic goldens.
 
 ```bash
 # From the repo root

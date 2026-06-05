@@ -36,6 +36,7 @@ apps/
 tooling/                 # registry builder, melos config, CI scripts
 ```
 
+- **Toolchain floor (hard): Flutter ≥ 3.27 / Dart ≥ 3.6.** Lower will not compile: the wide-gamut `Color` API (`Color.withValues` per §3.8, and the `Color.a/.r/.g/.b` accessors), the `Row`/`Column`/`Flex` `spacing` parameter, and pub workspaces all landed in 3.27/3.6. This floor is set in every `pubspec.yaml` `environment:` and **verified by a CI job pinned to it** (separate from the golden job, which pins a newer version for determinism). Keep the floor identical in the pubspecs and the README.
 - Dependency resolution: **pub workspaces** (`resolution: workspace` in each `pubspec.yaml`). Task running / versioning / publishing: **Melos** — the intended cross-package runner, adopted once the workspace holds multiple packages. While `flutterwindcss` is the only package, use plain `flutter`/`dart` per-package (see §10).
 - The site (`apps/docs`) is **TypeScript**. The packages and CLI are **Dart**. Keep the boundary clean (see §7).
 
@@ -90,7 +91,7 @@ Semantic colors (the shadcn set — this list is the contract the generator targ
 
 ## 6. Authoring a flutterbits component
 
-Use `registry/button.dart` (mirrors the reference `flutterbits/button.dart`) as the template. A component is **done** only when ALL of these hold:
+Until the first component lands, follow the component checklist below and the engine design spec's component patterns (`docs/superpowers/specs`, §6). Once `registry/button.dart` exists it becomes the canonical template (it mirrors the reference `flutterbits/button.dart`). A component is **done** only when ALL of these hold:
 
 - [ ] Styled through `.tw`, using semantic tokens for every themeable value.
 - [ ] Variants/sizes are typed enums with an exhaustive `switch` resolver.

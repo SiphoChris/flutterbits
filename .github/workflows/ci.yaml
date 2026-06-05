@@ -32,3 +32,25 @@ jobs:
           name: golden-failures
           path: packages/flutterwindcss/test/**/failures/
           if-no-files-found: ignore
+
+  floor-compat:
+    # Verifies the toolchain floor (AGENTS.md §2): the package must compile and
+    # its unit tests must pass on the MINIMUM supported Flutter/Dart. Goldens are
+    # excluded — they are baselined on the pinned newer version in analyze-and-test.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/flutterwindcss
+    steps:
+      - uses: actions/checkout@v5
+      # The declared floor (Flutter 3.27 / Dart 3.6). If this job fails, the real
+      # floor is higher — raise it in both pubspecs + the README, don't delete this.
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.27.0
+      - run: flutter pub get
+      - name: Analyze on floor (compiles lib + tests)
+        run: flutter analyze --fatal-infos --fatal-warnings
+      - name: Unit tests on floor (goldens excluded)
+        run: flutter test test/tokens

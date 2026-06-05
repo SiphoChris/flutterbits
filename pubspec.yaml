@@ -3,7 +3,8 @@ name: _flutterbits_workspace
 publish_to: none
 
 environment:
-  sdk: ^3.11.0
+  # Pub workspaces require Dart >= 3.6 (= Flutter 3.27); see the package floor.
+  sdk: '>=3.6.0 <4.0.0'
 
 workspace:
   - packages/flutterwindcss
