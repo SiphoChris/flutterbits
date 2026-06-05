@@ -101,7 +101,7 @@ class FwTokens {
     colors: FwColors.lerp(a.colors, b.colors, t),
     radii: FwRadii.lerp(a.radii, b.radii, t),
     shadows: FwShadows.lerp(a.shadows, b.shadows, t),
-    typography: FwTypographyTheme.standard,
+    typography: t < 0.5 ? a.typography : b.typography,
     radiusBase: a.radiusBase + (b.radiusBase - a.radiusBase) * t,
   );
 
@@ -111,10 +111,11 @@ class FwTokens {
       other.colors == colors &&
       other.radii == radii &&
       other.shadows == shadows &&
+      other.typography == typography &&
       other.radiusBase == radiusBase;
 
   @override
-  int get hashCode => Object.hash(colors, radii, shadows, radiusBase);
+  int get hashCode => Object.hash(colors, radii, shadows, typography, radiusBase);
 }
 
 /// Placeholder per-theme typography marker. Type scales are static
