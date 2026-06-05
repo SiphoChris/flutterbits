@@ -1,6 +1,8 @@
 // tooling/bake_palette.dart
 // Transcribes tooling/palette/tailwind_v4_palette.json into a Dart source file
-// of `const Color`s. No color math — pure hex → ARGB transcription.
+// of `const Color`s. No color math — pure hex -> ARGB transcription.
+//
+// Usage (MUST run from the repo root): dart run tooling/bake_palette.dart
 import 'dart:convert';
 import 'dart:io';
 
@@ -31,6 +33,9 @@ void main() {
   File('packages/flutterwindcss/lib/src/tokens/palette.g.dart')
       .writeAsStringSync(b.toString());
   stdout.writeln('Wrote palette.g.dart (${data.length} hue groups).');
+  Process.runSync('dart', <String>['format', '--line-length', '100',
+      'packages/flutterwindcss/lib/src/tokens/palette.g.dart']);
+  stdout.writeln('Formatted palette.g.dart.');
 }
 
 String _color(String hex) {

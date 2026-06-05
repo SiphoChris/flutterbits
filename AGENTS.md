@@ -150,6 +150,7 @@ Adjust paths if the layout drifts; keep this section current.
 | Run all tests | `melos run test` |
 | Update goldens | `cd apps/example && flutter test --update-goldens` |
 | Build registry manifests | `dart run tooling/build_registry.dart` |
+| Bake Tailwind palette (regenerate palette.g.dart) | `dart run tooling/bake_palette.dart` |
 | Run docs site / generator | `cd apps/docs && pnpm dev` |
 | Run showcase app | `cd apps/example && flutter run` |
 

@@ -54,6 +54,12 @@ class FwSwatch {
 
   /// Returns the swatch's [shade] (`50`,`100`,…,`950`).
   Color shade(int shade) => _s(shade);
+
+  @override
+  bool operator ==(Object other) => other is FwSwatch && other.hue == hue;
+
+  @override
+  int get hashCode => hue.hashCode;
 }
 
 /// The raw Tailwind v4 color palette. Used to build themes and for non-themeable
