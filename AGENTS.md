@@ -113,7 +113,7 @@ If a desired behavior genuinely cannot be done in Flutter, do not fake it — ad
 
 - Input: a pasted tweakcn/shadcn theme (`:root` + `.dark` blocks). Output: a downloadable `theme.dart` **and** a `theme.json` (the JSON is the source of truth; the Dart file is the emitted artifact).
 - MUST parse **all four** color formats: `oklch()`, `hsl()`, `rgb()`, hex. OKLCH is the tweakcn default (Tailwind v4).
-- Color conversion: OKLCH → OKLab → linear sRGB → gamma-encode → **gamut-map** (do not naively clamp; clamping shifts hue). sRGB target by default; optionally target display-P3 for wider gamut.
+- Color conversion: OKLCH → OKLab → linear sRGB → gamma-encode → **gamut-map** (do not naively clamp; clamping shifts hue). sRGB target by default; optionally target display-P3 for wider gamut. **This rule is for converting *arbitrary user themes* faithfully to what a browser renders.** It does **not** govern the baked `FwPalette` (`flutterwindcss`), which instead transcribes **Tailwind's own published (gamut-clipped) hex** so it matches the recognizable Tailwind values — see the engine spec §4.1 "Conversion policy." The two can differ for out-of-gamut shades by design.
 - Parse **color, radius, shadow, and typography** tokens — not just color. "The theme works" is false if shadows and type don't come across.
 - **Fonts:** the generator emits the `fontFamily` *name* and optional `google_fonts` wiring. It MUST NOT pretend to bundle an arbitrary font. If the family is unknown, emit a clearly-commented `// TODO: bundle this font or map it` rather than a silent fallback.
 - **Color math lives only here.** The Dart CLI does NOT generate themes; it only fetches components. Do not duplicate the conversion in Dart.
