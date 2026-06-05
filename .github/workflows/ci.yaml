@@ -76,11 +76,18 @@ jobs:
             echo "::error::withOpacity is banned; use Color.withValues(alpha: ...) (AGENTS.md §3.8)."
             exit 1
           fi
-      - name: No direct Theme.of outside context.fw (§3.4)
+      - name: No direct Theme.of outside the theme bridge (§3.4)
         run: |
           # Whitespace-tolerant so `Theme . of(` can't dodge the guard.
+          # Allowlist = the two Material-bridge files: context_fw.dart (defines
+          # context.fw and documents the rule) and fw_theme_extension.dart, which
+          # performs the actual Material lookup so the call — and the Material
+          # import — stay confined to one file (spec §5.2/§5.3). Components, which
+          # §3.4 actually restricts, still cannot call Theme.of: they are not on
+          # this allowlist.
           if grep -rnE --include='*.dart' 'Theme\s*\.\s*of\b' packages/flutterwindcss/lib \
-             | grep -vF 'lib/src/theme/context_fw.dart'; then
+             | grep -vF 'lib/src/theme/context_fw.dart' \
+             | grep -vF 'lib/src/theme/fw_theme_extension.dart'; then
             echo "::error::Read tokens via context.fw, not Theme.of (AGENTS.md §3.4)."
             exit 1
           fi
