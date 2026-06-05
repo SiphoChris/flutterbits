@@ -1,0 +1,32 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/flutterwindcss
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - name: Analyze (zero warnings)
+        run: flutter analyze --fatal-infos --fatal-warnings
+      - name: Format check
+        run: dart format --output=none --set-exit-if-changed --line-length 100 .
+      - name: Test (incl. goldens)
+        run: flutter test
+      - name: Upload golden failures
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-failures
+          path: packages/flutterwindcss/test/**/failures/
+          if-no-files-found: ignore
