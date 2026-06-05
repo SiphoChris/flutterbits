@@ -1,5 +1,5 @@
-import 'package:flutterwindcss/flutterwindcss.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutterwindcss/flutterwindcss.dart';
 
 void main() {
   test('light and dark are distinct const themes', () {
@@ -12,10 +12,14 @@ void main() {
   });
 
   test('lerp(light, dark, 0) == light and (.,.,1) == dark', () {
-    expect(FwTokens.lerp(FwTokens.light, FwTokens.dark, 0).colors.background,
-        FwTokens.light.colors.background);
-    expect(FwTokens.lerp(FwTokens.light, FwTokens.dark, 1).colors.background,
-        FwTokens.dark.colors.background);
+    expect(
+      FwTokens.lerp(FwTokens.light, FwTokens.dark, 0).colors.background,
+      FwTokens.light.colors.background,
+    );
+    expect(
+      FwTokens.lerp(FwTokens.light, FwTokens.dark, 1).colors.background,
+      FwTokens.dark.colors.background,
+    );
   });
 
   test('light theme literals match baked palette swatches', () {

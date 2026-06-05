@@ -98,12 +98,12 @@ class FwTokens {
 
   /// Interpolates two themes (drives FwAnimatedTheme later).
   static FwTokens lerp(FwTokens a, FwTokens b, double t) => FwTokens(
-        colors: FwColors.lerp(a.colors, b.colors, t),
-        radii: FwRadii.lerp(a.radii, b.radii, t),
-        shadows: FwShadows.lerp(a.shadows, b.shadows, t),
-        typography: FwTypographyTheme.standard,
-        radiusBase: a.radiusBase + (b.radiusBase - a.radiusBase) * t,
-      );
+    colors: FwColors.lerp(a.colors, b.colors, t),
+    radii: FwRadii.lerp(a.radii, b.radii, t),
+    shadows: FwShadows.lerp(a.shadows, b.shadows, t),
+    typography: FwTypographyTheme.standard,
+    radiusBase: a.radiusBase + (b.radiusBase - a.radiusBase) * t,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -132,8 +132,7 @@ class FwTypographyTheme {
   static const FwTypographyTheme standard = FwTypographyTheme(family: FwFontFamily.sans);
 
   @override
-  bool operator ==(Object other) =>
-      other is FwTypographyTheme && other.family == family;
+  bool operator ==(Object other) => other is FwTypographyTheme && other.family == family;
 
   @override
   int get hashCode => family.hashCode;
