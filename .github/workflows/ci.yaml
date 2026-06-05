@@ -13,9 +13,11 @@ jobs:
         working-directory: packages/flutterwindcss
     steps:
       - uses: actions/checkout@v4
+      # Pinned for deterministic goldens (spec R1). Bump deliberately + re-baseline.
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: 3.41.9
       - run: flutter pub get
       - name: Analyze (zero warnings)
         run: flutter analyze --fatal-infos --fatal-warnings
