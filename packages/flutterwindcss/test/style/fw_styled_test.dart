@@ -78,7 +78,7 @@ void main() {
     expect(find.byType(LayoutBuilder), findsOneWidget);
   });
 
-  testWidgets('injected states resolve without any detector requirement', (t) async {
+  testWidgets('injected non-live state resolves in the stateless path (no wrappers)', (t) async {
     await t.pumpWidget(
       Directionality(
         textDirection: TextDirection.ltr,
@@ -90,6 +90,8 @@ void main() {
       ),
     );
     expect(_boxColor(t), _b);
+    // `selected` is component-managed, not live-sourced: no MouseRegion/Focus.
+    expect(_ourFocus, findsNothing);
   });
 
   testWidgets('a Semantics(button) child survives the .tw chain', (t) async {
