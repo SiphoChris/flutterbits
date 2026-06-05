@@ -6,3 +6,6 @@ pubspec.lock
 .idea/
 node_modules/
 .next/
+
+# Local Claude Code settings (per-machine)
+.claude/settings.local.json
