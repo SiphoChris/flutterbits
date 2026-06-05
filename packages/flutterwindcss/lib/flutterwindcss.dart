@@ -13,4 +13,4 @@ export 'src/tokens/scales.dart';
 
 export 'src/tokens/shadows.dart';
 // export 'src/tokens/tokens.dart';
-// export 'src/tokens/typography.dart';
+export 'src/tokens/typography.dart';
