@@ -1,0 +1,22 @@
+name: flutterwindcss
+description: >-
+  Tailwind CSS v4 design system and styling vocabulary for Flutter — tokens,
+  theming, and a typed utility API over the widgets layer.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.11.0
+  flutter: '>=3.24.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
