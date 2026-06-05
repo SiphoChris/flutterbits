@@ -122,7 +122,7 @@ class FwTokens {
   static const FwTokens dark  = /* shadcn-neutral defaults */;
 }
 ```
-`FwTokens.light/dark` carry the stock shadcn-neutral values so the engine is usable and testable standalone. This is **not** duplicating the generator — the generator emits *custom* `FwTokens`; these are sane defaults. The palette/scales (radii named scale, shadows, typography, breakpoints, blur, z, border-width, spacing) are theme-independent constants and are exposed directly, not per-`FwTokens`.
+`FwTokens.light/dark` carry the stock shadcn-neutral values so the engine is usable and testable standalone. This is **not** duplicating the generator — the generator emits *custom* `FwTokens`; these are sane defaults. They are composed **purely from already-baked `const Color` palette literals** (§4.1) — no OKLCH→sRGB conversion runs at `const`-eval time (Dart cannot; conversion is the authoring-time script of R4). So `light/dark` are genuine compile-time constants, not runtime-computed. The palette/scales (radii named scale, shadows, typography, breakpoints, blur, z, border-width, spacing) are theme-independent constants and are exposed directly, not per-`FwTokens`.
 
 ---
 
@@ -168,7 +168,7 @@ What this does **not** sacrifice: the accumulator's real value is **last-wins co
 - **Overflow/clip:** `clipBehavior (Clip?)`.
 - **Layers (nested):** `List<FwLayer> layers`, where `FwLayer = (FwCondition condition, FwStyle style)` and `FwCondition` is one of `state(WidgetState)`, `viewport(FwBreakpoint)`, or `container(FwBreakpoint)`. A layer's `style` is a full `FwStyle` and **may itself contain layers**, so `.md((s) => s.hover((s2) => …))` produces a `viewport(md)` layer whose nested style has a `state(hovered)` layer — `md:hover:` resolves jointly (Finding #8). Layers preserve declaration order.
 
-**Last-wins** is intrinsic: each base utility returns a `copyWith` overwriting just its field(s) (`.px(4).px(2)` ⇒ padding 8 px); each variant method appends a layer.
+**Last-wins** is intrinsic: each base utility returns a `copyWith` that **overwrites** just its field(s) — it is replacement, never accumulation. In `.px(4).px(2)`, the second call overwrites the first: the `.px(4)` is **discarded** and the resolved horizontal padding is `2` units = **8 logical px** (`fwSpace(2)`), not `4+2`. Each variant method (`.hover`, `.md`, …) instead **appends** a layer.
 
 ### 6.2 `FwStyled` (`style/fw_styled.dart`)
 The widget the user places in the tree:
@@ -179,7 +179,7 @@ extension TwExtension on Widget {
 ```
 `FwStyled` is a `StatelessWidget` exposing every base + variant utility (each returns a new `FwStyled` with an updated `FwStyle`). Its `build` inserts ancestors **conditionally**, so a purely-static style is a lean tree:
 1. **If** any `viewport`/`container` layer exists → read `MediaQuery.maybeOf(context)?.size` for viewport conditions, and wrap in a single `LayoutBuilder` for `container` conditions. If neither layer kind exists, neither is inserted. (Viewport uses `MediaQuery`, **not** `LayoutBuilder`, so it does not break intrinsic sizing — see R6.)
-2. **If** any `state` layer exists *or* the styled box is interactive → wrap in `FocusableActionDetector` to source `Set<WidgetState>`. For **visual-only** state styling (no `onPressed`/action), the detector is configured non-focusable (`descendantsAreFocusable: true`, own `skipTraversal: true`, no focus node) so a `hover:`-only card never becomes a tab stop (Finding #9). A real focus node + ring is added only when an action is present.
+2. **If** any `state` layer exists **at any nesting depth** *or* the styled box is interactive → wrap in `FocusableActionDetector` to source `Set<WidgetState>`. The "has a state layer" check is computed once over the **flattened** layer set (recursing into nested layers), so `md:hover:` (a `state` layer nested under a `viewport` layer) still gets a detector at large viewports. For **visual-only** state styling (no `onPressed`/action), the detector is configured non-focusable (`descendantsAreFocusable: true`, own `skipTraversal: true`, no focus node) so a `hover:`-only card never becomes a tab stop (Finding #9). A real focus node + ring is added only when an action is present.
 3. Calls `style.resolve(context, states, size)` → `ResolvedStyle`.
 4. Renders `ResolvedStyle.build(child)`.
 
@@ -196,46 +196,51 @@ ResolvedStyle FwStyle.resolve(BuildContext context, Set<WidgetState> states, Siz
 Precedence is deterministic, documented, and unit-tested (base < matching layers in declared order; nested conditions resolve jointly; disabled suppresses interaction states).
 
 ### 6.4 Render chain (`ResolvedStyle.build`)
-Hand-composed primitives, **fixed order, asserted by widget tests**, outer→inner; each wrapper emitted only if its inputs are set:
+Hand-composed primitives, **fixed order, asserted by widget tests**, outer→inner; each wrapper emitted only if its inputs are set. Note the decoration **splits into a shadow layer and a surface layer** so that backdrop-blur (which must be clipped) does not clip away the shadow:
 ```
 Padding(margin, EdgeInsetsDirectional)                       ← margin is outermost
-  → ConstrainedBox(min/max)  ⊕  SizedBox(width/height)       ← see sizing rules below
+  → ConstrainedBox(min/max)  ⊕  SizedBox(width/height)       ← sizing rules below
     → AspectRatio(aspectRatio)
       → FractionallySizedBox(widthFactor/heightFactor, alignment: factorAlignment)
-        → Transform(scale/rotate/translate)
-          → ImageFiltered(blur)                              ← content blur wraps the WHOLE element
-            → Opacity(opacity)                               ← only when group opacity is needed (see below)
-              → BackdropFilter(backdropBlur)                 ← blurs what's BEHIND the element
-                → DecoratedBox(BoxDecoration:
-                      gradient | color,
-                      uniform Border.all(side) | BorderDirectional(start/end/top/bottom),  ← Finding #5
-                      BorderRadiusDirectional,
-                      boxShadow)
-                  → ClipRRect(borderRadius INSET by borderWidth, if clipBehavior != none)  ← Finding #3
+        → Transform(scale/rotate/translate)                  ← transforms the rendered result incl. shadow
+          → ImageFiltered(blur)                              ← CONTENT blur: filters the WHOLE element
+            → Opacity(opacity)                               ← only when group opacity is needed (else folded)
+              → _ShadowBox(boxShadow only, UNCLIPPED)        ← shadow paints here, outside any clip
+                → _Surface:
+                    IF backdropBlur set:
+                      ClipRRect(borderRadius)                ← clips the backdrop to the box shape
+                        → BackdropFilter(backdropBlur)       ← blurs content painted BEHIND the box
+                          → DecoratedBox(gradient|color, border, radius)   ← composites ON TOP of backdrop
+                    ELSE:
+                      DecoratedBox(gradient|color, border, radius)
+                  → ClipRRect(borderRadius INSET by borderWidth, if clipBehavior != none)  ← clips CONTENT
                     → Padding(padding, EdgeInsetsDirectional)
                       → DefaultTextStyle.merge + IconTheme.merge (foreground, font*, align, decoration)
                         → child
 ```
-Specifics the tests pin (because the order is asserted):
+`border` resolves to `Border.all(side)` (uniform) or `BorderDirectional(start/end/top/bottom)` (per-side) — Finding #5. Specifics the tests pin (because the order is asserted):
 
-- **Sizing reconciliation (Finding #6):** a fixed `width`/`height` produces a **tight** constraint and **wins on its axis**; `min*/max*` apply only to axes without a fixed value. Setting both a fixed dim and a `min/max` on the *same* axis throws an `assert` in debug (silently fixed-wins in release). `widthFactor`/`heightFactor` use `FractionallySizedBox` with `factorAlignment` (default `centerStart`).
-- **Content `blur` (Finding #4):** `ImageFiltered` wraps the decorated box (background + border + content), matching CSS `filter: blur`. `backdropBlur` (`BackdropFilter`) sits *inside* the decoration to blur the layer behind, and is distinct.
-- **ClipRRect geometry (Finding #3):** reuses the decoration's `BorderRadiusDirectional`, deflated by `borderWidth`, so clipped content never bleeds across the stroke.
-- **Opacity (Finding #11):** when the box is decorative (no child needing group opacity — e.g. an empty/overlay box), `opacity` folds into the background/border alpha (`Color.withValues(alpha:)`) and **no** `Opacity` layer (no `saveLayer`) is emitted. `Opacity` is used only when real group opacity over child content is required.
+- **Backdrop-blur layering (Finding #1):** `BackdropFilter` sits **above** the surface `DecoratedBox` (so the semi-transparent decoration composites over the blurred backdrop, matching CSS `backdrop-filter`) and is wrapped in its own `ClipRRect(borderRadius)` so it only frosts the box region. `boxShadow` is therefore moved to the outer, **unclipped** `_ShadowBox` so the clip required by backdrop-blur never eats the shadow. Content `blur` (`ImageFiltered`, Finding #4) is the *opposite* filter — it blurs the element's own rendering (bg + border + content) and wraps the whole element. The two are distinct layer positions and both are golden-tested.
+- **Transform vs. shadow ordering (Finding #2):** `boxShadow` paints in the inner `_ShadowBox`, beneath the outer `Transform`; this is intentional and correct — `Transform` transforms the already-rendered result (including the shadow), matching CSS `transform`. Do not "fix" this by hoisting the shadow above the transform.
+- **Sizing reconciliation (Finding #6):** a fixed `width`/`height` produces a **tight** constraint and **wins on its axis**; `min*/max*` apply only to axes without a fixed value. Setting both a fixed dim and a `min/max` on the *same* axis throws an `assert` in debug (fixed-wins in release). `widthFactor`/`heightFactor` use `FractionallySizedBox` with author-settable `factorAlignment` (default `AlignmentDirectional.centerStart`).
+- **ClipRRect geometry (Finding #3):** the content clip reuses the decoration's `BorderRadiusDirectional`, deflated by `borderWidth`, so clipped content never bleeds across the stroke.
+- **Opacity (Finding #11):** opacity folds into the **solid `background` alpha** only when the box has a solid background **and** no `gradient`, no `boxShadow`, and no child needing group opacity (e.g. an empty/overlay box) — in that case no `Opacity`/`saveLayer` is emitted. Whenever a gradient, shadow, or real child content is present, a true `Opacity` layer is used (folding alpha into a shadow or one gradient stop would not reproduce group opacity).
 
 ### 6.5 `.tw` utility surface (single-box; see §12 for the landing module)
 Directional throughout (AGENTS.md §3.3); spacing args in utility units:
-`p, px, py, ps, pe, pt, pb · m, mx, my, ms, me, mt, mb · w, h, minW, minH, maxW, maxH, wFull, hFull, wFraction, hFraction, square, aspect · bg, bgGradient · border, borderColor, borderWidth, borderS/E/T/B (per-side) · rounded, roundedT/B/S/E, roundedAll, roundedNone, roundedFull · shadow(FwShadow) · opacity · blur, backdropBlur · text(color), fontSize, fontWeight, leading, tracking, textAlign, underline/lineThrough · scale, rotate, translate · clip · hover, focus, pressed, disabled, whenState · sm, md, lg, xl, xl2 · containerSm…container2xl`.
+`p, px, py, ps, pe, pt, pb · m, mx, my, ms, me, mt, mb · w, h, minW, minH, maxW, maxH, wFull, hFull, wFraction(f, {align}), hFraction(f, {align}), square, aspect · bg, bgGradient · border, borderColor, borderWidth, borderS/E/T/B (per-side) · rounded, roundedT/B/S/E, roundedAll, roundedNone, roundedFull · shadow(FwShadow) · opacity · blur, backdropBlur · text(color), fontSize, fontWeight, leading, tracking, textAlign, underline/lineThrough · scale, rotate, translate · clip · hover, focus, pressed, disabled, whenState · sm, md, lg, xl, xl2 · containerSm…container2xl`.
+
+> `square` is sugar for `aspectRatio: 1` (writes the `aspectRatio` field, so it last-wins against `aspect`); it does **not** set `width == height`. `wFraction`/`hFraction` take an optional `align` (→ `factorAlignment`), the only way to control fractional-size alignment.
 
 > Note: `row/col/wrap/gap/items*/justify*/position/inset/z` are **not** here — they belong to the layout widgets (§6.6).
 
 ### 6.6 Layout widgets (`lib/src/layout/`)
 Multi-child structure the single-box chain cannot express. Each is a normal widget producing one subtree, so it can itself be styled with `.tw` (e.g. `FwColumn(...).tw.p(4).bg(c)`):
 
-- **`FwRow` / `FwColumn`** — flex with typed `gap` (spacing inserted between children, in utility units), `mainAxisAlignment`, `crossAxisAlignment`, `mainAxisSize`. (`gap` renders via `Flex`'s native `spacing` where available, else interleaved `SizedBox`.)
+- **`FwRow` / `FwColumn`** — flex with typed `gap` (spacing inserted between children, in utility units), `mainAxisAlignment`, `crossAxisAlignment`, and `mainAxisSize` **defaulting to `MainAxisSize.max`** (Flutter's default — chosen deliberately to avoid layout surprises; web refugees expecting shrink-to-fit opt into `MainAxisSize.min` explicitly, and it's documented on the constructor). `gap` renders via `Flex`'s native `spacing` where available, else interleaved `SizedBox`.
 - **`FwWrap`** — `Wrap` with directional run/cross spacing + alignment.
 - **`FwStack` / `FwPositioned`** — stacking context; `FwPositioned` carries directional `inset` (`start/end/top/bottom`) and `z` for paint order (children sorted by `z`, then declaration order). This is where the `z-index` scale (§4.6) is consumed.
-- **`FwGrid`** — the AGENTS.md §11 grid helper: `grid-template-columns: 1fr 2fr`-style tracks via flex/`CustomMultiChildLayout`.
+- **`FwGrid`** — the AGENTS.md §11 grid helper. **v1 grammar (pinned):** a single set of **column tracks** mixing `fr` (flex) and fixed-px tracks (e.g. `[Fr(1), Fr(2)]` or `[Px(200), Fr(1)]`) with a directional **column gap** and equal-structure wrapping rows — all implementable with `Flex`/`Expanded` (`fr` → `Expanded(flex:)`, fixed → `SizedBox`). **Cell/row spanning, auto-placement, and `subgrid` are Non-Goals** (AGENTS.md §11) and require a custom `RenderObject` we are *not* shipping in v1. "FwGrid ships complete" means complete *for this grammar*, stated so it's falsifiable.
 
 Variant/responsive layering applies to layout widgets too (e.g. a responsive `gap`) via the same `FwStyle` layer engine, exposed through their constructors where it makes sense. All directional; all golden-tested LTR + RTL.
 
