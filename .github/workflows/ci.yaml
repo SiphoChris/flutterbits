@@ -54,3 +54,42 @@ jobs:
         run: flutter analyze --fatal-infos --fatal-warnings
       - name: Unit tests on floor (goldens excluded)
         run: flutter test test/tokens
+
+  arch-guard:
+    # Mechanically enforces the AGENTS.md §3 rules that are otherwise review-only,
+    # so a violation fails the build instead of depending on a human catching it.
+    # grep-only — no Flutter toolchain needed, so it's fast. Allowlists name the
+    # single sanctioned exception per rule (those files arrive in Module 2).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: No Material import outside the FwThemeExtension bridge (§3.5)
+        run: |
+          if grep -rnF --include='*.dart' 'package:flutter/material.dart' packages/flutterwindcss/lib \
+             | grep -vF 'lib/src/theme/fw_theme_extension.dart'; then
+            echo "::error::Material import is banned outside the FwThemeExtension bridge (AGENTS.md §3.5)."
+            exit 1
+          fi
+      - name: No withOpacity — use Color.withValues (§3.8)
+        run: |
+          if grep -rnF --include='*.dart' 'withOpacity' packages/flutterwindcss/lib; then
+            echo "::error::withOpacity is banned; use Color.withValues(alpha: ...) (AGENTS.md §3.8)."
+            exit 1
+          fi
+      - name: No direct Theme.of outside context.fw (§3.4)
+        run: |
+          if grep -rnF --include='*.dart' 'Theme.of(' packages/flutterwindcss/lib \
+             | grep -vF 'lib/src/theme/context_fw.dart'; then
+            echo "::error::Read tokens via context.fw, not Theme.of (AGENTS.md §3.4)."
+            exit 1
+          fi
+      - name: Directional layout only — no left/right insets or alignments (§3.3)
+        run: |
+          if grep -rnE --include='*.dart' \
+             'EdgeInsets\.only\([^)]*(left|right):|Alignment\.(centerLeft|centerRight|topLeft|topRight|bottomLeft|bottomRight)\b' \
+             packages/flutterwindcss/lib; then
+            echo "::error::Use EdgeInsetsDirectional / AlignmentDirectional (AGENTS.md §3.3)."
+            exit 1
+          fi
+      # NOTE: §3.1 (no hardcoded Color(0x...) in components) and §3.7 (no className
+      # string parsing) get a guard against registry/ once the first component lands.
