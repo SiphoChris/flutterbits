@@ -15,9 +15,6 @@ void main() {
       ),
     );
 
-    await expectLater(
-      find.byType(ColoredBox),
-      matchesGoldenFile('goldens/harness_smoke.png'),
-    );
+    await expectLater(find.byType(ColoredBox), matchesGoldenFile('goldens/harness_smoke.png'));
   });
 }

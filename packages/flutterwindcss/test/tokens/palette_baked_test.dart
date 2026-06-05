@@ -1,7 +1,8 @@
 // test/tokens/palette_baked_test.dart
-import 'package:flutterwindcss/src/tokens/palette.g.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'dart:ui';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutterwindcss/src/tokens/palette.g.dart';
 
 void main() {
   test('baked palette has known Tailwind v4 sRGB values', () {

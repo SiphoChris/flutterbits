@@ -51,11 +51,11 @@ enum FwState {
 
   /// The framework [WidgetState] this maps to.
   WidgetState get widgetState => switch (this) {
-        FwState.hovered => WidgetState.hovered,
-        FwState.focused => WidgetState.focused,
-        FwState.pressed => WidgetState.pressed,
-        FwState.disabled => WidgetState.disabled,
-      };
+    FwState.hovered => WidgetState.hovered,
+    FwState.focused => WidgetState.focused,
+    FwState.pressed => WidgetState.pressed,
+    FwState.disabled => WidgetState.disabled,
+  };
 }
 
 /// Tailwind v4 opacity scale step (`0..100`) as a 0..1 double.

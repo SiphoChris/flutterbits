@@ -1,5 +1,5 @@
-import 'package:flutterwindcss/flutterwindcss.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutterwindcss/flutterwindcss.dart';
 
 void main() {
   test('fwSpace maps 1 unit to 4 logical pixels', () {
@@ -18,8 +18,9 @@ void main() {
 
   test('FwState enumerates the four engine-sourced interaction states', () {
     expect(FwState.values, hasLength(4));
-    expect(FwState.values, containsAll(<FwState>[
-      FwState.hovered, FwState.focused, FwState.pressed, FwState.disabled,
-    ]));
+    expect(
+      FwState.values,
+      containsAll(<FwState>[FwState.hovered, FwState.focused, FwState.pressed, FwState.disabled]),
+    );
   });
 }
