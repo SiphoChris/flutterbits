@@ -2,6 +2,12 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Correction (post-execution).** This plan is left as-written for historical accuracy, but three things changed during TDD (each stricter/more correct; all reflected in the engine spec §6 and the design doc's §7 "As-built corrections"):
+> 1. **`resolve` takes two widths** — `resolve(states, {viewportWidth, containerWidth})`, not a single unified `width`/`Size`. Viewport and container layers resolve independently. (The "Self-Review Notes" already flagged the unified-width approach as a gap; the gap was fixed at implementation time.)
+> 2. **Interaction sourcing uses `MouseRegion` + non-traversable `Focus` + `Listener`**, not `FocusableActionDetector` (which can't be made non-traversable while enabled and would add a tab stop, violating §7). Tasks 7's FAD-based skeleton was superseded.
+> 3. **Interaction wrappers activate only for live-sourced states** (`hover`/`focus`/`pressed`); component-managed states (`selected`/`disabled`) inject via `FwStyled.states` and resolve statelessly.
+> Two render-chain details are **deferred and tracked** (not silently dropped): content-clip radius **deflation** (Finding #3) → module 5 (coupled to border width); opacity **fold** (Finding #11) → later perf pass (an always-correct `Opacity` is emitted meanwhile).
+
 **Goal:** Build the `FwStyle` lazy resolver engine — the nested-layer styling core, the complete §6.4 render chain, and the `FwStyled`/`.tw` widget — so the engine is structurally complete and modules 4–9 only add typed base-setter sugar.
 
 **Architecture:** An immutable `FwStyle` data class holds all single-box style fields plus a list of nested `FwLayer`s. Builder methods live once in a shared `FwStyleOps<T>` mixin, mixed into both `FwStyle` (`T = FwStyle`, for nested-layer callbacks) and `FwStyled` (`T = FwStyled`, the `.tw` widget). `FwStyle.resolve(context, states, width)` flattens base + matching nested layers (last-wins, disabled-suppressed) into a `ResolvedStyle`, whose `build(child)` emits the fixed outer→inner primitive chain, each wrapper present only when its field is set. `FwStyled` conditionally inserts `MediaQuery`/`LayoutBuilder`/`FocusableActionDetector` ancestors based on the flattened layer set.
