@@ -43,12 +43,12 @@ jobs:
         working-directory: packages/flutterwindcss
     steps:
       - uses: actions/checkout@v5
-      # The declared floor (Flutter 3.27 / Dart 3.6). If this job fails, the real
+      # The declared floor (Flutter 3.29 / Dart 3.7). If this job fails, the real
       # floor is higher — raise it in both pubspecs + the README, don't delete this.
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.27.0
+          flutter-version: 3.29.0
       - run: flutter pub get
       - name: Analyze on floor (compiles lib + tests)
         run: flutter analyze --fatal-infos --fatal-warnings

@@ -36,7 +36,7 @@ apps/
 tooling/                 # registry builder, melos config, CI scripts
 ```
 
-- **Toolchain floor (hard): Flutter ≥ 3.27 / Dart ≥ 3.6.** Lower will not compile: the wide-gamut `Color` API (`Color.withValues` per §3.8, and the `Color.a/.r/.g/.b` accessors), the `Row`/`Column`/`Flex` `spacing` parameter, and pub workspaces all landed in 3.27/3.6. This floor is set in every `pubspec.yaml` `environment:` and **verified by a CI job pinned to it** (separate from the golden job, which pins a newer version for determinism). Keep the floor identical in the pubspecs and the README.
+- **Toolchain floor (hard): Flutter ≥ 3.29 / Dart ≥ 3.7.** The wide-gamut `Color` API (`Color.withValues` per §3.8, and the `Color.a/.r/.g/.b` accessors), the `Row`/`Column`/`Flex` `spacing` parameter, and pub workspaces require 3.27/3.6 — below that, the code will not compile. We floor one minor higher at **Dart 3.7** so `dart format` uses the modern "tall" style (Dart 3.7+) rather than the legacy short style; mixing the two fails the format check. This floor is set in every `pubspec.yaml` `environment:` and **verified by a CI job pinned to it** (separate from the golden job, which pins a newer version for determinism). Keep the floor identical in the pubspecs and the README.
 - Dependency resolution: **pub workspaces** (`resolution: workspace` in each `pubspec.yaml`). Task running / versioning / publishing: **Melos** — the intended cross-package runner, adopted once the workspace holds multiple packages. While `flutterwindcss` is the only package, use plain `flutter`/`dart` per-package (see §10).
 - The site (`apps/docs`) is **TypeScript**. The packages and CLI are **Dart**. Keep the boundary clean (see §7).
 

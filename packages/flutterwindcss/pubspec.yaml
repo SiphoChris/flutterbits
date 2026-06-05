@@ -7,11 +7,12 @@ publish_to: none
 resolution: workspace
 
 environment:
-  # Floor driven by the wide-gamut Color API (Color.withValues / Color.a, §3.8),
-  # the Flex `spacing` parameter, and pub workspaces — all land in Dart 3.6 /
-  # Flutter 3.27. CI also runs a job pinned to this floor to keep it honest.
-  sdk: '>=3.6.0 <4.0.0'
-  flutter: '>=3.27.0'
+  # Required APIs (Color.withValues / Color.a per §3.8, the Flex `spacing` param)
+  # and pub workspaces land in Flutter 3.27 / Dart 3.6. We floor one minor higher
+  # at Dart 3.7 / Flutter 3.29 so the codebase keeps the modern "tall" dart-format
+  # style (Dart 3.7+) instead of the legacy style. A CI job pins this floor.
+  sdk: '>=3.7.0 <4.0.0'
+  flutter: '>=3.29.0'
 
 dependencies:
   flutter:
