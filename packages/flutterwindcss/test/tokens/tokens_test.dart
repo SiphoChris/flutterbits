@@ -1,3 +1,5 @@
+import 'dart:ui' show Color;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutterwindcss/flutterwindcss.dart';
 
@@ -25,6 +27,57 @@ void main() {
   test('light theme literals match baked palette swatches', () {
     expect(FwTokens.light.colors.border, FwPalette.neutral.shade200);
     expect(FwTokens.dark.colors.background, FwPalette.neutral.shade950);
+  });
+
+  // Comprehensive provenance test: every one of the 19 color roles in both
+  // light and dark is pinned — either to the named palette swatch from its
+  // annotation comment, or (for alpha-on-white values) to the explicit literal.
+  // This catches any typo in a hex literal that the annotation comment would
+  // otherwise conceal.
+  test('every annotated theme literal matches its named palette swatch', () {
+    // ── light theme (19 roles) ────────────────────────────────────────────────
+    expect(FwTokens.light.colors.background, FwPalette.white);
+    expect(FwTokens.light.colors.foreground, FwPalette.neutral.shade950);
+    expect(FwTokens.light.colors.card, FwPalette.white);
+    expect(FwTokens.light.colors.cardForeground, FwPalette.neutral.shade950);
+    expect(FwTokens.light.colors.popover, FwPalette.white);
+    expect(FwTokens.light.colors.popoverForeground, FwPalette.neutral.shade950);
+    expect(FwTokens.light.colors.primary, FwPalette.neutral.shade900);
+    expect(FwTokens.light.colors.primaryForeground, FwPalette.neutral.shade50);
+    expect(FwTokens.light.colors.secondary, FwPalette.neutral.shade100);
+    expect(FwTokens.light.colors.secondaryForeground, FwPalette.neutral.shade900);
+    expect(FwTokens.light.colors.muted, FwPalette.neutral.shade100);
+    expect(FwTokens.light.colors.mutedForeground, FwPalette.neutral.shade500);
+    expect(FwTokens.light.colors.accent, FwPalette.neutral.shade100);
+    expect(FwTokens.light.colors.accentForeground, FwPalette.neutral.shade900);
+    expect(FwTokens.light.colors.destructive, FwPalette.red.shade600);
+    expect(FwTokens.light.colors.destructiveForeground, FwPalette.white);
+    expect(FwTokens.light.colors.border, FwPalette.neutral.shade200);
+    expect(FwTokens.light.colors.input, FwPalette.neutral.shade200);
+    expect(FwTokens.light.colors.ring, FwPalette.neutral.shade400);
+
+    // ── dark theme (19 roles) ─────────────────────────────────────────────────
+    expect(FwTokens.dark.colors.background, FwPalette.neutral.shade950);
+    expect(FwTokens.dark.colors.foreground, FwPalette.neutral.shade50);
+    expect(FwTokens.dark.colors.card, FwPalette.neutral.shade900);
+    expect(FwTokens.dark.colors.cardForeground, FwPalette.neutral.shade50);
+    expect(FwTokens.dark.colors.popover, FwPalette.neutral.shade900);
+    expect(FwTokens.dark.colors.popoverForeground, FwPalette.neutral.shade50);
+    expect(FwTokens.dark.colors.primary, FwPalette.neutral.shade50);
+    expect(FwTokens.dark.colors.primaryForeground, FwPalette.neutral.shade900);
+    expect(FwTokens.dark.colors.secondary, FwPalette.neutral.shade800);
+    expect(FwTokens.dark.colors.secondaryForeground, FwPalette.neutral.shade50);
+    expect(FwTokens.dark.colors.muted, FwPalette.neutral.shade800);
+    expect(FwTokens.dark.colors.mutedForeground, FwPalette.neutral.shade400);
+    expect(FwTokens.dark.colors.accent, FwPalette.neutral.shade800);
+    expect(FwTokens.dark.colors.accentForeground, FwPalette.neutral.shade50);
+    expect(FwTokens.dark.colors.destructive, FwPalette.red.shade400);
+    expect(FwTokens.dark.colors.destructiveForeground, FwPalette.neutral.shade950);
+    // border and input use alpha-on-white composites (not plain palette swatches);
+    // pin them to their explicit literal values so a typo is still caught.
+    expect(FwTokens.dark.colors.border, const Color(0x1AFFFFFF)); // white/10%
+    expect(FwTokens.dark.colors.input, const Color(0x26FFFFFF)); // white/15%
+    expect(FwTokens.dark.colors.ring, FwPalette.neutral.shade500);
   });
 
   test('equality includes typography', () {
