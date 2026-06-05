@@ -42,19 +42,16 @@ Flutter has no structure/style split and no CSS cascade — the widget tree *is*
 
 > **Early development.** The foundation is being built module‑by‑module, each one fully implemented, tested, and reviewed before the next begins — no stubs, no "TODO: productionize later."
 
-**✅ Shipped — the token system (`flutterwindcss`):**
+**✅ Shipped (`flutterwindcss`):**
 
-- The full **Tailwind v4 color palette** (22 hues × 11 shades, baked from published sRGB hex — zero runtime color math).
-- The **19 shadcn semantic tokens** (`background`, `foreground`, `primary`, `muted`, `border`, `ring`, …) — the exact contract the theme generator targets.
-- Complete **scales**: spacing (1 unit = 4px), radius (derived `sm ×0.6 / md ×0.8 / lg ×1.0 / xl ×1.4` + the Tailwind named scale), box‑shadow, typography (font‑size/weight/tracking/leading), opacity, border‑width, z‑index, blur, and breakpoints.
-- `FwTokens.light` / `FwTokens.dark` shadcn‑neutral themes (const, animatable via `lerp`), the `FwState`/`FwBreakpoint` enums (frozen API contract), and a **CI‑authoritative golden‑test harness**.
+- **Tokens (module 1)** — the full **Tailwind v4 color palette** (22 hues × 11 shades, baked from published sRGB hex — zero runtime color math); the **19 shadcn semantic tokens** (`background`, `foreground`, `primary`, `muted`, `border`, `ring`, …); complete **scales** (spacing 1 unit = 4px, derived + named radius, box‑shadow, typography, opacity, border‑width, z‑index, blur, breakpoints); `FwTokens.light`/`dark` (const, `lerp`‑animatable); the frozen `FwState`/`FwBreakpoint` enums; and a **CI‑authoritative golden harness**.
+- **Theme access (module 2)** — `FwTheme` (InheritedWidget, pure path) + `FwThemeExtension` (Material interop) + `context.fw`, resolving in both paths with a clear error when neither is present.
+- **The `FwStyle` resolver + `.tw` API (module 3)** — an accumulator with last‑wins conflict resolution that resolves lazily against interaction states and **viewport vs. container** width (kept distinct), so `hover:`/`focus:`/`pressed:`/`disabled:` variants and `sm:`/`md:`/`container*:` prefixes are first‑class. Includes the full primitive render chain and `FwStyled`, which inserts `MediaQuery`/`LayoutBuilder`/interaction wrappers only when a layer needs them — and never a spurious focus tab stop. Ships the `padding` + `bg` setters; the rest land per family below.
 
 **🚧 Next on the roadmap:**
 
-1. **Theme access** — `FwTheme` (InheritedWidget) + `FwThemeExtension` + `context.fw`, resolving in both the pure and Material paths.
-2. **The `FwStyle` resolver + `.tw` API** — an accumulator with last‑wins conflict resolution that resolves lazily against interaction states and viewport/container size, so `hover:`/`focus:`/`disabled:` variants and `sm:`/`md:` responsive prefixes are first‑class.
-3. **Utility families** — spacing, sizing, color/border/radius/gradient, typography, effects (shadow/opacity/blur/backdrop‑blur), layout widgets (`FwRow`/`FwColumn`/`FwStack`/`FwGrid`), transforms, and animated theming.
-4. **`flutterbits` components**, the **registry + CLI** (`flutterbits add` / `diff`), and the **tweakcn → `theme.dart` generator**.
+1. **Utility families** — spacing/sizing, color/border/radius/gradient, typography, effects (shadow/opacity/blur/backdrop‑blur), layout widgets (`FwRow`/`FwColumn`/`FwStack`/`FwGrid`), transforms, and animated theming. (Each adds typed `.tw` setters over the already‑built resolver + render chain.)
+2. **`flutterbits` components**, the **registry + CLI** (`flutterbits add` / `diff`), and the **tweakcn → `theme.dart` generator**.
 
 See [`docs/superpowers/specs`](docs/superpowers/specs) for the full engine design and [`docs/superpowers/plans`](docs/superpowers/plans) for the implementation plans.
 

@@ -158,3 +158,38 @@ implemented; the representative base-setter slice + full variant surface usable;
 §4 unit + golden tests green on CI; `flutter analyze --fatal-infos --fatal-warnings`
 clean; `dart format` clean; all four arch-guards pass; barrel exports the new public
 surface (`.tw`/`FwStyled`/`FwStyle`). No stubs, no cross-module TODOs.
+
+---
+
+## 7. As-built corrections (recorded post-TDD)
+
+What landed differed from this design and the original engine spec in three deliberate
+ways — each stricter/more correct, each now reflected in the engine spec:
+
+1. **Two-width resolution.** `resolve(Set<WidgetState> states, {double? viewportWidth,
+   double? containerWidth})` — viewport and container widths are passed **separately**,
+   not merged into one. A box mixing `md:` and `containerMd:` resolves each from its own
+   source (`MediaQuery` vs `LayoutBuilder`); neither can satisfy the other. (The plan had
+   tentatively unified them to a single width — rejected as a correctness gap.)
+
+2. **Interaction sourcing uses `MouseRegion` + non-traversable `Focus` + `Listener`, not
+   `FocusableActionDetector`.** FAD's internal `Focus` overrides a passed node's
+   `canRequestFocus`/`skipTraversal` while `enabled`, so it cannot be made non-traversable
+   — it would add a tab stop and violate §7. The chosen primitives add no tab stop and no
+   `focusable` semantics flag (verified: a `Semantics(button:true)` child keeps
+   `button=true, focusable=false` through the interactive path). A real focusable detector
+   + visible `ring` is an interactive **component's** job, not the engine's.
+
+3. **Interaction wrappers activate only for live-sourced states.** Only a layer keyed on
+   `hover`/`focus`/`pressed` inserts the wrappers; component-managed states (`selected`,
+   `disabled`, …) inject via `FwStyled.states` and resolve **statelessly**. (Audit fix —
+   the first cut over-triggered on any state condition.)
+
+**Deferrals (tracked, not silent):**
+- **Content-clip radius deflation by border width (Finding #3)** → **module 5**. It is
+  coupled to the border width that module 5 introduces and was untestable in module 3
+  (no `.border`/`.rounded`/`.clip` setters ship here). Until then the chain emits the
+  content clip without deflation. Recorded on the engine spec §6.4 Finding #3 and the
+  module 5 row.
+- **Opacity fold (Finding #11)** → deferred **perf** optimization. Module 3 always emits a
+  true `Opacity` (always correct); the fold lands later behind the same tests.

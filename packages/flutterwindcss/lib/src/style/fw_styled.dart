@@ -20,10 +20,11 @@ extension TwExtension on Widget {
 /// ancestors resolution needs — never more than required:
 /// - a `LayoutBuilder` only when the flattened layer set has a container layer;
 /// - a `MediaQuery` read only when it has a viewport layer;
-/// - live interaction sourcing (`MouseRegion`/`Focus`/`Listener`) only when it
-///   has a state layer. Visual-only state styling uses a non-traversable
-///   `Focus`, so a `hover:`-only box never becomes a tab stop (Finding #9, §7).
-///   Externally-injected [states] alone resolve without any of these wrappers.
+/// - live interaction sourcing (`MouseRegion`/`Focus`/`Listener`) only when a
+///   layer is keyed on a live-sourced state (hover/focus/pressed). Visual-only
+///   state styling uses a non-traversable `Focus`, so a `hover:`-only box never
+///   becomes a tab stop (Finding #9, §7). Component-managed states (`selected`,
+///   `disabled`, …) arrive via [states] and resolve without any of these.
 ///
 /// `FwStyled` is semantics-transparent: it wraps, never replaces, the child's
 /// `Semantics` (spec §7).
@@ -47,6 +48,15 @@ class FwStyled extends StatelessWidget with FwStyleOps<FwStyled> {
   @override
   FwStyled fwRebuild(FwStyle next) => FwStyled(style: next, states: states, key: key, child: child);
 
+  /// The interaction states the engine sources on its own. A layer keyed on one
+  /// of these needs a live detector; component-managed states (`selected`,
+  /// `disabled`, …) are injected via [states] and resolve without one (§6.5).
+  static const Set<WidgetState> _liveStates = <WidgetState>{
+    WidgetState.hovered,
+    WidgetState.focused,
+    WidgetState.pressed,
+  };
+
   bool _anyCondition(bool Function(FwCondition) test) {
     bool walk(FwStyle s) {
       for (final (cond, nested) in s.layers) {
@@ -59,6 +69,11 @@ class FwStyled extends StatelessWidget with FwStyleOps<FwStyled> {
 
     return walk(style);
   }
+
+  /// Whether any layer (at any depth) is keyed on a live-sourced state, which is
+  /// the only thing that requires the `MouseRegion`/`Focus`/`Listener` wrappers.
+  bool get _needsLiveStateSourcing =>
+      _anyCondition((c) => c is FwStateCondition && _liveStates.contains(c.state));
 
   @override
   Widget build(BuildContext context) {
@@ -77,9 +92,9 @@ class FwStyled extends StatelessWidget with FwStyleOps<FwStyled> {
     final viewportWidth =
         _anyCondition((c) => c.isViewport) ? MediaQuery.maybeOf(context)?.size.width : null;
 
-    // Interactive path: any state layer means live hover/focus/pressed must be
-    // sourced. Externally-injected states alone do not need a detector.
-    if (_anyCondition((c) => c.isState)) {
+    // Interactive path only when a layer is keyed on a live-sourced state.
+    // Component-managed states arrive via [states] and resolve statelessly.
+    if (_needsLiveStateSourcing) {
       return _FwStyledInteractive(
         style: style,
         injected: states ?? const <WidgetState>{},
