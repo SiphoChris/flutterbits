@@ -16,4 +16,16 @@ void main() {
     final r = FwRadii.lerp(FwRadii.fromBase(0), FwRadii.fromBase(10), 0.5);
     expect(r.lg, 5);
   });
+
+  test('FwRadiusScale exposes Tailwind named values', () {
+    expect(FwRadiusScale.xs, 2);
+    expect(FwRadiusScale.md, 6);
+    expect(FwRadiusScale.xl2, 16);
+    expect(FwRadiusScale.xl4, 32);
+  });
+
+  test('equality: fromBase(8) == fromBase(8), != fromBase(10)', () {
+    expect(FwRadii.fromBase(8), FwRadii.fromBase(8));
+    expect(FwRadii.fromBase(8), isNot(FwRadii.fromBase(10)));
+  });
 }

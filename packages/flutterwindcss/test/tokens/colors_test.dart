@@ -36,4 +36,16 @@ void main() {
     final r = FwColors.lerp(a, b, 0.5);
     expect(r.primary, Color.lerp(const Color(0xFF000000), const Color(0xFFFFFFFF), 0.5));
   });
+
+  test('lerp at t=0 returns a and t=1 returns b', () {
+    final b = a.copyWith(primary: const Color(0xFFFFFFFF));
+    expect(FwColors.lerp(a, b, 0), a);
+    expect(FwColors.lerp(a, b, 1), b);
+  });
+
+  test('copyWith() with no args equals original; == is reflexive', () {
+    expect(a.copyWith(), a);
+    expect(a, a);
+    expect(a.copyWith(primary: const Color(0xFFFFFFFF)), isNot(a));
+  });
 }

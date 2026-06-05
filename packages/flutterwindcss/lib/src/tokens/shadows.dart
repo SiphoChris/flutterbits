@@ -40,7 +40,8 @@ class FwShadows {
 
   static const Color _k = Color(0x00000000);
 
-  /// Tailwind v4 default shadow values (black at documented alphas).
+  /// Tailwind v4 default shadow values. Colours are black at 5% (xs2/xs),
+  /// 10% (sm..xl), and 25% (2xl) opacity — matching the CSS variable values.
   static const FwShadows defaults = FwShadows(
     xs2: <BoxShadow>[BoxShadow(color: Color(0x0D000000), offset: Offset(0, 1))],
     xs: <BoxShadow>[BoxShadow(color: Color(0x0D000000), offset: Offset(0, 1), blurRadius: 2)],
@@ -76,6 +77,8 @@ class FwShadows {
     xl2: <BoxShadow>[],
   );
 
+  // Pads the shorter list by copying the extra BoxShadow with a fully-transparent
+  // colour, so surplus layers fade in/out rather than snapping on/off.
   static List<BoxShadow> _lerpList(List<BoxShadow> a, List<BoxShadow> b, double t) {
     final n = a.length > b.length ? a.length : b.length;
     return List<BoxShadow>.generate(n, (i) {

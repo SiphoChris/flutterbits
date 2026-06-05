@@ -43,6 +43,8 @@ class FwRadii {
   static FwRadii lerp(FwRadii a, FwRadii b, double t) =>
       FwRadii.fromBase(a.base + (b.base - a.base) * t);
 
+  // Direct-constructor instances may set sm/md/lg/xl independently of base,
+  // so compare all five fields rather than base alone.
   @override
   bool operator ==(Object other) =>
       other is FwRadii &&

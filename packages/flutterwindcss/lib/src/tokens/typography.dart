@@ -5,43 +5,43 @@ library;
 
 /// Tailwind v4 font-size steps with paired line-height ratios.
 enum FwFontSize {
-  /// `0.75rem`.
+  /// `0.75rem` (12 px).
   xs(12, 1 / 0.75),
 
-  /// `0.875rem`.
+  /// `0.875rem` (14 px).
   sm(14, 1.25 / 0.875),
 
-  /// `1rem`.
+  /// `1rem` (16 px).
   base(16, 1.5 / 1),
 
-  /// `1.125rem`.
+  /// `1.125rem` (18 px).
   lg(18, 1.75 / 1.125),
 
-  /// `1.25rem`.
+  /// `1.25rem` (20 px).
   xl(20, 1.75 / 1.25),
 
-  /// `1.5rem`.
+  /// `1.5rem` (24 px).
   xl2(24, 2 / 1.5),
 
-  /// `1.875rem`.
+  /// `1.875rem` (30 px).
   xl3(30, 2.25 / 1.875),
 
-  /// `2.25rem`.
+  /// `2.25rem` (36 px).
   xl4(36, 2.5 / 2.25),
 
-  /// `3rem`.
+  /// `3rem` (48 px).
   xl5(48, 1),
 
-  /// `3.75rem`.
+  /// `3.75rem` (60 px).
   xl6(60, 1),
 
-  /// `4.5rem`.
+  /// `4.5rem` (72 px).
   xl7(72, 1),
 
-  /// `6rem`.
+  /// `6rem` (96 px).
   xl8(96, 1),
 
-  /// `8rem`.
+  /// `8rem` (128 px).
   xl9(128, 1);
 
   const FwFontSize(this.px, this.lineHeight);
@@ -124,7 +124,8 @@ abstract final class FwLeading {
 
 /// Font-family *names* only — the engine never bundles fonts (spec §4.5).
 abstract final class FwFontFamily {
-  /// Default UI sans family name. Host wires the actual font.
+  /// Default UI sans family name. Flutter resolves this generic name to the
+  /// platform UI font; the host overrides it in FwTheme for a custom face.
   static const String sans = 'sans-serif';
 
   /// Serif family name.

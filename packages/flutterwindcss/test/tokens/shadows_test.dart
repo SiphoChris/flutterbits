@@ -13,4 +13,9 @@ void main() {
     final r = FwShadows.lerp(FwShadows.none, FwShadows.defaults, 0.5);
     expect(r.sm.first.color.a, closeTo(FwShadows.defaults.sm.first.color.a * 0.5, 0.001));
   });
+
+  test('equality: defaults == defaults, defaults != none', () {
+    expect(FwShadows.defaults, FwShadows.defaults);
+    expect(FwShadows.defaults, isNot(FwShadows.none));
+  });
 }
