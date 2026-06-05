@@ -1,5 +1,5 @@
-import 'package:flutterwindcss/flutterwindcss.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutterwindcss/flutterwindcss.dart';
 
 void main() {
   test('font sizes match Tailwind v4 (16px root)', () {

@@ -43,67 +43,25 @@ class FwShadows {
   /// Tailwind v4 default shadow values (black at documented alphas).
   static const FwShadows defaults = FwShadows(
     xs2: <BoxShadow>[BoxShadow(color: Color(0x0D000000), offset: Offset(0, 1))],
-    xs: <BoxShadow>[
-      BoxShadow(color: Color(0x0D000000), offset: Offset(0, 1), blurRadius: 2),
-    ],
+    xs: <BoxShadow>[BoxShadow(color: Color(0x0D000000), offset: Offset(0, 1), blurRadius: 2)],
     sm: <BoxShadow>[
       BoxShadow(color: Color(0x1A000000), offset: Offset(0, 1), blurRadius: 3),
-      BoxShadow(
-        color: Color(0x1A000000),
-        offset: Offset(0, 1),
-        blurRadius: 2,
-        spreadRadius: -1,
-      ),
+      BoxShadow(color: Color(0x1A000000), offset: Offset(0, 1), blurRadius: 2, spreadRadius: -1),
     ],
     md: <BoxShadow>[
-      BoxShadow(
-        color: Color(0x1A000000),
-        offset: Offset(0, 4),
-        blurRadius: 6,
-        spreadRadius: -1,
-      ),
-      BoxShadow(
-        color: Color(0x1A000000),
-        offset: Offset(0, 2),
-        blurRadius: 4,
-        spreadRadius: -2,
-      ),
+      BoxShadow(color: Color(0x1A000000), offset: Offset(0, 4), blurRadius: 6, spreadRadius: -1),
+      BoxShadow(color: Color(0x1A000000), offset: Offset(0, 2), blurRadius: 4, spreadRadius: -2),
     ],
     lg: <BoxShadow>[
-      BoxShadow(
-        color: Color(0x1A000000),
-        offset: Offset(0, 10),
-        blurRadius: 15,
-        spreadRadius: -3,
-      ),
-      BoxShadow(
-        color: Color(0x1A000000),
-        offset: Offset(0, 4),
-        blurRadius: 6,
-        spreadRadius: -4,
-      ),
+      BoxShadow(color: Color(0x1A000000), offset: Offset(0, 10), blurRadius: 15, spreadRadius: -3),
+      BoxShadow(color: Color(0x1A000000), offset: Offset(0, 4), blurRadius: 6, spreadRadius: -4),
     ],
     xl: <BoxShadow>[
-      BoxShadow(
-        color: Color(0x1A000000),
-        offset: Offset(0, 20),
-        blurRadius: 25,
-        spreadRadius: -5,
-      ),
-      BoxShadow(
-        color: Color(0x1A000000),
-        offset: Offset(0, 8),
-        blurRadius: 10,
-        spreadRadius: -6,
-      ),
+      BoxShadow(color: Color(0x1A000000), offset: Offset(0, 20), blurRadius: 25, spreadRadius: -5),
+      BoxShadow(color: Color(0x1A000000), offset: Offset(0, 8), blurRadius: 10, spreadRadius: -6),
     ],
     xl2: <BoxShadow>[
-      BoxShadow(
-        color: Color(0x40000000),
-        offset: Offset(0, 25),
-        blurRadius: 50,
-        spreadRadius: -12,
-      ),
+      BoxShadow(color: Color(0x40000000), offset: Offset(0, 25), blurRadius: 50, spreadRadius: -12),
     ],
   );
 
@@ -129,14 +87,14 @@ class FwShadows {
 
   /// Layer-wise interpolation of every step.
   static FwShadows lerp(FwShadows a, FwShadows b, double t) => FwShadows(
-        xs2: _lerpList(a.xs2, b.xs2, t),
-        xs: _lerpList(a.xs, b.xs, t),
-        sm: _lerpList(a.sm, b.sm, t),
-        md: _lerpList(a.md, b.md, t),
-        lg: _lerpList(a.lg, b.lg, t),
-        xl: _lerpList(a.xl, b.xl, t),
-        xl2: _lerpList(a.xl2, b.xl2, t),
-      );
+    xs2: _lerpList(a.xs2, b.xs2, t),
+    xs: _lerpList(a.xs, b.xs, t),
+    sm: _lerpList(a.sm, b.sm, t),
+    md: _lerpList(a.md, b.md, t),
+    lg: _lerpList(a.lg, b.lg, t),
+    xl: _lerpList(a.xl, b.xl, t),
+    xl2: _lerpList(a.xl2, b.xl2, t),
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -151,12 +109,12 @@ class FwShadows {
 
   @override
   int get hashCode => Object.hash(
-        Object.hashAll(xs2),
-        Object.hashAll(xs),
-        Object.hashAll(sm),
-        Object.hashAll(md),
-        Object.hashAll(lg),
-        Object.hashAll(xl),
-        Object.hashAll(xl2),
-      );
+    Object.hashAll(xs2),
+    Object.hashAll(xs),
+    Object.hashAll(sm),
+    Object.hashAll(md),
+    Object.hashAll(lg),
+    Object.hashAll(xl),
+    Object.hashAll(xl2),
+  );
 }

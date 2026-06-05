@@ -1,6 +1,5 @@
-import 'dart:ui';
-import 'package:flutterwindcss/flutterwindcss.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutterwindcss/flutterwindcss.dart';
 
 void main() {
   test('sm matches the Tailwind v4 two-layer shadow', () {
