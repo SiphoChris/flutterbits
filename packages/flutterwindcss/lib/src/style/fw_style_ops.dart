@@ -9,9 +9,12 @@ import 'fw_style.dart';
 /// the `.tw` widget). Implementers expose their current [fwStyle] and a
 /// [fwRebuild] that wraps a new style back into `T`.
 ///
-/// Module 3 ships only the **padding + bg** base setters (the engine's test
+/// Module 3 shipped the **padding + bg** base setters (the engine's test
 /// vehicle, module design §1) plus the **complete** variant/responsive/container
-/// surface. Modules 4–9 extend this mixin with the remaining base setters.
+/// surface. Module 4 adds the **spacing + sizing** setters (margin, fixed/min/max
+/// sizing, fractional sizing + alignment, aspect/square). Modules 5–9 extend this
+/// mixin with the remaining base setters (color/border/radius, typography,
+/// effects, transforms).
 mixin FwStyleOps<T> {
   /// The current accumulated style.
   FwStyle get fwStyle;
@@ -54,6 +57,96 @@ mixin FwStyleOps<T> {
 
   /// Padding at the bottom edge.
   T pb(double units) => fwRebuild(fwStyle.copyWith(padding: _mergePad(bottom: fwSpace(units))));
+
+  // ---- Margin (per-edge merge; last-wins per edge — mirrors padding) ----
+
+  EdgeInsetsDirectional _mergeMargin({double? start, double? end, double? top, double? bottom}) {
+    final m = fwStyle.margin ?? EdgeInsetsDirectional.zero;
+    return EdgeInsetsDirectional.only(
+      start: start ?? m.start,
+      end: end ?? m.end,
+      top: top ?? m.top,
+      bottom: bottom ?? m.bottom,
+    );
+  }
+
+  /// Margin on all sides, [units] × 4 logical px.
+  T m(double units) =>
+      fwRebuild(fwStyle.copyWith(margin: EdgeInsetsDirectional.all(fwSpace(units))));
+
+  /// Horizontal margin (start + end).
+  T mx(double units) =>
+      fwRebuild(fwStyle.copyWith(margin: _mergeMargin(start: fwSpace(units), end: fwSpace(units))));
+
+  /// Vertical margin (top + bottom).
+  T my(double units) => fwRebuild(
+    fwStyle.copyWith(margin: _mergeMargin(top: fwSpace(units), bottom: fwSpace(units))),
+  );
+
+  /// Margin at the start edge (RTL-aware).
+  T ms(double units) => fwRebuild(fwStyle.copyWith(margin: _mergeMargin(start: fwSpace(units))));
+
+  /// Margin at the end edge (RTL-aware).
+  T me(double units) => fwRebuild(fwStyle.copyWith(margin: _mergeMargin(end: fwSpace(units))));
+
+  /// Margin at the top edge.
+  T mt(double units) => fwRebuild(fwStyle.copyWith(margin: _mergeMargin(top: fwSpace(units))));
+
+  /// Margin at the bottom edge.
+  T mb(double units) => fwRebuild(fwStyle.copyWith(margin: _mergeMargin(bottom: fwSpace(units))));
+
+  // ---- Sizing (fixed / min / max; utility units → logical px) ----
+  //
+  // Tailwind's width/height scale is its spacing scale (`w-4` = 1rem = 16px), so
+  // these reuse [fwSpace]. A fixed dim produces a tight constraint and wins its
+  // axis; `min*`/`max*` apply only to axes without a fixed value — the render
+  // chain's sizing reconciliation (spec §6.4 Finding #6) governs how they
+  // combine (and asserts against a fixed dim + min/max on the same axis).
+
+  /// Fixed width, [units] × 4 logical px (tight constraint, wins its axis).
+  T w(double units) => fwRebuild(fwStyle.copyWith(width: fwSpace(units)));
+
+  /// Fixed height, [units] × 4 logical px (tight constraint, wins its axis).
+  T h(double units) => fwRebuild(fwStyle.copyWith(height: fwSpace(units)));
+
+  /// Minimum width, [units] × 4 logical px.
+  T minW(double units) => fwRebuild(fwStyle.copyWith(minWidth: fwSpace(units)));
+
+  /// Minimum height, [units] × 4 logical px.
+  T minH(double units) => fwRebuild(fwStyle.copyWith(minHeight: fwSpace(units)));
+
+  /// Maximum width, [units] × 4 logical px.
+  T maxW(double units) => fwRebuild(fwStyle.copyWith(maxWidth: fwSpace(units)));
+
+  /// Maximum height, [units] × 4 logical px.
+  T maxH(double units) => fwRebuild(fwStyle.copyWith(maxHeight: fwSpace(units)));
+
+  // ---- Fractional sizing (FractionallySizedBox factors) ----
+
+  /// Fractional width, [factor] of the parent (e.g. `0.5` = half). [align]
+  /// (default `centerStart` at resolve time) is the only control over fractional
+  /// alignment (spec §6.5); it is shared with [hFraction] (last-wins).
+  T wFraction(double factor, {AlignmentDirectional? align}) =>
+      fwRebuild(fwStyle.copyWith(widthFactor: factor, factorAlignment: align));
+
+  /// Fractional height, [factor] of the parent. See [wFraction] re [align].
+  T hFraction(double factor, {AlignmentDirectional? align}) =>
+      fwRebuild(fwStyle.copyWith(heightFactor: factor, factorAlignment: align));
+
+  /// Fills the parent's width (Tailwind `w-full`); sugar for `wFraction(1)`.
+  T get wFull => wFraction(1);
+
+  /// Fills the parent's height (Tailwind `h-full`); sugar for `hFraction(1)`.
+  T get hFull => hFraction(1);
+
+  // ---- Aspect ratio ----
+
+  /// Constrains the box to [ratio] (width / height).
+  T aspect(double ratio) => fwRebuild(fwStyle.copyWith(aspectRatio: ratio));
+
+  /// Square aspect ratio; sugar for `aspect(1)`. Writes the `aspectRatio` field
+  /// (so it last-wins against [aspect]); it does **not** set `width == height`.
+  T get square => aspect(1);
 
   // ---- Background ----
 
