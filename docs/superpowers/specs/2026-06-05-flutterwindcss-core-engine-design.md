@@ -76,11 +76,11 @@ All token values are sourced from the **Tailwind v4 default theme** and **shadcn
 ### 4.1 `FwPalette` (`tokens/palette.dart`)
 The raw Tailwind v4 color palette — every hue (`slate, gray, zinc, neutral, stone, red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia, pink, rose`) × shades `50,100,…,900,950`, plus `black`/`white`. The baked `const Color` values are **Tailwind's own published sRGB hex** (e.g. `orange-500 = #ff6900`), as shown on tailwindcss.com/docs/colors — transcribed, not re-derived. Exposed as `FwPalette.blue.shade500` etc.
 
-> **Conversion policy (important, easy to get wrong).** Tailwind v4 defines colors in OKLCH but **publishes gamut-*clipped* sRGB hex** (kept close to its legacy v3 hex). For the ~79 saturated out-of-gamut shades, that clipped hex differs from the CSS-Color-4 *gamut-mapped* value a browser actually renders. The baked palette **deliberately matches Tailwind's published hex** (so `FwPalette.orange.shade500` is the `#ff6900` developers recognize), **not** the gamut-mapped value. This is the opposite of the generator's rule (§7), and that is intentional:
-> - **Baked palette** = reproduce *Tailwind's published palette* → transcribe Tailwind's clipped hex.
-> - **Generator** (§7) = port an *arbitrary user theme* faithfully to what the browser shows → gamut-map (don't clip).
+> **Conversion policy (important, easy to get wrong).** Tailwind v4 defines colors in OKLCH but **publishes gamut-*clipped* sRGB hex** (kept close to its legacy v3 hex). For the ~79 saturated out-of-gamut shades, that clipped hex differs from the CSS-Color-4 *gamut-mapped* value a browser renders. The baked palette **matches Tailwind's published hex** (so `FwPalette.orange.shade500` is the `#ff6900` developers recognize), **not** the gamut-mapped value.
+> - **Baked palette** = transcribe Tailwind's published (clipped) hex.
+> - **Generator default** (AGENTS.md §7) = the *same* faithful-clip conversion, so a pasted shadcn/Tailwind theme yields the colors developers recognize and **agrees with `FwPalette`** by construction. (Opt-in perceptual/gamut-map mode exists for extreme out-of-gamut colors or a P3 target.)
 >
-> So for an out-of-gamut color the two paths can yield slightly different sRGB. They serve different masters (recognizable-Tailwind vs. browser-faithful-portability) and never feed the same value at runtime, so this is a documented design choice, not a bug. The generator's eventual handling of *Tailwind-default* inputs is a question for the generator spec, not the palette.
+> So palette and generator-default are **coherent** — they use one conversion philosophy. The earlier "they differ by design" framing was superseded by the §7 decision to default the generator to Tailwind-fidelity; gamut-mapping is the opt-in, not the default.
 
 > Rationale: components use semantic tokens only (AGENTS.md §3.1). The palette exists to **build** themes (the default `FwTokens`, and to give app authors the Tailwind vocabulary for non-themeable one-offs). It is not the conversion pipeline — these are baked constants, the generator (§2) owns runtime conversion.
 

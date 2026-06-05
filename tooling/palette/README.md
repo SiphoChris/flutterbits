@@ -11,10 +11,12 @@ Tailwind colors developers recognize.
 
 **Do NOT "improve" these by gamut-mapping the OKLCH yourself.** For the ~79
 saturated out-of-gamut shades, a proper CSS-Color-4 gamut map produces *different*
-hex than Tailwind publishes (e.g. orange-500 would become `~#fc7100`). That belongs
-to the theme **generator** (AGENTS.md §7), which gamut-maps *arbitrary user themes*
-to match browser rendering — a different job from reproducing Tailwind's own palette.
-The out-of-gamut contract is pinned by `test/tokens/palette_baked_test.dart`.
+hex than Tailwind publishes (e.g. orange-500 would become `~#fc7100`). The theme
+**generator** (AGENTS.md §7) **defaults to the same faithful-clip conversion** as this
+palette, so generated themes stay coherent with `FwPalette` (gamut-mapping is an
+opt-in generator mode for extreme colors / P3, not the default). Either way, this
+palette transcribes Tailwind's published hex verbatim. The out-of-gamut contract is
+pinned by `test/tokens/palette_baked_test.dart`.
 
 These values are transcribed, not computed in Dart (AGENTS.md §7 keeps color
 math out of the Dart side). To regenerate the baked Dart constants after editing
