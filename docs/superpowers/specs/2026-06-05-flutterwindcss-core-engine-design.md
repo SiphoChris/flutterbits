@@ -14,7 +14,7 @@
 
 1. A **token system** — the Tailwind v4 palette, the semantic shadcn token set, and the full Tailwind v4 scales (spacing, radius, shadow, typography, opacity, border-width, z-index, breakpoints).
 2. **Provider-agnostic theme access** — `context.fw`, resolving a Material-free `FwTheme` first and falling back to a Material `FwThemeExtension`, so identical component code works in a bare `WidgetsApp` and inside a `MaterialApp`.
-3. The **`FwStyle` resolver + `.tw` utility API** — Tailwind's utility vocabulary as typed method chains that accumulate into one immutable description and resolve to a single composed widget, with first-class interaction states, viewport-responsive breakpoints, and container queries.
+3. The **`FwStyle` resolver + `.tw` utility API** — Tailwind's utility vocabulary as typed method chains that accumulate into one immutable description (last-wins on conflicts, no duplicate wrappers) and resolve to a composed primitive subtree, with first-class interaction states, viewport-responsive breakpoints, and container queries. Multi-child layout (flex/stack/grid) is handled by dedicated widgets (§6.6), not the single-child chain.
 
 It is **Material-free** (visuals/components), directional-by-default (RTL is free), and accessible by construction.
 
@@ -39,6 +39,11 @@ What the engine *does* own and ships complete: every token, every utility family
 
 ## 3. Architecture overview
 
+The engine has **two distinct surfaces** (see §6.0 for why the split is structural, not stylistic):
+
+- **`.tw` — single-box styling.** An extension on a single `Widget` that styles *that box*: padding, margin, background, border, radius, shadow, opacity, blur, transform, text defaults, sizing, aspect, clip. Everything here genuinely composes onto one child.
+- **Layout widgets — multi-child structure.** `FwRow`/`FwColumn`/`FwWrap`/`FwStack`/`FwPositioned`/`FwGrid`. These own the concerns that need multiple children or a stacking context: flex direction/alignment, `gap`, positioning, `inset`, `z-index`. They produce a single subtree that `.tw` can then style as a box.
+
 ```
 context.fw  ─────────────►  FwTokens (colors · radii · shadows · typography · scales)
    │                              ▲
@@ -47,19 +52,20 @@ context.fw  ─────────────►  FwTokens (colors · radi
 FwTheme (InheritedWidget)  ──┐    │
 FwThemeExtension (Material) ─┴────┘
 
-widget.tw  ──►  FwStyled (StatelessWidget, wraps child + FwStyle)
-                   │  hosts FocusableActionDetector → Set<WidgetState>
-                   │  hosts LayoutBuilder/MediaQuery → BoxConstraints + viewport Size
+widget.tw  ──►  FwStyled (StatelessWidget, wraps ONE child + FwStyle)
+                   │  state layers/action present? → FocusableActionDetector → Set<WidgetState>
+                   │  responsive/container layers present? → MediaQuery (viewport) and/or
+                   │                                          LayoutBuilder (container) → Size/constraints
                    ▼
-                FwStyle.resolve(context, states, constraints) ──► ResolvedStyle
+                FwStyle.resolve(context, states, size) ──► ResolvedStyle   (nested layers flattened)
                    │
                    ▼
-                primitive build chain (outer→inner):
-                ConstrainedBox → Transform → Opacity → DecoratedBox(shadow,bg,border,radius)
-                  → ClipRRect(if overflow) → Padding → DefaultTextStyle+IconTheme → child
+                primitive build chain — see §6.4 for the exact, test-asserted order
+
+FwRow/FwColumn/FwWrap/FwStack/FwPositioned/FwGrid  ──►  multi-child layout (own widgets, not .tw)
 ```
 
-The keystone is that **`FwStyle` is a lazy resolver, not a static property bag.** Resolution takes the interaction-state set and the layout/viewport size, so state variants and responsive breakpoints are first-class inputs rather than features bolted on later.
+The keystone is that **`FwStyle` is a lazy resolver, not a static property bag.** Resolution takes the interaction-state set and the layout/viewport size, so state variants and responsive breakpoints are first-class inputs rather than features bolted on later. Layers are **nested** (a layer's value is itself an `FwStyle`), so combined conditions like `md:hover:` resolve jointly.
 
 ---
 
@@ -97,7 +103,7 @@ The Tailwind v4 box-shadow scale (`2xs, xs, sm, md, lg, xl, 2xl`) and inset vari
 - **Spacing:** base `0.25rem` → `fwSpace(double units) => units * 4.0` logical px (1 unit = 4 px). Fractional units supported (`fwSpace(0.5)` = 2 px).
 - **Opacity:** `0…100` step scale → `double`.
 - **Border-width:** `0,1,2,4,8` px.
-- **Z-index:** `0,10,20,30,40,50`.
+- **Z-index:** `0,10,20,30,40,50` — consumed by `FwStack`/`FwPositioned` paint ordering (not a `.tw` utility; a single box has no stacking context).
 - **Breakpoints:** `FwBreakpoint { sm 640, md 768, lg 1024, xl 1280, xl2 1536 }` (Tailwind v4 `40/48/64/80/96rem` at 16px root). Min-width, mobile-first.
 - **Blur:** `xs…3xl` (4…64 px) for `blur`/`backdrop-blur`.
 
@@ -145,77 +151,106 @@ Components read tokens **only** via `context.fw` (AGENTS.md §3.4) — never `Th
 
 ## 6. The `FwStyle` resolver + `.tw` API (`lib/src/style/`)
 
-### 6.1 Data model
-`FwStyle` (`style/fw_style.dart`) is `@immutable`. It stores **base** utility values plus **layers** (state + responsive + container closures, captured as resolved sub-`FwStyle`s). All base fields are nullable (null = unset):
+### 6.0 Why `.tw` is single-box and layout is separate widgets
+`.tw` is `extension on Widget` — it wraps exactly **one** child and styles that box. That structurally rules out any concern needing multiple children or a stacking context: flex (`Row`/`Column` need `children:`), `gap` (a between-children property of a flex, not injectable into an already-built child), positioning/`inset`/`z-index` (need a `Stack` ancestor). A wrapper cannot reach into a constructed `Row` and rewrite its `children`/`spacing`. So those concerns live in **dedicated layout widgets** (§6.6), and `FwStyle` carries **only** what genuinely composes onto a single box. This is a hard boundary, decided here, so it never gets bent back into the chain.
 
-- **Spacing:** `padding (EdgeInsetsDirectional?)`, `margin (EdgeInsetsDirectional?)`, `gap (double?)`.
-- **Sizing:** `width, height, minWidth, minHeight, maxWidth, maxHeight (double?)`, `widthFactor, heightFactor (double?)` for fractional, `aspectRatio (double?)`.
-- **Color/decoration:** `background (Color?)`, `gradient (Gradient?)`, `borderColor (Color?)`, `borderWidth (double?)`, `borderRadius (BorderRadiusDirectional?)`, `boxShadow (List<BoxShadow>?)`.
+What this does **not** sacrifice: the accumulator's real value is **last-wins conflict resolution** and **emitting no duplicate/redundant wrappers** — not literal element flatness. The render chain (§6.4) is intentionally a multi-level nest of explicit primitives; that explicitness (vs. a single `Container`) is what buys precise ordering and avoids `Container`'s `color`-vs-`decoration` assertion. "One widget" means *one node in the author's code*, not one element at runtime.
+
+### 6.1 Data model
+`FwStyle` (`style/fw_style.dart`) is `@immutable`. It stores **base** single-box values plus **nested layers**. All base fields are nullable (null = unset):
+
+- **Spacing:** `padding (EdgeInsetsDirectional?)`, `margin (EdgeInsetsDirectional?)`.
+- **Sizing:** `width, height, minWidth, minHeight, maxWidth, maxHeight (double?)`, `widthFactor, heightFactor (double?)` (fractional), `factorAlignment (AlignmentDirectional?)`, `aspectRatio (double?)`.
+- **Color/decoration:** `background (Color?)`, `gradient (Gradient?)`, `border (BorderSideSpec? perSide)` resolving to uniform `Border` or `BorderDirectional`, `borderRadius (BorderRadiusDirectional?)`, `boxShadow (List<BoxShadow>?)`.
 - **Foreground/text:** `foreground (Color?)`, `fontSize, fontWeight, letterSpacing, lineHeight (… ?)`, `textAlign (TextAlign?)`, `textDecoration (TextDecoration?)`.
 - **Effects:** `opacity (double?)`, `blur (double?)`, `backdropBlur (double?)`.
-- **Layout (when child is a flex):** `flexDirection (Axis?)`, `mainAxisAlignment`, `crossAxisAlignment`, `wrap (bool?)`.
 - **Transform:** `scale, rotation (double?)`, `translate (Offset?)`.
 - **Overflow/clip:** `clipBehavior (Clip?)`.
-- **Layers:** `Map<FwStateKey, FwStyle> stateLayers`, `List<(_BreakpointKind, double, FwStyle)> responsiveLayers` (ordered).
+- **Layers (nested):** `List<FwLayer> layers`, where `FwLayer = (FwCondition condition, FwStyle style)` and `FwCondition` is one of `state(WidgetState)`, `viewport(FwBreakpoint)`, or `container(FwBreakpoint)`. A layer's `style` is a full `FwStyle` and **may itself contain layers**, so `.md((s) => s.hover((s2) => …))` produces a `viewport(md)` layer whose nested style has a `state(hovered)` layer — `md:hover:` resolves jointly (Finding #8). Layers preserve declaration order.
 
-**Last-wins** is intrinsic: each utility returns a `copyWith` overwriting just its field(s), so `.px(4).px(2)` ⇒ padding 8 px.
+**Last-wins** is intrinsic: each base utility returns a `copyWith` overwriting just its field(s) (`.px(4).px(2)` ⇒ padding 8 px); each variant method appends a layer.
 
 ### 6.2 `FwStyled` (`style/fw_styled.dart`)
-The widget the user actually places in the tree:
+The widget the user places in the tree:
 ```dart
 extension TwExtension on Widget {
   FwStyled get tw => FwStyled._(child: this, style: const FwStyle());
 }
 ```
-`FwStyled` is a `StatelessWidget` exposing every utility method (each returns a new `FwStyled` with an updated `FwStyle` — immutable, chainable, last-wins). Its `build`:
-1. Wraps in `LayoutBuilder` (for container queries + constraints) and reads `MediaQuery.sizeOf` (for viewport responsive).
-2. Wraps in `FocusableActionDetector` to source `Set<WidgetState>` (hovered/focused/pressed/disabled) — **only if** any state layer or interactivity is present, to avoid needless focus nodes.
-3. Calls `style.resolve(context, states, constraints)` → `ResolvedStyle`.
+`FwStyled` is a `StatelessWidget` exposing every base + variant utility (each returns a new `FwStyled` with an updated `FwStyle`). Its `build` inserts ancestors **conditionally**, so a purely-static style is a lean tree:
+1. **If** any `viewport`/`container` layer exists → read `MediaQuery.maybeOf(context)?.size` for viewport conditions, and wrap in a single `LayoutBuilder` for `container` conditions. If neither layer kind exists, neither is inserted. (Viewport uses `MediaQuery`, **not** `LayoutBuilder`, so it does not break intrinsic sizing — see R6.)
+2. **If** any `state` layer exists *or* the styled box is interactive → wrap in `FocusableActionDetector` to source `Set<WidgetState>`. For **visual-only** state styling (no `onPressed`/action), the detector is configured non-focusable (`descendantsAreFocusable: true`, own `skipTraversal: true`, no focus node) so a `hover:`-only card never becomes a tab stop (Finding #9). A real focus node + ring is added only when an action is present.
+3. Calls `style.resolve(context, states, size)` → `ResolvedStyle`.
 4. Renders `ResolvedStyle.build(child)`.
 
 ### 6.3 Resolution (`style/resolve.dart`)
 ```dart
-ResolvedStyle FwStyle.resolve(BuildContext context, Set<WidgetState> states, BoxConstraints c);
+ResolvedStyle FwStyle.resolve(BuildContext context, Set<WidgetState> states, Size? viewport);
 ```
-`ResolvedStyle` is the flattened concrete value set (non-nullable defaults applied). Layering precedence (deterministic, documented, unit-tested):
-1. **Base** values.
-2. **Responsive layers** whose breakpoint is satisfied (viewport for `.sm/.md/…`, constraint width for `.containerSm/…`), applied **ascending by breakpoint** so the largest satisfied wins (mobile-first, matches Tailwind).
-3. **State layers** for currently-active `WidgetState`s, applied in **declared order** (last-declared active state wins).
+`ResolvedStyle` is the flattened concrete value set (non-nullable defaults applied). Algorithm:
+1. **Disabled suppression first (Finding #7):** if `WidgetState.disabled ∈ states`, remove `hovered`/`focused`/`pressed` from the working set before any layer matching, and the pressed gesture recognizer is guarded so it cannot re-add `pressed`. Disabled therefore always wins regardless of declaration order.
+2. Start from **base** fields.
+3. Walk `layers` in declaration order; a layer **matches** when its condition holds (`state` ∈ working set; `viewport`/`container` breakpoint ≤ available width). For each matching layer, **recurse**: resolve its nested `FwStyle` against the same `(states, viewport/width)` and merge the result field-by-field (last-wins). Because matching layers are applied in declaration order, the **last-declared matching layer wins** among equals; nested recursion gives joint `md:hover:` semantics for free.
+4. Apply non-null defaults → `ResolvedStyle`.
 
-Each layer is merged field-by-field via the same last-wins overwrite. Responsive and state are orthogonal axes; both are flattened in the single `resolve` pass.
+Precedence is deterministic, documented, and unit-tested (base < matching layers in declared order; nested conditions resolve jointly; disabled suppresses interaction states).
 
 ### 6.4 Render chain (`ResolvedStyle.build`)
-Hand-composed primitives, **fixed documented order**, outer→inner; each wrapper emitted only if its inputs are set:
+Hand-composed primitives, **fixed order, asserted by widget tests**, outer→inner; each wrapper emitted only if its inputs are set:
 ```
-ConstrainedBox(min/max w/h)
-  → Transform(scale/rotate/translate)
-    → Opacity
-      → BackdropFilter(backdropBlur)
-        → DecoratedBox(BoxDecoration: gradient|color, Border.all(color,width), BorderRadiusDirectional, boxShadow)
-          → ClipRRect(if clipBehavior)
-            → Padding(EdgeInsetsDirectional)
-              → DefaultTextStyle.merge + IconTheme.merge (foreground, font*, align, decoration)
-                → ImageFiltered(blur)   // content blur, distinct from backdropBlur
-                  → child
+Padding(margin, EdgeInsetsDirectional)                       ← margin is outermost
+  → ConstrainedBox(min/max)  ⊕  SizedBox(width/height)       ← see sizing rules below
+    → AspectRatio(aspectRatio)
+      → FractionallySizedBox(widthFactor/heightFactor, alignment: factorAlignment)
+        → Transform(scale/rotate/translate)
+          → ImageFiltered(blur)                              ← content blur wraps the WHOLE element
+            → Opacity(opacity)                               ← only when group opacity is needed (see below)
+              → BackdropFilter(backdropBlur)                 ← blurs what's BEHIND the element
+                → DecoratedBox(BoxDecoration:
+                      gradient | color,
+                      uniform Border.all(side) | BorderDirectional(start/end/top/bottom),  ← Finding #5
+                      BorderRadiusDirectional,
+                      boxShadow)
+                  → ClipRRect(borderRadius INSET by borderWidth, if clipBehavior != none)  ← Finding #3
+                    → Padding(padding, EdgeInsetsDirectional)
+                      → DefaultTextStyle.merge + IconTheme.merge (foreground, font*, align, decoration)
+                        → child
 ```
-`margin` renders as an outermost `Padding` above `ConstrainedBox`. Flex utilities apply when `child` is a `Flex`/the style declares a flex container (composed via `Flex` with the resolved axis/alignment/gap). The order is asserted by widget tests so it never silently drifts.
+Specifics the tests pin (because the order is asserted):
 
-### 6.5 Utility surface (complete — see §12 for the module each lands in)
+- **Sizing reconciliation (Finding #6):** a fixed `width`/`height` produces a **tight** constraint and **wins on its axis**; `min*/max*` apply only to axes without a fixed value. Setting both a fixed dim and a `min/max` on the *same* axis throws an `assert` in debug (silently fixed-wins in release). `widthFactor`/`heightFactor` use `FractionallySizedBox` with `factorAlignment` (default `centerStart`).
+- **Content `blur` (Finding #4):** `ImageFiltered` wraps the decorated box (background + border + content), matching CSS `filter: blur`. `backdropBlur` (`BackdropFilter`) sits *inside* the decoration to blur the layer behind, and is distinct.
+- **ClipRRect geometry (Finding #3):** reuses the decoration's `BorderRadiusDirectional`, deflated by `borderWidth`, so clipped content never bleeds across the stroke.
+- **Opacity (Finding #11):** when the box is decorative (no child needing group opacity — e.g. an empty/overlay box), `opacity` folds into the background/border alpha (`Color.withValues(alpha:)`) and **no** `Opacity` layer (no `saveLayer`) is emitted. `Opacity` is used only when real group opacity over child content is required.
+
+### 6.5 `.tw` utility surface (single-box; see §12 for the landing module)
 Directional throughout (AGENTS.md §3.3); spacing args in utility units:
-`p, px, py, ps, pe, pt, pb · m, mx, my, ms, me, mt, mb · gap · w, h, minW, minH, maxW, maxH, wFull, hFull, wFraction, hFraction, square, aspect · bg, bgGradient · border, borderColor, borderWidth, borderX/Y/S/E · rounded, roundedT/B/S/E, roundedAll, roundedNone, roundedFull · shadow(FwShadow) · opacity · blur, backdropBlur · text(color), fontSize, fontWeight, leading, tracking, textAlign, underline/lineThrough · row, col, wrap, items*, justify* · scale, rotate, translate · clip · hover, focus, pressed, disabled, whenState · sm, md, lg, xl, xl2 · containerSm…container2xl`.
+`p, px, py, ps, pe, pt, pb · m, mx, my, ms, me, mt, mb · w, h, minW, minH, maxW, maxH, wFull, hFull, wFraction, hFraction, square, aspect · bg, bgGradient · border, borderColor, borderWidth, borderS/E/T/B (per-side) · rounded, roundedT/B/S/E, roundedAll, roundedNone, roundedFull · shadow(FwShadow) · opacity · blur, backdropBlur · text(color), fontSize, fontWeight, leading, tracking, textAlign, underline/lineThrough · scale, rotate, translate · clip · hover, focus, pressed, disabled, whenState · sm, md, lg, xl, xl2 · containerSm…container2xl`.
+
+> Note: `row/col/wrap/gap/items*/justify*/position/inset/z` are **not** here — they belong to the layout widgets (§6.6).
+
+### 6.6 Layout widgets (`lib/src/layout/`)
+Multi-child structure the single-box chain cannot express. Each is a normal widget producing one subtree, so it can itself be styled with `.tw` (e.g. `FwColumn(...).tw.p(4).bg(c)`):
+
+- **`FwRow` / `FwColumn`** — flex with typed `gap` (spacing inserted between children, in utility units), `mainAxisAlignment`, `crossAxisAlignment`, `mainAxisSize`. (`gap` renders via `Flex`'s native `spacing` where available, else interleaved `SizedBox`.)
+- **`FwWrap`** — `Wrap` with directional run/cross spacing + alignment.
+- **`FwStack` / `FwPositioned`** — stacking context; `FwPositioned` carries directional `inset` (`start/end/top/bottom`) and `z` for paint order (children sorted by `z`, then declaration order). This is where the `z-index` scale (§4.6) is consumed.
+- **`FwGrid`** — the AGENTS.md §11 grid helper: `grid-template-columns: 1fr 2fr`-style tracks via flex/`CustomMultiChildLayout`.
+
+Variant/responsive layering applies to layout widgets too (e.g. a responsive `gap`) via the same `FwStyle` layer engine, exposed through their constructors where it makes sense. All directional; all golden-tested LTR + RTL.
 
 ---
 
 ## 7. RTL & accessibility
 
 - **RTL:** every spacing/alignment/radius API is directional (`EdgeInsetsDirectional`, `AlignmentDirectional`, `BorderRadiusDirectional`). The engine never exposes a `left/right` variant. RTL is correct with zero consumer effort. A golden test renders a representative styled widget under both `TextDirection.ltr` and `rtl`.
-- **Accessibility:** the engine is styling, so it does not impose semantics — but it **must not erase** them. `FwStyled` is semantics-transparent (wraps, never replaces, the child's `Semantics`). `FocusableActionDetector` exposes focus state for the visible focus-ring utility (`ring` token). Components add roles/labels; the engine guarantees it never swallows them (asserted by a test that a `Semantics(button:true)` child survives a full `.tw` chain).
+- **Accessibility:** the engine is styling, so it does not impose semantics — but it **must not erase or pollute** them. `FwStyled` is semantics-transparent (wraps, never replaces, the child's `Semantics`). The `FocusableActionDetector` exposes focus state for the visible focus-ring utility (`ring` token) **only when an action is present**; visual-only state styling (e.g. `hover:` on a card) is non-focusable and adds no traversal stop (§6.2, Finding #9). Components add roles/labels; the engine guarantees it never swallows them or injects spurious tab stops — asserted by tests that (a) a `Semantics(button:true)` child survives a full `.tw` chain, and (b) a `hover:`-only box does **not** appear in focus traversal.
 
 ---
 
 ## 8. Public API surface (`lib/flutterwindcss.dart`)
 
-The barrel re-exports exactly the supported surface (AGENTS.md §3.6): `context.fw`, the `.tw` extension + `FwStyled`, `FwStyle` (for advanced composition), `FwTokens/FwColors/FwRadii/FwShadows/FwTypography`, `FwPalette`, `FwTheme`, `FwThemeExtension`, the enums (`FwShadow`, `FwBreakpoint`, `FwState…`), and `fwSpace`. Nothing under `lib/src/` is importable by consumers. Adding to the surface is always allowed; **renaming/removing requires a deprecation cycle** (every copied component in the wild pins these names).
+The barrel re-exports exactly the supported surface (AGENTS.md §3.6): `context.fw`, the `.tw` extension + `FwStyled`, `FwStyle` (for advanced composition), the layout widgets (`FwRow`, `FwColumn`, `FwWrap`, `FwStack`, `FwPositioned`, `FwGrid`), `FwTokens/FwColors/FwRadii/FwShadows/FwTypography`, `FwPalette`, `FwTheme`, `FwThemeExtension`, `FwAnimatedTheme`, the enums (`FwShadow`, `FwBreakpoint`, `FwState…`), and `fwSpace`. Nothing under `lib/src/` is importable by consumers. Adding to the surface is always allowed; **renaming/removing requires a deprecation cycle** (every copied component in the wild pins these names).
 
 ---
 
@@ -231,8 +266,8 @@ Every module is **done only when** unit + golden tests are green and `flutter an
 
 - **Unit tests** (`test/`):
   - `FwStyle` last-wins per field; a chain flattens to one `ResolvedStyle`.
-  - Layer precedence: base < responsive(larger wins) < state(last-declared wins); responsive×state orthogonality.
-  - `resolve` honors `states` and `constraints` (hover changes bg; `md` breakpoint changes padding at width≥768; `containerMd` keys off constraint width).
+  - Layer precedence: base < matching layers in declared order; **nested** `md:hover:` resolves jointly; **disabled suppresses** hover/focus/pressed (wins regardless of declaration order).
+  - `resolve` honors `states` and `viewport`/width (hover changes bg; `md` breakpoint changes padding at viewport ≥768; `containerMd` keys off the `LayoutBuilder` constraint width).
   - Render chain: each wrapper present iff its field is set; documented order asserted via the pumped element tree.
   - `context.fw` resolves `FwTheme`; falls back to `FwThemeExtension` inside a `MaterialApp`; throws the clear error when neither exists.
   - Token `lerp` midpoints (colors, radii, shadows, typography, full `FwTokens.lerp`).
@@ -246,9 +281,11 @@ Every module is **done only when** unit + golden tests are green and `flutter an
 
 - **R1 — Golden non-determinism across OS.** Flutter goldens depend on platform font hinting. *Mitigation:* CI-only golden generation in a pinned container with a bundled font (§10). Authoritative goldens never come from a dev machine.
 - **R2 — `MediaQuery`-based responsive vs. tests.** Viewport responsive needs a `MediaQuery` ancestor. *Mitigation:* `FwStyled` reads `MediaQuery.maybeOf` and treats absence as "smallest breakpoint" (base only) rather than throwing; tests pump explicit `MediaQuery` sizes.
-- **R3 — `FocusableActionDetector` cost when unused.** *Mitigation:* only inserted when the style declares state layers or focus/ring; pure-static styles render without it.
+- **R3 — `FocusableActionDetector` cost + spurious focus when unused.** *Mitigation:* only inserted when the style declares state layers or an action; and for visual-only states it is non-focusable (`skipTraversal`, no focus node) so it neither costs a focus node nor adds a tab stop (§6.2, Finding #9). Pure-static styles render without it entirely.
 - **R4 — Palette OKLCH→sRGB authoring accuracy.** Baked palette constants must match Tailwind's intent. *Mitigation:* convert via a documented one-off script using the same OKLCH→OKLab→linear-sRGB→gamut-map math the generator will use, and spot-check against published Tailwind hex equivalents in a unit test. (The *runtime* pipeline still lives only in the generator per §2; this is authoring-time only.)
-- **R5 — Container queries + responsive both wrapping in `LayoutBuilder`/`MediaQuery`.** Potential rebuild overhead. *Mitigation:* single `LayoutBuilder` per `FwStyled`, only when responsive/container layers exist; static styles skip it.
+- **R5 — Container queries + responsive rebuild overhead.** *Mitigation:* viewport responsive uses `MediaQuery` (no `LayoutBuilder`); a single `LayoutBuilder` is inserted only when `container` layers exist; static styles skip both.
+- **R6 — `LayoutBuilder` breaks intrinsic sizing.** `LayoutBuilder` is a relayout boundary that does not report intrinsic dimensions, so an `FwStyled` carrying **container-query** layers placed inside `IntrinsicWidth`/`IntrinsicHeight` or a min/max-content measuring parent will misbehave. *Mitigation:* scoped to container-query usage only (viewport responsive is `MediaQuery`-based and unaffected); documented on the `.containerXx` API with the recommendation to avoid it under intrinsic-sizing ancestors. Not a silent failure — it is called out at the call site in docs.
+- **R7 — `.tw`-vs-layout split is a public-API boundary.** Moving flex/position/z out of `.tw` must be right the first time (deprecation cost later). *Mitigation:* the boundary is fixed in §6.0 and covered by the barrel surface (§8); layout widgets ship complete in their module, not as an afterthought.
 
 ---
 
@@ -261,15 +298,15 @@ The architecture above is fixed up front. Implementation lands as modules, **eac
 | 0 | **Scaffold** | `git` repo, root pub-workspace `pubspec.yaml`, `packages/flutterwindcss` package skeleton, barrel, analysis_options (100-col, strict), the pinned-font golden harness + `flutter_test_config.dart`, CI workflow running analyze+test+golden in the pinned container. |
 | 1 | **Tokens** | `FwPalette` (full v4 palette, baked), `FwColors`, `FwRadii`, `FwShadows`, `FwTypography`, scalar scales, `FwTokens` + `light/dark`, all `lerp`. Unit tests + value spot-checks. |
 | 2 | **Theme access** | `FwTheme`, `FwThemeExtension`, `context.fw`, both paths + error. Tests incl. `MaterialApp` fallback. |
-| 3 | **Resolver core** | `FwStyle`, `ResolvedStyle`, `FwStyled`, render chain, the state/responsive/container layering engine + precedence. The `.tw` entry. Tests for last-wins, precedence, render order, RTL transparency, semantics transparency. |
-| 4 | **Spacing + sizing** | padding/margin/gap, w/h/min/max, fractional, aspect. Unit + golden. |
+| 3 | **Resolver core** | `FwStyle`, `ResolvedStyle`, `FwStyled`, render chain, the **nested** layering engine + precedence (incl. disabled suppression, joint `md:hover:`), conditional `MediaQuery`/`LayoutBuilder`/`FocusableActionDetector` insertion. The `.tw` entry. Tests for last-wins, precedence, nested resolution, render order, sizing reconciliation, focus-traversal hygiene, RTL + semantics transparency. |
+| 4 | **Spacing + sizing** | padding/margin, w/h/min/max, fractional (+ alignment), aspect, sizing reconciliation. Unit + golden. (`gap` lands with the flex widgets in module 8.) |
 | 5 | **Color + border + radius + gradient** | bg, gradient, border (directional), radius (directional + named + full), using semantic tokens. Unit + golden (light/dark). |
 | 6 | **Typography** | size/weight/leading/tracking/align/decoration via `DefaultTextStyle`/`IconTheme`. Unit + golden. |
 | 7 | **Effects** | shadow (token scale), opacity, blur, backdrop-blur. Unit + golden. |
-| 8 | **Layout + container queries** | flex (row/col/wrap/gap/align/justify), position/inset, aspect, overflow/clip, the `.containerSm…` family. Unit + golden. |
-| 9 | **Transforms** | scale/rotate/translate. Unit + golden. |
+| 8 | **Layout widgets + container queries** | `FwRow`/`FwColumn`/`FwWrap`/`FwStack`/`FwPositioned`/`FwGrid` (flex/gap/align, positioning/inset/z, grid tracks) as dedicated multi-child widgets (§6.6), plus the `.containerSm…` query family on `.tw`. Unit + golden (LTR + RTL). |
+| 9 | **Transforms** | scale/rotate/translate (`.tw`). Unit + golden. |
 | 10 | **Animated theming** | `FwAnimatedTheme` driving `FwTokens.lerp` over a duration/curve. Unit + golden (mid-transition pump). |
 
-Modules 4–9 each also add their utilities' **state + responsive + container** variants (the layering engine from module 3 makes this uniform, not per-utility work).
+Modules 4–9 each also add their utilities' **state + responsive + container** variants (the nested layering engine from module 3 makes this uniform, not per-utility work).
 
 **Definition of done (whole engine):** every module merged; `flutter analyze` zero warnings; `flutter test` green; all goldens reviewed; the public barrel (§8) stable; a smoke example in `apps/example` renders a fully-`.tw`-styled widget in both a bare `WidgetsApp` and a `MaterialApp`, light/dark, LTR/RTL.
