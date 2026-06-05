@@ -8,7 +8,7 @@ library;
 // Token system (Module 1) — each export is uncommented as its file lands.
 export 'src/tokens/colors.dart';
 export 'src/tokens/palette.dart';
-// export 'src/tokens/radii.dart';
+export 'src/tokens/radii.dart';
 export 'src/tokens/scales.dart';
 
 // export 'src/tokens/shadows.dart';
