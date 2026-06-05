@@ -1,0 +1,9 @@
+# Root pub-workspace manifest. Members set `resolution: workspace`.
+name: _flutterbits_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.11.0
+
+workspace:
+  - packages/flutterwindcss
