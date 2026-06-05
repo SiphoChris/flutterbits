@@ -15,8 +15,15 @@ class FwSwatch {
 
   Color _s(int shade) {
     final c = fwBakedPalette['$hue-$shade'];
-    assert(c != null, 'Missing palette value $hue-$shade');
-    return c ?? const Color(0xFF000000);
+    if (c == null) {
+      // Fail loud: a stripped assert in release must not silently return black.
+      throw ArgumentError.value(
+        shade,
+        'shade',
+        'No "$hue" shade in the Tailwind palette (valid: 50,100,…,900,950)',
+      );
+    }
+    return c;
   }
 
   /// Lightest shade.
@@ -52,7 +59,10 @@ class FwSwatch {
   /// Darkest shade.
   Color get shade950 => _s(950);
 
-  /// Returns the swatch's [shade] (`50`,`100`,…,`950`).
+  /// Returns the swatch's exact [shade] (one of `50,100,…,900,950`).
+  ///
+  /// Throws [ArgumentError] if [shade] is not a defined step — there is no
+  /// nearest-rounding; pass a real Tailwind shade.
   Color shade(int shade) => _s(shade);
 
   @override

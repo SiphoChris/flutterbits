@@ -3,7 +3,7 @@ import 'package:flutterwindcss/flutterwindcss.dart';
 
 void main() {
   test('fromBase derives the shadcn-style set', () {
-    final r = FwRadii.fromBase(10);
+    const r = FwRadii.fromBase(10);
     expect(r.sm, 6); // ×0.6
     expect(r.md, 8); // ×0.8
     expect(r.lg, 10); // ×1.0
@@ -13,7 +13,7 @@ void main() {
   });
 
   test('lerp interpolates the base', () {
-    final r = FwRadii.lerp(FwRadii.fromBase(0), FwRadii.fromBase(10), 0.5);
+    final r = FwRadii.lerp(const FwRadii.fromBase(0), const FwRadii.fromBase(10), 0.5);
     expect(r.lg, 5);
   });
 
@@ -25,7 +25,7 @@ void main() {
   });
 
   test('equality: fromBase(8) == fromBase(8), != fromBase(10)', () {
-    expect(FwRadii.fromBase(8), FwRadii.fromBase(8));
-    expect(FwRadii.fromBase(8), isNot(FwRadii.fromBase(10)));
+    expect(const FwRadii.fromBase(8), const FwRadii.fromBase(8));
+    expect(const FwRadii.fromBase(8), isNot(const FwRadii.fromBase(10)));
   });
 }

@@ -67,7 +67,9 @@ const List<double> fwBorderWidths = <double>[0, 1, 2, 4, 8];
 /// Tailwind v4 z-index scale, consumed by FwStack/FwPositioned (spec §4.6).
 const List<int> fwZIndices = <int>[0, 10, 20, 30, 40, 50];
 
-/// Tailwind v4 blur scale (sigma in logical px): xs..3xl.
+/// Tailwind v4 blur scale (sigma in logical px): `xs`..`xl3` (Tailwind's
+/// `blur-xs`..`blur-3xl`; `xl2`/`xl3` map to `2xl`/`3xl` since Dart
+/// identifiers cannot start with a digit).
 enum FwBlur {
   /// 4px.
   xs(4),

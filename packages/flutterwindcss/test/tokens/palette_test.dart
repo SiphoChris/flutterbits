@@ -14,7 +14,13 @@ void main() {
     expect(FwPalette.black, const Color(0xFF000000));
   });
 
-  test('FwSwatch.shade(n) returns the nearest defined shade', () {
+  test('FwSwatch.shade(n) returns the exact shade', () {
     expect(FwPalette.blue.shade(500), FwPalette.blue.shade500);
+    expect(FwPalette.blue.shade(950), FwPalette.blue.shade950);
+  });
+
+  test('FwSwatch.shade throws on an undefined shade (no silent black)', () {
+    expect(() => FwPalette.blue.shade(550), throwsArgumentError);
+    expect(() => FwPalette.blue.shade(1000), throwsArgumentError);
   });
 }

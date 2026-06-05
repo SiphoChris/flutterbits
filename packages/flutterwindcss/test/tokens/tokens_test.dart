@@ -134,4 +134,22 @@ void main() {
     );
     expect(FwTokens.lerp(a, b, 0.5).radiusBase, 5.0);
   });
+
+  test('theme radii use the shadcn default base (10px) and stay in sync', () {
+    expect(FwTokens.light.radiusBase, 10);
+    // Derived from fromBase, not restated literals — cannot silently desync.
+    expect(FwTokens.light.radii, const FwRadii.fromBase(10));
+    expect(FwTokens.dark.radii, FwRadii.fromBase(FwTokens.dark.radiusBase));
+  });
+
+  test('lerp boundaries carry the whole non-color object intact', () {
+    final lo = FwTokens.lerp(FwTokens.light, FwTokens.dark, 0);
+    expect(lo.radiusBase, FwTokens.light.radiusBase);
+    expect(lo.radii, FwTokens.light.radii);
+    expect(lo.shadows, FwTokens.light.shadows);
+    expect(lo.typography, FwTokens.light.typography);
+    final hi = FwTokens.lerp(FwTokens.light, FwTokens.dark, 1);
+    expect(hi.radiusBase, FwTokens.dark.radiusBase);
+    expect(hi.radii, FwTokens.dark.radii);
+  });
 }

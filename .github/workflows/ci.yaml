@@ -78,15 +78,19 @@ jobs:
           fi
       - name: No direct Theme.of outside context.fw (§3.4)
         run: |
-          if grep -rnF --include='*.dart' 'Theme.of(' packages/flutterwindcss/lib \
+          # Whitespace-tolerant so `Theme . of(` can't dodge the guard.
+          if grep -rnE --include='*.dart' 'Theme\s*\.\s*of\b' packages/flutterwindcss/lib \
              | grep -vF 'lib/src/theme/context_fw.dart'; then
             echo "::error::Read tokens via context.fw, not Theme.of (AGENTS.md §3.4)."
             exit 1
           fi
       - name: Directional layout only — no left/right insets or alignments (§3.3)
         run: |
+          # Catches: EdgeInsets.only(left:/right:), EdgeInsets.fromLTRB(, the raw
+          # Alignment( constructor (use AlignmentDirectional or a named const),
+          # and the non-directional named Alignment corners.
           if grep -rnE --include='*.dart' \
-             'EdgeInsets\.only\([^)]*(left|right):|Alignment\.(centerLeft|centerRight|topLeft|topRight|bottomLeft|bottomRight)\b' \
+             'EdgeInsets\.only\([^)]*(left|right):|EdgeInsets\.fromLTRB\(|\bAlignment\(|Alignment\.(centerLeft|centerRight|topLeft|topRight|bottomLeft|bottomRight)\b' \
              packages/flutterwindcss/lib; then
             echo "::error::Use EdgeInsetsDirectional / AlignmentDirectional (AGENTS.md §3.3)."
             exit 1

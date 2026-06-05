@@ -15,8 +15,15 @@ class FwRadii {
   });
 
   /// Derives the shadcn-style set from a single [base] radius (logical px).
-  factory FwRadii.fromBase(double base) =>
-      FwRadii(base: base, sm: base * 0.6, md: base * 0.8, lg: base * 1.0, xl: base * 1.4);
+  ///
+  /// `const` so themes can compose it directly (e.g. `FwRadii.fromBase(10)`),
+  /// keeping the derived values in lockstep with [base] instead of restating
+  /// them as literals that could drift.
+  const FwRadii.fromBase(this.base)
+    : sm = base * 0.6,
+      md = base * 0.8,
+      lg = base * 1.0,
+      xl = base * 1.4;
 
   /// The shadcn `--radius` this set was derived from.
   final double base;

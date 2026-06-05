@@ -40,8 +40,10 @@ class FwTokens {
   /// The stock shadcn-neutral **light** theme. Composed from baked `const`
   /// palette literals — no runtime color computation (spec §4.7 / R4).
   static const FwTokens light = FwTokens(
-    radiusBase: 8,
-    radii: FwRadii(base: 8, sm: 4.8, md: 6.4, lg: 8, xl: 11.2),
+    // shadcn default --radius is 0.625rem = 10 logical px (derived set:
+    // sm 6 / md 8 / lg 10 / xl 14).
+    radiusBase: 10,
+    radii: FwRadii.fromBase(10),
     shadows: FwShadows.defaults,
     typography: FwTypographyTheme.standard,
     colors: FwColors(
@@ -69,8 +71,9 @@ class FwTokens {
 
   /// The stock shadcn-neutral **dark** theme.
   static const FwTokens dark = FwTokens(
-    radiusBase: 8,
-    radii: FwRadii(base: 8, sm: 4.8, md: 6.4, lg: 8, xl: 11.2),
+    // shadcn default --radius is 0.625rem = 10 logical px (same as light).
+    radiusBase: 10,
+    radii: FwRadii.fromBase(10),
     shadows: FwShadows.defaults,
     typography: FwTypographyTheme.standard,
     colors: FwColors(
