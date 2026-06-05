@@ -48,21 +48,21 @@ class FwTokens {
       background: FwPalette.white,
       foreground: Color(0xFF0A0A0A), // neutral-950
       card: FwPalette.white,
-      cardForeground: Color(0xFF0A0A0A),
+      cardForeground: Color(0xFF0A0A0A), // neutral-950
       popover: FwPalette.white,
-      popoverForeground: Color(0xFF0A0A0A),
+      popoverForeground: Color(0xFF0A0A0A), // neutral-950
       primary: Color(0xFF171717), // neutral-900
       primaryForeground: Color(0xFFFAFAFA), // neutral-50
       secondary: Color(0xFFF5F5F5), // neutral-100
-      secondaryForeground: Color(0xFF171717),
-      muted: Color(0xFFF5F5F5),
+      secondaryForeground: Color(0xFF171717), // neutral-900
+      muted: Color(0xFFF5F5F5), // neutral-100
       mutedForeground: Color(0xFF737373), // neutral-500
-      accent: Color(0xFFF5F5F5),
-      accentForeground: Color(0xFF171717),
-      destructive: Color(0xFFE7000B), // red-600-ish per shadcn
+      accent: Color(0xFFF5F5F5), // neutral-100
+      accentForeground: Color(0xFF171717), // neutral-900
+      destructive: Color(0xFFE7000B), // red-600
       destructiveForeground: FwPalette.white,
       border: Color(0xFFE5E5E5), // neutral-200
-      input: Color(0xFFE5E5E5),
+      input: Color(0xFFE5E5E5), // neutral-200
       ring: Color(0xFFA1A1A1), // neutral-400
     ),
   );
@@ -75,24 +75,24 @@ class FwTokens {
     typography: FwTypographyTheme.standard,
     colors: FwColors(
       background: Color(0xFF0A0A0A), // neutral-950
-      foreground: Color(0xFFFAFAFA),
-      card: Color(0xFF171717),
-      cardForeground: Color(0xFFFAFAFA),
-      popover: Color(0xFF171717),
-      popoverForeground: Color(0xFFFAFAFA),
-      primary: Color(0xFFFAFAFA),
-      primaryForeground: Color(0xFF171717),
+      foreground: Color(0xFFFAFAFA), // neutral-50
+      card: Color(0xFF171717), // neutral-900
+      cardForeground: Color(0xFFFAFAFA), // neutral-50
+      popover: Color(0xFF171717), // neutral-900
+      popoverForeground: Color(0xFFFAFAFA), // neutral-50
+      primary: Color(0xFFFAFAFA), // neutral-50
+      primaryForeground: Color(0xFF171717), // neutral-900
       secondary: Color(0xFF262626), // neutral-800
-      secondaryForeground: Color(0xFFFAFAFA),
-      muted: Color(0xFF262626),
-      mutedForeground: Color(0xFFA1A1A1),
-      accent: Color(0xFF262626),
-      accentForeground: Color(0xFFFAFAFA),
-      destructive: Color(0xFFFF6467), // red-400-ish per shadcn dark
-      destructiveForeground: Color(0xFF0A0A0A),
-      border: Color(0x1AFFFFFF), // white/10
-      input: Color(0x26FFFFFF), // white/15
-      ring: Color(0xFF737373),
+      secondaryForeground: Color(0xFFFAFAFA), // neutral-50
+      muted: Color(0xFF262626), // neutral-800
+      mutedForeground: Color(0xFFA1A1A1), // neutral-400
+      accent: Color(0xFF262626), // neutral-800
+      accentForeground: Color(0xFFFAFAFA), // neutral-50
+      destructive: Color(0xFFFF6467), // red-400
+      destructiveForeground: Color(0xFF0A0A0A), // neutral-950
+      border: Color(0x1AFFFFFF), // white/10%
+      input: Color(0x26FFFFFF), // white/15%
+      ring: Color(0xFF737373), // neutral-500
     ),
   );
 
@@ -101,6 +101,8 @@ class FwTokens {
     colors: FwColors.lerp(a.colors, b.colors, t),
     radii: FwRadii.lerp(a.radii, b.radii, t),
     shadows: FwShadows.lerp(a.shadows, b.shadows, t),
+    // String family names cannot numerically interpolate; use a hard
+    // crossover at t=0.5 (same approach Flutter takes for non-lerpable fields).
     typography: t < 0.5 ? a.typography : b.typography,
     radiusBase: a.radiusBase + (b.radiusBase - a.radiusBase) * t,
   );
@@ -121,6 +123,9 @@ class FwTokens {
 /// Placeholder per-theme typography marker. Type scales are static
 /// (`FwFontSize` etc.); this exists so a theme can carry a default family in a
 /// later module without changing the `FwTokens` shape.
+///
+/// Note: `FwTokens.lerp` uses a hard crossover (t < 0.5 -> a, t >= 0.5 -> b)
+/// for this field, because [String] family names cannot numerically interpolate.
 @immutable
 class FwTypographyTheme {
   /// Creates a typography theme with a default sans [family].

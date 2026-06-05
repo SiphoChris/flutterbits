@@ -63,4 +63,22 @@ void main() {
     expect(FwTokens.lerp(a, b, 0.5).typography, tB);
     expect(FwTokens.lerp(a, b, 1.0).typography, tB);
   });
+
+  test('lerp interpolates radiusBase', () {
+    final a = FwTokens(
+      colors: FwTokens.light.colors,
+      radii: FwTokens.light.radii,
+      shadows: FwTokens.light.shadows,
+      typography: FwTypographyTheme.standard,
+      radiusBase: 0,
+    );
+    final b = FwTokens(
+      colors: FwTokens.dark.colors,
+      radii: FwTokens.dark.radii,
+      shadows: FwTokens.dark.shadows,
+      typography: FwTypographyTheme.standard,
+      radiusBase: 10,
+    );
+    expect(FwTokens.lerp(a, b, 0.5).radiusBase, 5.0);
+  });
 }
