@@ -30,9 +30,7 @@ void main() {
   });
 
   test('bg replaces the background (last-wins)', () {
-    final s = const FwStyle()
-        .bg(const Color(0xFF111111))
-        .bg(const Color(0xFF222222));
+    final s = const FwStyle().bg(const Color(0xFF111111)).bg(const Color(0xFF222222));
     expect(s.background, const Color(0xFF222222));
   });
 
@@ -60,36 +58,44 @@ void main() {
   });
 
   test('md/container append viewport/container layers; nest jointly', () {
-    final s = const FwStyle()
-        .md((m) => m.hover((h) => h.bg(const Color(0xFF010101))));
+    final s = const FwStyle().md((m) => m.hover((h) => h.bg(const Color(0xFF010101))));
     final (cond, nested) = s.layers.first;
     expect(cond, const FwViewportCondition(FwBreakpoint.md));
     expect(nested.layers.first.$1, const FwStateCondition(WidgetState.hovered));
   });
 
   test('all five viewport breakpoints map correctly', () {
-    expect(const FwStyle().sm((s) => s).layers.first.$1,
-        const FwViewportCondition(FwBreakpoint.sm));
-    expect(const FwStyle().lg((s) => s).layers.first.$1,
-        const FwViewportCondition(FwBreakpoint.lg));
-    expect(const FwStyle().xl((s) => s).layers.first.$1,
-        const FwViewportCondition(FwBreakpoint.xl));
-    expect(const FwStyle().xl2((s) => s).layers.first.$1,
-        const FwViewportCondition(FwBreakpoint.xl2));
+    expect(
+      const FwStyle().sm((s) => s).layers.first.$1,
+      const FwViewportCondition(FwBreakpoint.sm),
+    );
+    expect(
+      const FwStyle().lg((s) => s).layers.first.$1,
+      const FwViewportCondition(FwBreakpoint.lg),
+    );
+    expect(
+      const FwStyle().xl((s) => s).layers.first.$1,
+      const FwViewportCondition(FwBreakpoint.xl),
+    );
+    expect(
+      const FwStyle().xl2((s) => s).layers.first.$1,
+      const FwViewportCondition(FwBreakpoint.xl2),
+    );
   });
 
   test('container family maps to container conditions', () {
-    expect(const FwStyle().containerSm((s) => s).layers.first.$1,
-        const FwContainerCondition(FwBreakpoint.sm));
-    expect(const FwStyle().container2xl((s) => s).layers.first.$1,
-        const FwContainerCondition(FwBreakpoint.xl2));
+    expect(
+      const FwStyle().containerSm((s) => s).layers.first.$1,
+      const FwContainerCondition(FwBreakpoint.sm),
+    );
+    expect(
+      const FwStyle().container2xl((s) => s).layers.first.$1,
+      const FwContainerCondition(FwBreakpoint.xl2),
+    );
   });
 
   test('whenState accepts arbitrary WidgetState', () {
-    final s = const FwStyle().whenState(
-      WidgetState.selected,
-      (x) => x.bg(const Color(0xFF030303)),
-    );
+    final s = const FwStyle().whenState(WidgetState.selected, (x) => x.bg(const Color(0xFF030303)));
     expect(s.layers.first.$1, const FwStateCondition(WidgetState.selected));
   });
 }

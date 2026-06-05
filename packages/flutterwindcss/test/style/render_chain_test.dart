@@ -4,15 +4,14 @@ import 'package:flutterwindcss/src/style/resolved_style.dart';
 import 'package:flutterwindcss/src/style/resolved_style_build.dart';
 
 Future<void> _pump(WidgetTester t, ResolvedStyle r) => t.pumpWidget(
-      Directionality(
-        textDirection: TextDirection.ltr,
-        child: r.build(const SizedBox(key: Key('child'))),
-      ),
-    );
+  Directionality(
+    textDirection: TextDirection.ltr,
+    child: r.build(const SizedBox(key: Key('child'))),
+  ),
+);
 
 void main() {
-  testWidgets('static empty style renders the child with no extra wrappers',
-      (t) async {
+  testWidgets('static empty style renders the child with no extra wrappers', (t) async {
     await _pump(t, const ResolvedStyle());
     expect(find.byKey(const Key('child')), findsOneWidget);
     expect(find.byType(Opacity), findsNothing);
@@ -32,8 +31,7 @@ void main() {
     expect(find.byType(DecoratedBox), findsOneWidget);
   });
 
-  testWidgets('shadow emits an outer DecoratedBox even with a backdrop clip',
-      (t) async {
+  testWidgets('shadow emits an outer DecoratedBox even with a backdrop clip', (t) async {
     await _pump(
       t,
       const ResolvedStyle(
@@ -45,10 +43,7 @@ void main() {
     );
     // The shadow box must sit OUTSIDE the backdrop ClipRRect.
     final shadowBox = find.byType(DecoratedBox).first;
-    expect(
-      find.descendant(of: shadowBox, matching: find.byType(BackdropFilter)),
-      findsOneWidget,
-    );
+    expect(find.descendant(of: shadowBox, matching: find.byType(BackdropFilter)), findsOneWidget);
   });
 
   testWidgets('margin is outermost, decoration nested within it', (t) async {
@@ -61,40 +56,26 @@ void main() {
       ),
     );
     final marginPadding = find.byType(Padding).first;
-    expect(
-      find.descendant(of: marginPadding, matching: find.byType(DecoratedBox)),
-      findsOneWidget,
-    );
+    expect(find.descendant(of: marginPadding, matching: find.byType(DecoratedBox)), findsOneWidget);
   });
 
   testWidgets('opacity wrapper present iff opacity set', (t) async {
     await _pump(t, const ResolvedStyle());
     expect(find.byType(Opacity), findsNothing);
-    await _pump(
-      t,
-      const ResolvedStyle(opacity: 0.5, background: Color(0xFF111111)),
-    );
+    await _pump(t, const ResolvedStyle(opacity: 0.5, background: Color(0xFF111111)));
     expect(find.byType(Opacity), findsOneWidget);
   });
 
-  testWidgets('transform is outside the shadow (transforms rendered result)',
-      (t) async {
+  testWidgets('transform is outside the shadow (transforms rendered result)', (t) async {
     await _pump(
       t,
-      const ResolvedStyle(
-        scale: 1.5,
-        boxShadow: <BoxShadow>[BoxShadow(blurRadius: 3)],
-      ),
+      const ResolvedStyle(scale: 1.5, boxShadow: <BoxShadow>[BoxShadow(blurRadius: 3)]),
     );
     final transform = find.byType(Transform).first;
-    expect(
-      find.descendant(of: transform, matching: find.byType(DecoratedBox)),
-      findsOneWidget,
-    );
+    expect(find.descendant(of: transform, matching: find.byType(DecoratedBox)), findsOneWidget);
   });
 
-  testWidgets('fixed width produces a tight ConstrainedBox on that axis',
-      (t) async {
+  testWidgets('fixed width produces a tight ConstrainedBox on that axis', (t) async {
     await _pump(t, const ResolvedStyle(width: 50));
     final cb = t.widget<ConstrainedBox>(find.byType(ConstrainedBox));
     expect(cb.constraints.minWidth, 50);

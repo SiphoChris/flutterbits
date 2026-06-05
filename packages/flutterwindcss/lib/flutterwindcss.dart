@@ -9,6 +9,13 @@ library;
 // the grouping comments describe modules, not ordering. Module 1 = tokens,
 // Module 2 = theme access.
 
+// Styling engine (Module 3). resolve/ResolvedStyle/the render chain are engine
+// internals (consumers never call them directly), so they are not exported.
+export 'src/style/fw_layer.dart';
+export 'src/style/fw_style.dart';
+export 'src/style/fw_style_ops.dart';
+export 'src/style/fw_styled.dart';
+
 // Theme access (Module 2).
 export 'src/theme/context_fw.dart';
 export 'src/theme/fw_theme.dart';

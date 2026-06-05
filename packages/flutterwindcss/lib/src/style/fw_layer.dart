@@ -65,8 +65,7 @@ final class FwViewportCondition extends FwCondition {
       viewportWidth != null && viewportWidth >= breakpoint.minWidth;
 
   @override
-  bool operator ==(Object other) =>
-      other is FwViewportCondition && other.breakpoint == breakpoint;
+  bool operator ==(Object other) => other is FwViewportCondition && other.breakpoint == breakpoint;
 
   @override
   int get hashCode => breakpoint.hashCode;
@@ -87,8 +86,7 @@ final class FwContainerCondition extends FwCondition {
       containerWidth != null && containerWidth >= breakpoint.minWidth;
 
   @override
-  bool operator ==(Object other) =>
-      other is FwContainerCondition && other.breakpoint == breakpoint;
+  bool operator ==(Object other) => other is FwContainerCondition && other.breakpoint == breakpoint;
 
   @override
   int get hashCode => breakpoint.hashCode;

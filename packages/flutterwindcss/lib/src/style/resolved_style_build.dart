@@ -49,28 +49,18 @@ extension ResolvedStyleBuild on ResolvedStyle {
     }
 
     // Content clip, inset by border width, if clipping requested.
-    if (clipBehavior != null &&
-        clipBehavior != Clip.none &&
-        borderRadius != null) {
-      current = ClipRRect(
-        clipBehavior: clipBehavior!,
-        borderRadius: borderRadius!,
-        child: current,
-      );
+    if (clipBehavior != null && clipBehavior != Clip.none && borderRadius != null) {
+      current = ClipRRect(clipBehavior: clipBehavior!, borderRadius: borderRadius!, child: current);
     }
 
     // Surface: optional backdrop blur clipped to the box, then the decoration
     // composited on top so a semi-transparent fill frosts the backdrop.
-    final hasDecoration =
-        background != null || gradient != null || border != null;
+    final hasDecoration = background != null || gradient != null || border != null;
     if (backdropBlur != null) {
       current = ClipRRect(
         borderRadius: borderRadius ?? BorderRadius.zero,
         child: BackdropFilter(
-          filter: ui.ImageFilter.blur(
-            sigmaX: backdropBlur!,
-            sigmaY: backdropBlur!,
-          ),
+          filter: ui.ImageFilter.blur(sigmaX: backdropBlur!, sigmaY: backdropBlur!),
           child: hasDecoration ? _decorate(current) : current,
         ),
       );
@@ -81,10 +71,7 @@ extension ResolvedStyleBuild on ResolvedStyle {
     // Unclipped shadow layer (outside any clip so backdrop-blur can't eat it).
     if (boxShadow != null && boxShadow!.isNotEmpty) {
       current = DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: borderRadius,
-          boxShadow: boxShadow,
-        ),
+        decoration: BoxDecoration(borderRadius: borderRadius, boxShadow: boxShadow),
         child: current,
       );
     }
@@ -121,11 +108,7 @@ extension ResolvedStyleBuild on ResolvedStyle {
       if (scale != null) {
         m = m.multiplied(Matrix4.diagonal3Values(scale!, scale!, 1));
       }
-      current = Transform(
-        transform: m,
-        alignment: Alignment.center,
-        child: current,
-      );
+      current = Transform(transform: m, alignment: Alignment.center, child: current);
     }
 
     // Fractional sizing.
@@ -145,7 +128,8 @@ extension ResolvedStyleBuild on ResolvedStyle {
 
     // Sizing reconciliation: a fixed dim => tight constraint and wins its axis;
     // min/max apply only to axes without a fixed value (Finding #6).
-    final hasConstraints = width != null ||
+    final hasConstraints =
+        width != null ||
         height != null ||
         minWidth != null ||
         minHeight != null ||
@@ -180,12 +164,12 @@ extension ResolvedStyleBuild on ResolvedStyle {
   }
 
   Widget _decorate(Widget child) => DecoratedBox(
-        decoration: BoxDecoration(
-          color: gradient == null ? background : null,
-          gradient: gradient,
-          border: border,
-          borderRadius: borderRadius,
-        ),
-        child: child,
-      );
+    decoration: BoxDecoration(
+      color: gradient == null ? background : null,
+      gradient: gradient,
+      border: border,
+      borderRadius: borderRadius,
+    ),
+    child: child,
+  );
 }

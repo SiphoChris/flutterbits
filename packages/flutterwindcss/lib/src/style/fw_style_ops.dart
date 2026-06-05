@@ -21,12 +21,7 @@ mixin FwStyleOps<T> {
 
   // ---- Padding (per-edge merge; last-wins per edge) ----
 
-  EdgeInsetsDirectional _mergePad({
-    double? start,
-    double? end,
-    double? top,
-    double? bottom,
-  }) {
+  EdgeInsetsDirectional _mergePad({double? start, double? end, double? top, double? bottom}) {
     final p = fwStyle.padding ?? EdgeInsetsDirectional.zero;
     return EdgeInsetsDirectional.only(
       start: start ?? p.start,
@@ -41,30 +36,24 @@ mixin FwStyleOps<T> {
       fwRebuild(fwStyle.copyWith(padding: EdgeInsetsDirectional.all(fwSpace(units))));
 
   /// Horizontal padding (start + end).
-  T px(double units) => fwRebuild(
-        fwStyle.copyWith(padding: _mergePad(start: fwSpace(units), end: fwSpace(units))),
-      );
+  T px(double units) =>
+      fwRebuild(fwStyle.copyWith(padding: _mergePad(start: fwSpace(units), end: fwSpace(units))));
 
   /// Vertical padding (top + bottom).
-  T py(double units) => fwRebuild(
-        fwStyle.copyWith(padding: _mergePad(top: fwSpace(units), bottom: fwSpace(units))),
-      );
+  T py(double units) =>
+      fwRebuild(fwStyle.copyWith(padding: _mergePad(top: fwSpace(units), bottom: fwSpace(units))));
 
   /// Padding at the start edge (RTL-aware).
-  T ps(double units) =>
-      fwRebuild(fwStyle.copyWith(padding: _mergePad(start: fwSpace(units))));
+  T ps(double units) => fwRebuild(fwStyle.copyWith(padding: _mergePad(start: fwSpace(units))));
 
   /// Padding at the end edge (RTL-aware).
-  T pe(double units) =>
-      fwRebuild(fwStyle.copyWith(padding: _mergePad(end: fwSpace(units))));
+  T pe(double units) => fwRebuild(fwStyle.copyWith(padding: _mergePad(end: fwSpace(units))));
 
   /// Padding at the top edge.
-  T pt(double units) =>
-      fwRebuild(fwStyle.copyWith(padding: _mergePad(top: fwSpace(units))));
+  T pt(double units) => fwRebuild(fwStyle.copyWith(padding: _mergePad(top: fwSpace(units))));
 
   /// Padding at the bottom edge.
-  T pb(double units) =>
-      fwRebuild(fwStyle.copyWith(padding: _mergePad(bottom: fwSpace(units))));
+  T pb(double units) => fwRebuild(fwStyle.copyWith(padding: _mergePad(bottom: fwSpace(units))));
 
   // ---- Background ----
 

@@ -10,21 +10,14 @@ extension FwStyleResolve on FwStyle {
   /// [containerWidth] (enclosing constraint, for `containerSm…container2xl`
   /// layers). The two widths are kept separate so a viewport layer never
   /// matches on container size or vice-versa (spec §6.3).
-  ResolvedStyle resolve(
-    Set<WidgetState> states, {
-    double? viewportWidth,
-    double? containerWidth,
-  }) {
+  ResolvedStyle resolve(Set<WidgetState> states, {double? viewportWidth, double? containerWidth}) {
     // 1. Disabled suppression first (Finding #7): disabled removes the other
     //    three from the working set before any matching, so it always wins.
     final Set<WidgetState> working;
     if (states.contains(WidgetState.disabled)) {
       working = <WidgetState>{
         for (final s in states)
-          if (s != WidgetState.hovered &&
-              s != WidgetState.focused &&
-              s != WidgetState.pressed)
-            s,
+          if (s != WidgetState.hovered && s != WidgetState.focused && s != WidgetState.pressed) s,
       };
     } else {
       working = states;
@@ -92,35 +85,35 @@ FwStyle _flatten(
 /// Field-by-field last-wins overlay: every non-null field of [top] replaces the
 /// corresponding field of [base] (relies on `copyWith` treating null as "keep").
 FwStyle _overlay(FwStyle base, FwStyle top) => base.copyWith(
-      padding: top.padding,
-      margin: top.margin,
-      width: top.width,
-      height: top.height,
-      minWidth: top.minWidth,
-      minHeight: top.minHeight,
-      maxWidth: top.maxWidth,
-      maxHeight: top.maxHeight,
-      widthFactor: top.widthFactor,
-      heightFactor: top.heightFactor,
-      factorAlignment: top.factorAlignment,
-      aspectRatio: top.aspectRatio,
-      background: top.background,
-      gradient: top.gradient,
-      border: top.border,
-      borderRadius: top.borderRadius,
-      boxShadow: top.boxShadow,
-      foreground: top.foreground,
-      fontSize: top.fontSize,
-      fontWeight: top.fontWeight,
-      letterSpacing: top.letterSpacing,
-      lineHeight: top.lineHeight,
-      textAlign: top.textAlign,
-      textDecoration: top.textDecoration,
-      opacity: top.opacity,
-      blur: top.blur,
-      backdropBlur: top.backdropBlur,
-      scale: top.scale,
-      rotation: top.rotation,
-      translate: top.translate,
-      clipBehavior: top.clipBehavior,
-    );
+  padding: top.padding,
+  margin: top.margin,
+  width: top.width,
+  height: top.height,
+  minWidth: top.minWidth,
+  minHeight: top.minHeight,
+  maxWidth: top.maxWidth,
+  maxHeight: top.maxHeight,
+  widthFactor: top.widthFactor,
+  heightFactor: top.heightFactor,
+  factorAlignment: top.factorAlignment,
+  aspectRatio: top.aspectRatio,
+  background: top.background,
+  gradient: top.gradient,
+  border: top.border,
+  borderRadius: top.borderRadius,
+  boxShadow: top.boxShadow,
+  foreground: top.foreground,
+  fontSize: top.fontSize,
+  fontWeight: top.fontWeight,
+  letterSpacing: top.letterSpacing,
+  lineHeight: top.lineHeight,
+  textAlign: top.textAlign,
+  textDecoration: top.textDecoration,
+  opacity: top.opacity,
+  blur: top.blur,
+  backdropBlur: top.backdropBlur,
+  scale: top.scale,
+  rotation: top.rotation,
+  translate: top.translate,
+  clipBehavior: top.clipBehavior,
+);
