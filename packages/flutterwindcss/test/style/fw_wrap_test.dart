@@ -42,4 +42,42 @@ void main() {
     expect(() => FwWrap(gap: -1, children: const []), throwsAssertionError);
     expect(() => FwWrap(runGap: -1, children: const []), throwsAssertionError);
   });
+
+  test('FwWrapPatch asserts non-negative gap / runGap', () {
+    expect(() => FwWrapPatch(gap: -1), throwsAssertionError);
+    expect(() => FwWrapPatch(runGap: -1), throwsAssertionError);
+  });
+
+  group('responsive', () {
+    Widget frameViewport(double width, Widget child) => MediaQuery(
+      data: MediaQueryData(size: Size(width, 600)),
+      child: Directionality(textDirection: TextDirection.ltr, child: child),
+    );
+
+    testWidgets('viewport patch overrides spacing + alignment at the breakpoint', (t) async {
+      const wrap = FwWrap(
+        gap: 1,
+        runGap: 1,
+        viewport: {
+          FwBreakpoint.md: FwWrapPatch(gap: 3, runGap: 2, alignment: WrapAlignment.center),
+        },
+        children: [SizedBox()],
+      );
+      await t.pumpWidget(frameViewport(500, wrap)); // below md
+      var w = t.widget<Wrap>(find.byType(Wrap));
+      expect(w.spacing, 4.0);
+      expect(w.runSpacing, 4.0);
+      expect(w.alignment, WrapAlignment.start);
+      await t.pumpWidget(frameViewport(800, wrap)); // at md
+      w = t.widget<Wrap>(find.byType(Wrap));
+      expect(w.spacing, 12.0);
+      expect(w.runSpacing, 8.0);
+      expect(w.alignment, WrapAlignment.center);
+    });
+
+    testWidgets('static wrap inserts no LayoutBuilder', (t) async {
+      await t.pumpWidget(frameViewport(800, const FwWrap(children: [SizedBox()])));
+      expect(find.byType(LayoutBuilder), findsNothing);
+    });
+  });
 }
