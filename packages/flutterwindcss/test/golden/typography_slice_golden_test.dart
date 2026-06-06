@@ -22,8 +22,7 @@ Widget _frame(FwTokens tokens, TextDirection dir, Widget child) => FwTheme(
 
 Widget _text(BuildContext context) {
   final c = context.fw.colors;
-  return const Text('Ag')
-      .tw
+  return const Text('Ag').tw
       .w(40)
       .p(2)
       .bg(c.card)

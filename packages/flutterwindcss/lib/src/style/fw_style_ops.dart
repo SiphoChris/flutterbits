@@ -15,8 +15,10 @@ import 'fw_style.dart';
 /// surface. Module 4 added the **spacing + sizing** setters (margin, fixed/min/max
 /// sizing, fractional sizing + alignment, aspect/square). Module 5 added the
 /// **color/border/radius** setters (gradient, per-edge directional border,
-/// per-corner directional radius, clip). Modules 6–9 extend this mixin with the
-/// remaining base setters (typography, effects, transforms).
+/// per-corner directional radius, clip). Module 6 added the **typography**
+/// setters (text color, size, weight, leading, tracking, align, underline/
+/// line-through). Modules 7–9 extend this mixin with the remaining base setters
+/// (effects, layout, transforms).
 mixin FwStyleOps<T> {
   /// The current accumulated style.
   FwStyle get fwStyle;
@@ -364,9 +366,10 @@ mixin FwStyleOps<T> {
 
   T _addDecoration(TextDecoration d) {
     final existing = fwStyle.textDecoration;
-    final combined = existing == null || existing == TextDecoration.none
-        ? d
-        : TextDecoration.combine(<TextDecoration>[existing, d]);
+    final combined =
+        existing == null || existing == TextDecoration.none
+            ? d
+            : TextDecoration.combine(<TextDecoration>[existing, d]);
     return fwRebuild(fwStyle.copyWith(textDecoration: combined));
   }
 
