@@ -55,4 +55,24 @@ void main() {
       expect(() => const FwStyle().weight(450), throwsAssertionError);
     });
   });
+
+  group('decoration', () {
+    test('underline / lineThrough set their decoration', () {
+      expect(const FwStyle().underline.textDecoration, TextDecoration.underline);
+      expect(const FwStyle().lineThrough.textDecoration, TextDecoration.lineThrough);
+    });
+
+    test('underline + lineThrough combine (both present, order-independent)', () {
+      final a = const FwStyle().underline.lineThrough.textDecoration!;
+      final b = const FwStyle().lineThrough.underline.textDecoration!;
+      for (final d in <TextDecoration>[a, b]) {
+        expect(d.contains(TextDecoration.underline), isTrue);
+        expect(d.contains(TextDecoration.lineThrough), isTrue);
+      }
+    });
+
+    test('repeating a decoration is idempotent', () {
+      expect(const FwStyle().underline.underline.textDecoration, TextDecoration.underline);
+    });
+  });
 }

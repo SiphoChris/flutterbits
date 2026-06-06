@@ -362,6 +362,22 @@ mixin FwStyleOps<T> {
   /// Default text alignment (Tailwind `text-{align}`); `start`/`end` are RTL-aware.
   T align(TextAlign align) => fwRebuild(fwStyle.copyWith(textAlign: align));
 
+  T _addDecoration(TextDecoration d) {
+    final existing = fwStyle.textDecoration;
+    final combined = existing == null || existing == TextDecoration.none
+        ? d
+        : TextDecoration.combine(<TextDecoration>[existing, d]);
+    return fwRebuild(fwStyle.copyWith(textDecoration: combined));
+  }
+
+  /// Underlines descendant text; combines with any existing decoration (Tailwind
+  /// `underline`).
+  T get underline => _addDecoration(TextDecoration.underline);
+
+  /// Strikes through descendant text; combines with any existing decoration
+  /// (Tailwind `line-through`).
+  T get lineThrough => _addDecoration(TextDecoration.lineThrough);
+
   // ---- Variant layering ----
 
   T _layer(FwCondition condition, FwStyle Function(FwStyle) build) =>
