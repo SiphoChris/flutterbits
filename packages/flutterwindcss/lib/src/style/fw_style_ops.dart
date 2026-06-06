@@ -227,6 +227,82 @@ mixin FwStyleOps<T> {
     fwStyle.copyWith(borderSpec: _borderSpec.merge(bottom: _edge(_borderSpec.bottom, width, color))),
   );
 
+  // ---- Radius (per-corner merge; directional) ----
+  //
+  // Radius args are in **logical px** (token values like `t.radii.md`,
+  // `FwRadiusScale.*`), NOT utility units.
+
+  BorderRadiusDirectional _mergeRadius({
+    Radius? topStart,
+    Radius? topEnd,
+    Radius? bottomStart,
+    Radius? bottomEnd,
+  }) {
+    final r = fwStyle.borderRadius ?? BorderRadiusDirectional.zero;
+    return BorderRadiusDirectional.only(
+      topStart: topStart ?? r.topStart,
+      topEnd: topEnd ?? r.topEnd,
+      bottomStart: bottomStart ?? r.bottomStart,
+      bottomEnd: bottomEnd ?? r.bottomEnd,
+    );
+  }
+
+  /// Rounds every corner to [radius] logical px (overwrites all corners, last-wins).
+  T rounded(double radius) =>
+      fwRebuild(fwStyle.copyWith(borderRadius: BorderRadiusDirectional.all(Radius.circular(radius))));
+
+  /// Explicit synonym of [rounded] (the spec's named `roundedAll` surface).
+  T roundedAll(double radius) => rounded(radius);
+
+  /// Rounds the top corners (topStart + topEnd); merges per-corner.
+  T roundedT(double radius) => fwRebuild(
+    fwStyle.copyWith(
+      borderRadius: _mergeRadius(topStart: Radius.circular(radius), topEnd: Radius.circular(radius)),
+    ),
+  );
+
+  /// Rounds the bottom corners (bottomStart + bottomEnd); merges per-corner.
+  T roundedB(double radius) => fwRebuild(
+    fwStyle.copyWith(
+      borderRadius: _mergeRadius(
+        bottomStart: Radius.circular(radius),
+        bottomEnd: Radius.circular(radius),
+      ),
+    ),
+  );
+
+  /// Rounds the start corners (topStart + bottomStart, RTL-aware); merges per-corner.
+  T roundedS(double radius) => fwRebuild(
+    fwStyle.copyWith(
+      borderRadius: _mergeRadius(
+        topStart: Radius.circular(radius),
+        bottomStart: Radius.circular(radius),
+      ),
+    ),
+  );
+
+  /// Rounds the end corners (topEnd + bottomEnd, RTL-aware); merges per-corner.
+  T roundedE(double radius) => fwRebuild(
+    fwStyle.copyWith(
+      borderRadius: _mergeRadius(
+        topEnd: Radius.circular(radius),
+        bottomEnd: Radius.circular(radius),
+      ),
+    ),
+  );
+
+  /// Removes all rounding (overwrites all corners).
+  T get roundedNone => fwRebuild(fwStyle.copyWith(borderRadius: BorderRadiusDirectional.zero));
+
+  /// Pill / fully-rounded corners (radius 9999).
+  T get roundedFull => rounded(9999);
+
+  // ---- Clip ----
+
+  /// Clips overflowing content to the box shape; the content clip uses the
+  /// border-radius **deflated by the border width** (spec §6.4 Finding #3).
+  T clip([Clip behavior = Clip.antiAlias]) => fwRebuild(fwStyle.copyWith(clipBehavior: behavior));
+
   // ---- Variant layering ----
 
   T _layer(FwCondition condition, FwStyle Function(FwStyle) build) =>

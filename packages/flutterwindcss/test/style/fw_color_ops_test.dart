@@ -55,4 +55,43 @@ void main() {
       expect(spec.top!.width, 2);
     });
   });
+
+  group('radius', () {
+    test('rounded sets every corner; last-wins on repeat', () {
+      final r = const FwStyle().rounded(8).rounded(4).borderRadius!;
+      expect(r.topStart, const Radius.circular(4));
+      expect(r.bottomEnd, const Radius.circular(4));
+    });
+
+    test('roundedAll is a synonym of rounded', () {
+      expect(const FwStyle().roundedAll(6).borderRadius, const FwStyle().rounded(6).borderRadius);
+    });
+
+    test('roundedT/B set their corner pair and merge per-corner', () {
+      final r = const FwStyle().roundedT(8).roundedB(4).borderRadius!;
+      expect(r.topStart, const Radius.circular(8));
+      expect(r.topEnd, const Radius.circular(8));
+      expect(r.bottomStart, const Radius.circular(4));
+      expect(r.bottomEnd, const Radius.circular(4));
+    });
+
+    test('roundedS/E are directional (start/end corners)', () {
+      final r = const FwStyle().roundedS(8).borderRadius!;
+      expect(r.topStart, const Radius.circular(8));
+      expect(r.bottomStart, const Radius.circular(8));
+      expect(r.topEnd, Radius.zero);
+    });
+
+    test('roundedNone zeroes; roundedFull pills', () {
+      expect(const FwStyle().rounded(8).roundedNone.borderRadius, BorderRadiusDirectional.zero);
+      expect(const FwStyle().roundedFull.borderRadius!.topStart, const Radius.circular(9999));
+    });
+  });
+
+  group('clip', () {
+    test('clip() defaults to antiAlias; clip(x) writes the behavior', () {
+      expect(const FwStyle().clip().clipBehavior, Clip.antiAlias);
+      expect(const FwStyle().clip(Clip.hardEdge).clipBehavior, Clip.hardEdge);
+    });
+  });
 }
