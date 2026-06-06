@@ -8,8 +8,7 @@ import 'package:flutterwindcss/flutterwindcss.dart';
 // longer composes Row/Expanded/SizedBox, so structure assertions are gone — we
 // verify actual layout instead).
 
-Widget _box(String k, {double w = 20, double h = 20}) =>
-    SizedBox(key: Key(k), width: w, height: h);
+Widget _box(String k, {double w = 20, double h = 20}) => SizedBox(key: Key(k), width: w, height: h);
 
 Future<void> _pump(
   WidgetTester t,
@@ -19,10 +18,7 @@ Future<void> _pump(
 }) => t.pumpWidget(
   Directionality(
     textDirection: dir,
-    child: Align(
-      alignment: Alignment.topLeft,
-      child: SizedBox(width: width, child: grid),
-    ),
+    child: Align(alignment: Alignment.topLeft, child: SizedBox(width: width, child: grid)),
   ),
 );
 
@@ -56,10 +52,7 @@ void main() {
     testWidgets('auto track sizes to its item content width', (t) async {
       await _pump(
         t,
-        FwGrid(
-          columns: const [FwAuto(), FwFr()],
-          children: [_box('a', w: 40), _box('b')],
-        ),
+        FwGrid(columns: const [FwAuto(), FwFr()], children: [_box('a', w: 40), _box('b')]),
         width: 200,
       );
       expect(_rect(t, 'a').width, 40); // content-sized
@@ -237,17 +230,16 @@ void main() {
       data: MediaQueryData(size: Size(vw, 600)),
       child: Directionality(
         textDirection: TextDirection.ltr,
-        child: Align(
-          alignment: Alignment.topLeft,
-          child: SizedBox(width: 120, child: child),
-        ),
+        child: Align(alignment: Alignment.topLeft, child: SizedBox(width: 120, child: child)),
       ),
     );
 
     testWidgets('viewport patch changes the column count (1 → 3)', (t) async {
       final grid = FwGrid(
         columns: const [FwFr()],
-        viewport: const {FwBreakpoint.md: FwGridPatch(columns: [FwFr(), FwFr(), FwFr()])},
+        viewport: const {
+          FwBreakpoint.md: FwGridPatch(columns: [FwFr(), FwFr(), FwFr()]),
+        },
         children: [_box('a'), _box('b'), _box('c')],
       );
       // Narrow (< md): 1 column → all stacked (distinct rows).
@@ -278,15 +270,9 @@ void main() {
     });
 
     test('FwGridItem guards: spans >= 1, line numbers >= 1', () {
-      expect(
-        () => FwGridItem(columnSpan: 0, child: const SizedBox()),
-        throwsAssertionError,
-      );
+      expect(() => FwGridItem(columnSpan: 0, child: const SizedBox()), throwsAssertionError);
       expect(() => FwGridItem(rowSpan: 0, child: const SizedBox()), throwsAssertionError);
-      expect(
-        () => FwGridItem(columnStart: 0, child: const SizedBox()),
-        throwsAssertionError,
-      );
+      expect(() => FwGridItem(columnStart: 0, child: const SizedBox()), throwsAssertionError);
     });
 
     test('FwTrack.repeat expands a track list', () {

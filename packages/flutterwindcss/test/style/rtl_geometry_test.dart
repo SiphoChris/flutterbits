@@ -49,7 +49,11 @@ void main() {
     await t.pumpWidget(_frame(TextDirection.rtl, padded()));
     box = t.getTopLeft(find.byType(FwStyled));
     child = t.getTopLeft(find.byKey(const Key('child')));
-    expect(child.dx - box.dx, 0.0, reason: 'RTL: start padding moves to the right, child flush left');
+    expect(
+      child.dx - box.dx,
+      0.0,
+      reason: 'RTL: start padding moves to the right, child flush left',
+    );
   });
 
   testWidgets('FwPositioned start-inset anchors to the right edge under RTL', (t) async {

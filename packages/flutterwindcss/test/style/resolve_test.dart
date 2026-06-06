@@ -157,9 +157,9 @@ void main() {
       translate: const Offset(2, 2),
       clipBehavior: Clip.hardEdge,
     );
-    final r = base
-        .addLayer(const FwStateCondition(WidgetState.hovered), over)
-        .resolve(<WidgetState>{WidgetState.hovered});
+    final r = base.addLayer(const FwStateCondition(WidgetState.hovered), over).resolve(
+      <WidgetState>{WidgetState.hovered},
+    );
 
     expect(r.padding, const EdgeInsetsDirectional.all(8));
     expect(r.margin, const EdgeInsetsDirectional.all(8));

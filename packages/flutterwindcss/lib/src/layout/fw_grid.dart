@@ -21,7 +21,8 @@ sealed class FwGridTrack {
 /// its content (max-intrinsic) size, since `fr` cannot divide infinite space.
 final class FwFr extends FwGridTrack {
   /// Creates an `fr` track with the given [flex] weight (must be `> 0`).
-  const FwFr([this.flex = 1]) : assert(flex > 0, 'flutterwindcss: fr flex must be > 0 (got $flex).');
+  const FwFr([this.flex = 1])
+    : assert(flex > 0, 'flutterwindcss: fr flex must be > 0 (got $flex).');
 
   /// The flex weight (CSS `Nfr`).
   final int flex;
@@ -875,9 +876,8 @@ class RenderFwGrid extends RenderBox
       final dy = tightH ? 0.0 : _blockDelta(alignV, cellH - cs.height);
 
       // Mirror the cell to the right edge under RTL, then place within it.
-      final cellLeft = _textDirection == TextDirection.rtl
-          ? size.width - cellLeftLtr - cellW
-          : cellLeftLtr;
+      final cellLeft =
+          _textDirection == TextDirection.rtl ? size.width - cellLeftLtr - cellW : cellLeftLtr;
       pd.offset = Offset(cellLeft + dx, cellTop + dy);
     }
   }
@@ -906,9 +906,10 @@ class RenderFwGrid extends RenderBox
       final span = horizontal ? pd.columnSpan.clamp(1, _columns.length) : pd.rowSpan;
       final start = horizontal ? pd.resolvedColumn : pd.resolvedRow;
       if (index < start || index >= start + span) continue;
-      final intrinsic = horizontal
-          ? child.getMaxIntrinsicWidth(double.infinity)
-          : child.getMaxIntrinsicHeight(double.infinity);
+      final intrinsic =
+          horizontal
+              ? child.getMaxIntrinsicWidth(double.infinity)
+              : child.getMaxIntrinsicHeight(double.infinity);
       final contribution = intrinsic / span; // even distribution across the span
       if (contribution > best) best = contribution;
     }
