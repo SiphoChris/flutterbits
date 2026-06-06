@@ -92,4 +92,35 @@ void main() {
       throwsAssertionError,
     );
   });
+
+  testWidgets('content clip radius is deflated by the border width (Finding #3)', (t) async {
+    const r = 10.0;
+    const w = 3.0;
+    await _pump(
+      t,
+      ResolvedStyle(
+        clipBehavior: Clip.antiAlias,
+        borderRadius: const BorderRadiusDirectional.all(Radius.circular(r)),
+        border: Border.all(width: w),
+        background: const Color(0xFF112233),
+      ),
+    );
+    // The content ClipRRect (inside the surface DecoratedBox) uses radius r - w.
+    final clip = t.widget<ClipRRect>(find.byType(ClipRRect));
+    final radius = clip.borderRadius as BorderRadiusDirectional;
+    expect(radius.topStart, const Radius.circular(r - w));
+  });
+
+  testWidgets('content clip without a border uses the un-deflated radius', (t) async {
+    await _pump(
+      t,
+      const ResolvedStyle(
+        clipBehavior: Clip.antiAlias,
+        borderRadius: BorderRadiusDirectional.all(Radius.circular(10)),
+      ),
+    );
+    final clip = t.widget<ClipRRect>(find.byType(ClipRRect));
+    final radius = clip.borderRadius as BorderRadiusDirectional;
+    expect(radius.topStart, const Radius.circular(10));
+  });
 }

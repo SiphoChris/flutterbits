@@ -48,9 +48,11 @@ extension ResolvedStyleBuild on ResolvedStyle {
       current = Padding(padding: padding!, child: current);
     }
 
-    // Content clip, inset by border width, if clipping requested.
+    // Content clip: reuse the decoration radius, deflated by the border width so
+    // clipped content never bleeds across the stroke (spec §6.4 Finding #3).
     if (clipBehavior != null && clipBehavior != Clip.none && borderRadius != null) {
-      current = ClipRRect(clipBehavior: clipBehavior!, borderRadius: borderRadius!, child: current);
+      final clipRadius = border == null ? borderRadius! : _deflateRadius(borderRadius!, border!);
+      current = ClipRRect(clipBehavior: clipBehavior!, borderRadius: clipRadius, child: current);
     }
 
     // Surface: optional backdrop blur clipped to the box, then the decoration
@@ -161,6 +163,46 @@ extension ResolvedStyleBuild on ResolvedStyle {
     }
 
     return current;
+  }
+
+  /// Deflates each corner of [r] by its two adjacent edge widths (CSS inner
+  /// border-radius), clamped at 0 — so the content clip hugs the inside of the
+  /// stroke (spec §6.4 Finding #3).
+  BorderRadiusDirectional _deflateRadius(BorderRadiusDirectional r, BoxBorder border) {
+    final w = _edgeWidths(border);
+    Radius inset(Radius c, double dx, double dy) {
+      final x = c.x - dx, y = c.y - dy;
+      return Radius.elliptical(x < 0 ? 0 : x, y < 0 ? 0 : y);
+    }
+
+    return BorderRadiusDirectional.only(
+      topStart: inset(r.topStart, w.start, w.top),
+      topEnd: inset(r.topEnd, w.end, w.top),
+      bottomStart: inset(r.bottomStart, w.start, w.bottom),
+      bottomEnd: inset(r.bottomEnd, w.end, w.bottom),
+    );
+  }
+
+  /// Reads the per-edge stroke widths off a resolved [BoxBorder], directionally.
+  /// A uniform `Border` is symmetric, so mapping start←left / end←right is exact.
+  EdgeInsetsDirectional _edgeWidths(BoxBorder border) {
+    if (border is BorderDirectional) {
+      return EdgeInsetsDirectional.only(
+        start: border.start.width,
+        end: border.end.width,
+        top: border.top.width,
+        bottom: border.bottom.width,
+      );
+    }
+    if (border is Border) {
+      return EdgeInsetsDirectional.only(
+        start: border.left.width,
+        end: border.right.width,
+        top: border.top.width,
+        bottom: border.bottom.width,
+      );
+    }
+    return EdgeInsetsDirectional.zero;
   }
 
   Widget _decorate(Widget child) => DecoratedBox(
