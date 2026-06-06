@@ -9,10 +9,14 @@ library;
 // the grouping comments describe modules, not ordering. Module 1 = tokens,
 // Module 2 = theme access.
 
+// Layout widgets (Module 8) — multi-child structure the single-box `.tw` chain
+// cannot express (spec §6.0/§6.6).
+export 'src/layout/fw_flex.dart';
+export 'src/layout/fw_stack.dart';
+export 'src/layout/fw_wrap.dart';
+
 // Styling engine (Module 3). resolve/ResolvedStyle/the render chain are engine
 // internals (consumers never call them directly), so they are not exported.
-export 'src/layout/fw_flex.dart';
-export 'src/layout/fw_wrap.dart';
 export 'src/style/fw_border_spec.dart';
 export 'src/style/fw_layer.dart';
 export 'src/style/fw_style.dart';
