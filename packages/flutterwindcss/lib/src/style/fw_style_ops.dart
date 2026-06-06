@@ -170,8 +170,15 @@ mixin FwStyleOps<T> {
 
   FwBorderSpec get _borderSpec => fwStyle.borderSpec ?? const FwBorderSpec();
 
+  // A negative stroke width is meaningless; guard it with a clear flutterwindcss
+  // message rather than leaving it to BorderSide's terser internal assert.
+  static double _checkWidth(double width) {
+    assert(width >= 0, 'flutterwindcss: border width must be >= 0 (got $width).');
+    return width;
+  }
+
   BorderSide _withWidth(BorderSide? s, double width) =>
-      (s ?? const BorderSide()).copyWith(width: width, style: BorderStyle.solid);
+      (s ?? const BorderSide()).copyWith(width: _checkWidth(width), style: BorderStyle.solid);
 
   BorderSide _withColor(BorderSide? s, Color color) =>
       (s ?? const BorderSide(width: 0)).copyWith(color: color, style: BorderStyle.solid);
@@ -183,13 +190,17 @@ mixin FwStyleOps<T> {
 
   BorderSide _edge(BorderSide? existing, double? width, Color? color) {
     var s = (existing ?? const BorderSide(width: 0)).copyWith(style: BorderStyle.solid);
-    if (width != null) s = s.copyWith(width: width);
+    if (width != null) s = s.copyWith(width: _checkWidth(width));
     if (color != null) s = s.copyWith(color: color);
     return s;
   }
 
   /// Uniform border of [width] logical px on every edge (plus [color] if given).
-  /// Tailwind's bare `border` is `border(1)`.
+  /// Tailwind's bare `border` is `border(1)`. With no [color] the edge defaults to
+  /// opaque black — pass a semantic token (`context.fw.colors.border`) in
+  /// components. A per-side (non-uniform) border **cannot** be rounded; combining
+  /// it with `rounded*` asserts at build time (Flutter limitation; see the render
+  /// chain). [width] must be `>= 0`.
   T border(double width, {Color? color}) => fwRebuild(
     fwStyle.copyWith(
       borderSpec: _borderEach((s) {
@@ -250,10 +261,16 @@ mixin FwStyleOps<T> {
     );
   }
 
+  // A negative corner radius is meaningless and (unlike a width) Radius.circular
+  // does NOT guard it, so assert here with a clear flutterwindcss message.
+  static Radius _circular(double radius) {
+    assert(radius >= 0, 'flutterwindcss: border radius must be >= 0 (got $radius).');
+    return Radius.circular(radius);
+  }
+
   /// Rounds every corner to [radius] logical px (overwrites all corners, last-wins).
-  T rounded(double radius) => fwRebuild(
-    fwStyle.copyWith(borderRadius: BorderRadiusDirectional.all(Radius.circular(radius))),
-  );
+  T rounded(double radius) =>
+      fwRebuild(fwStyle.copyWith(borderRadius: BorderRadiusDirectional.all(_circular(radius))));
 
   /// Explicit synonym of [rounded] (the spec's named `roundedAll` surface).
   T roundedAll(double radius) => rounded(radius);
@@ -261,40 +278,28 @@ mixin FwStyleOps<T> {
   /// Rounds the top corners (topStart + topEnd); merges per-corner.
   T roundedT(double radius) => fwRebuild(
     fwStyle.copyWith(
-      borderRadius: _mergeRadius(
-        topStart: Radius.circular(radius),
-        topEnd: Radius.circular(radius),
-      ),
+      borderRadius: _mergeRadius(topStart: _circular(radius), topEnd: _circular(radius)),
     ),
   );
 
   /// Rounds the bottom corners (bottomStart + bottomEnd); merges per-corner.
   T roundedB(double radius) => fwRebuild(
     fwStyle.copyWith(
-      borderRadius: _mergeRadius(
-        bottomStart: Radius.circular(radius),
-        bottomEnd: Radius.circular(radius),
-      ),
+      borderRadius: _mergeRadius(bottomStart: _circular(radius), bottomEnd: _circular(radius)),
     ),
   );
 
   /// Rounds the start corners (topStart + bottomStart, RTL-aware); merges per-corner.
   T roundedS(double radius) => fwRebuild(
     fwStyle.copyWith(
-      borderRadius: _mergeRadius(
-        topStart: Radius.circular(radius),
-        bottomStart: Radius.circular(radius),
-      ),
+      borderRadius: _mergeRadius(topStart: _circular(radius), bottomStart: _circular(radius)),
     ),
   );
 
   /// Rounds the end corners (topEnd + bottomEnd, RTL-aware); merges per-corner.
   T roundedE(double radius) => fwRebuild(
     fwStyle.copyWith(
-      borderRadius: _mergeRadius(
-        topEnd: Radius.circular(radius),
-        bottomEnd: Radius.circular(radius),
-      ),
+      borderRadius: _mergeRadius(topEnd: _circular(radius), bottomEnd: _circular(radius)),
     ),
   );
 
@@ -306,8 +311,9 @@ mixin FwStyleOps<T> {
 
   // ---- Clip ----
 
-  /// Clips overflowing content to the box shape; the content clip uses the
-  /// border-radius **deflated by the border width** (spec §6.4 Finding #3).
+  /// Clips overflowing content to the box shape. With a corner radius the clip
+  /// reuses it **deflated by the border width** (spec §6.4 Finding #3); with no
+  /// radius it clips to the rectangle (it never silently no-ops).
   T clip([Clip behavior = Clip.antiAlias]) => fwRebuild(fwStyle.copyWith(clipBehavior: behavior));
 
   // ---- Variant layering ----

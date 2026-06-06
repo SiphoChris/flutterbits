@@ -60,10 +60,16 @@ extension ResolvedStyleBuild on ResolvedStyle {
       current = Padding(padding: padding!, child: current);
     }
 
-    // Content clip: reuse the decoration radius, deflated by the border width so
-    // clipped content never bleeds across the stroke (spec §6.4 Finding #3).
-    if (clipBehavior != null && clipBehavior != Clip.none && borderRadius != null) {
-      final clipRadius = border == null ? borderRadius! : _deflateRadius(borderRadius!, border!);
+    // Content clip: clip to the box shape. With a corner radius, reuse it
+    // deflated by the border width so clipped content never bleeds across the
+    // stroke (spec §6.4 Finding #3); with no radius, clip to the rectangle
+    // (`BorderRadiusDirectional.zero`) — `.clip()` alone must still clip, not
+    // silently no-op.
+    if (clipBehavior != null && clipBehavior != Clip.none) {
+      final clipRadius =
+          borderRadius == null
+              ? BorderRadiusDirectional.zero
+              : (border == null ? borderRadius! : _deflateRadius(borderRadius!, border!));
       current = ClipRRect(clipBehavior: clipBehavior!, borderRadius: clipRadius, child: current);
     }
 

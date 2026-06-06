@@ -93,4 +93,27 @@ void main() {
       expect(const FwStyle().clip(Clip.hardEdge).clipBehavior, Clip.hardEdge);
     });
   });
+
+  group('guards (things a dev should not do)', () {
+    test('negative border width asserts in debug', () {
+      expect(() => const FwStyle().border(-1), throwsAssertionError);
+      expect(() => const FwStyle().borderWidth(-1), throwsAssertionError);
+      expect(() => const FwStyle().borderS(width: -1), throwsAssertionError);
+      expect(() => const FwStyle().borderT(width: -2), throwsAssertionError);
+    });
+
+    test('negative corner radius asserts in debug', () {
+      expect(() => const FwStyle().rounded(-1), throwsAssertionError);
+      expect(() => const FwStyle().roundedAll(-1), throwsAssertionError);
+      expect(() => const FwStyle().roundedT(-1), throwsAssertionError);
+      expect(() => const FwStyle().roundedS(-1), throwsAssertionError);
+      expect(() => const FwStyle().roundedE(-1), throwsAssertionError);
+      expect(() => const FwStyle().roundedB(-1), throwsAssertionError);
+    });
+
+    test('zero width / zero radius are allowed (no-op border / sharp corner)', () {
+      expect(const FwStyle().border(0).borderSpec!.resolve(), isNull); // nothing paints
+      expect(const FwStyle().rounded(0).borderRadius, BorderRadiusDirectional.zero);
+    });
+  });
 }

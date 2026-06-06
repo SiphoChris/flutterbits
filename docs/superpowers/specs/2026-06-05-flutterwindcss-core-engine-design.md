@@ -270,7 +270,7 @@ Variant/responsive layering applies to layout widgets too (e.g. a responsive `ga
 
 ## 8. Public API surface (`lib/flutterwindcss.dart`)
 
-The barrel re-exports exactly the supported surface (AGENTS.md §3.6): `context.fw`, the `.tw` extension + `FwStyled`, `FwStyle` (for advanced composition), the layout widgets (`FwRow`, `FwColumn`, `FwWrap`, `FwStack`, `FwPositioned`, `FwGrid`), `FwTokens/FwColors/FwRadii/FwShadows/FwTypography`, `FwPalette`, `FwTheme`, `FwThemeExtension`, `FwAnimatedTheme`, the enums (`FwShadow`, `FwBreakpoint`, `FwState…`), and `fwSpace`. Nothing under `lib/src/` is importable by consumers. Adding to the surface is always allowed; **renaming/removing requires a deprecation cycle** (every copied component in the wild pins these names).
+The barrel re-exports exactly the supported surface (AGENTS.md §3.6): `context.fw`, the `.tw` extension + `FwStyled`, `FwStyle` (for advanced composition) and its public value types (`FwBorderSpec`, `FwLayer`/`FwCondition`), the layout widgets (`FwRow`, `FwColumn`, `FwWrap`, `FwStack`, `FwPositioned`, `FwGrid`), `FwTokens/FwColors/FwRadii/FwShadows/FwTypography`, `FwPalette`, `FwTheme`, `FwThemeExtension`, `FwAnimatedTheme`, the enums (`FwShadow`, `FwBreakpoint`, `FwState…`), and `fwSpace`. Nothing under `lib/src/` is importable by consumers. Adding to the surface is always allowed; **renaming/removing requires a deprecation cycle** (every copied component in the wild pins these names).
 
 ---
 

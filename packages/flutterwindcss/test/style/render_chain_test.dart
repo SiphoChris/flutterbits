@@ -136,6 +136,20 @@ void main() {
     expect(find.byType(DecoratedBox), findsOneWidget);
   });
 
+  testWidgets('clip without a radius still clips (rectangular ClipRRect)', (t) async {
+    await _pump(t, const ResolvedStyle(clipBehavior: Clip.antiAlias));
+    final clip = t.widget<ClipRRect>(find.byType(ClipRRect));
+    expect(clip.borderRadius, BorderRadiusDirectional.zero);
+  });
+
+  testWidgets('no clip emitted when clipBehavior is unset', (t) async {
+    await _pump(
+      t,
+      const ResolvedStyle(borderRadius: BorderRadiusDirectional.all(Radius.circular(8))),
+    );
+    expect(find.byType(ClipRRect), findsNothing);
+  });
+
   testWidgets('content clip without a border uses the un-deflated radius', (t) async {
     await _pump(
       t,
