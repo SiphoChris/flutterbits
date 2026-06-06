@@ -41,12 +41,12 @@ Widget _grid(BuildContext context) {
 
 void main() {
   testWidgets('grid slice — light LTR (span + px/fr/auto tracks)', (t) async {
-    await t.pumpWidget(_frame(FwTokens.light, TextDirection.ltr, Builder(builder: _grid)));
+    await t.pumpWidget(_frame(FwTokens.light, TextDirection.ltr, const Builder(builder: _grid)));
     await expectLater(find.byType(FwGrid), matchesGoldenFile('goldens/grid_light_ltr.png'));
   });
 
   testWidgets('grid slice — dark RTL (column order mirrors)', (t) async {
-    await t.pumpWidget(_frame(FwTokens.dark, TextDirection.rtl, Builder(builder: _grid)));
+    await t.pumpWidget(_frame(FwTokens.dark, TextDirection.rtl, const Builder(builder: _grid)));
     await expectLater(find.byType(FwGrid), matchesGoldenFile('goldens/grid_dark_rtl.png'));
   });
 }
