@@ -381,6 +381,38 @@ mixin FwStyleOps<T> {
   /// (Tailwind `line-through`).
   T get lineThrough => _addDecoration(TextDecoration.lineThrough);
 
+  // ---- Effects ----
+  //
+  // The FwStyle fields are named groupOpacity/contentBlur/backdropBlurSigma so
+  // these Tailwind-natural setters don't collide (the field names also match the
+  // render-chain's "group opacity" / "content blur" terminology). Blur args are
+  // Gaussian sigmas in logical px.
+
+  /// Drop shadow from the theme scale; pass a resolved list like
+  /// `context.fw.shadows.md` (an empty list = no shadow). Last-wins.
+  T shadow(List<BoxShadow> shadows) => fwRebuild(fwStyle.copyWith(boxShadow: shadows));
+
+  /// Group opacity `0.0..1.0` (Tailwind `opacity-*`); `fwOpacity(50)` maps the
+  /// `0..100` scale. Applies to the whole box as one layer.
+  T opacity(double value) {
+    assert(value >= 0.0 && value <= 1.0, 'flutterwindcss: opacity must be 0.0..1.0 (got $value).');
+    return fwRebuild(fwStyle.copyWith(groupOpacity: value));
+  }
+
+  /// Content blur — Gaussian sigma in logical px, blurs the whole element
+  /// (Tailwind `blur-*`; `FwBlur.md.sigma` for the named scale). Must be `>= 0`.
+  T blur(double sigma) {
+    assert(sigma >= 0, 'flutterwindcss: blur sigma must be >= 0 (got $sigma).');
+    return fwRebuild(fwStyle.copyWith(contentBlur: sigma));
+  }
+
+  /// Backdrop blur — frosts content painted *behind* the box (Tailwind
+  /// `backdrop-blur-*`). Gaussian sigma in logical px; must be `>= 0`.
+  T backdropBlur(double sigma) {
+    assert(sigma >= 0, 'flutterwindcss: backdrop blur sigma must be >= 0 (got $sigma).');
+    return fwRebuild(fwStyle.copyWith(backdropBlurSigma: sigma));
+  }
+
   // ---- Variant layering ----
 
   T _layer(FwCondition condition, FwStyle Function(FwStyle) build) =>
