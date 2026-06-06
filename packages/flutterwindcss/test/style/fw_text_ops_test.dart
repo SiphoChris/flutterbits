@@ -49,10 +49,14 @@ void main() {
       expect(() => const FwStyle().leading(0), throwsAssertionError);
     });
 
-    test('out-of-range / unstepped weight asserts', () {
-      expect(() => const FwStyle().weight(50), throwsAssertionError);
-      expect(() => const FwStyle().weight(1000), throwsAssertionError);
-      expect(() => const FwStyle().weight(450), throwsAssertionError);
+    test('out-of-range / unstepped weight throws ArgumentError (release-safe, not assert)', () {
+      // A throw (not an assert) so the guard survives release mode — the value
+      // indexes a fixed-length list and a stripped assert would crash with an
+      // opaque RangeError instead of this clear message.
+      expect(() => const FwStyle().weight(50), throwsArgumentError);
+      expect(() => const FwStyle().weight(1000), throwsArgumentError);
+      expect(() => const FwStyle().weight(450), throwsArgumentError);
+      expect(() => const FwStyle().weight(0), throwsArgumentError);
     });
   });
 

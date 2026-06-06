@@ -18,8 +18,13 @@ import 'fw_style.dart';
 /// per-corner directional radius, clip). Module 6 added the **typography**
 /// setters (text color, size, weight, leading, tracking, align, underline/
 /// line-through). Module 7 added the **effects** setters (shadow, opacity, blur,
-/// backdrop-blur). Modules 8–10 extend this mixin with the remaining surface
-/// (layout widgets, transforms, animated theming).
+/// backdrop-blur). Module 8 shipped the **layout widgets** (`FwRow`/`FwColumn`/
+/// `FwWrap`/`FwStack`/`FwPositioned`/`FwGrid`) — dedicated multi-child widgets,
+/// *not* `.tw` setters (spec §6.0/§6.6), with first-class responsive
+/// layout-property layering via per-widget `viewport`/`container` patch maps —
+/// and confirmed the container-query family (`containerSm…`) already shipped here
+/// in module 3. Modules 9–10 extend this mixin with the remaining surface
+/// (transforms, animated theming).
 mixin FwStyleOps<T> {
   /// The current accumulated style.
   FwStyle get fwStyle;
@@ -339,11 +344,19 @@ mixin FwStyleOps<T> {
 
   /// Default font weight on the CSS scale `100..900` (Tailwind `font-{weight}`);
   /// pass a token like `FwFontWeight.semibold`. Maps to a Flutter [FontWeight].
+  ///
+  /// Validated with a **runtime throw** (not an `assert`): the value indexes a
+  /// fixed-length list, so an assert — stripped in release — would surface an
+  /// invalid weight as an opaque `RangeError`. Throwing keeps the error clear and
+  /// the behavior defined in both debug and release.
   T weight(int weight) {
-    assert(
-      weight >= 100 && weight <= 900 && weight % 100 == 0,
-      'flutterwindcss: font weight must be 100..900 in steps of 100 (got $weight).',
-    );
+    if (weight < 100 || weight > 900 || weight % 100 != 0) {
+      throw ArgumentError.value(
+        weight,
+        'weight',
+        'flutterwindcss: font weight must be 100..900 in steps of 100',
+      );
+    }
     return fwRebuild(fwStyle.copyWith(fontWeight: FontWeight.values[(weight ~/ 100) - 1]));
   }
 

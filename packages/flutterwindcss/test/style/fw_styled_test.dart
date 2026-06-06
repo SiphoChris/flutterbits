@@ -94,6 +94,34 @@ void main() {
     expect(_ourFocus, findsNothing);
   });
 
+  testWidgets('disabled suppresses hover in the live (stateful) interactive path', (t) async {
+    const c = Color(0xFFCCCCCC); // disabled color
+    // hover layer forces the stateful _FwStyledInteractive path; disabled is
+    // injected. Hovering must NOT switch to the hover color — the stateful
+    // path's _activeStates drops live states while disabled (fw_styled.dart).
+    await t.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: FwStyled(
+          style: const FwStyle().bg(_a).hover((h) => h.bg(_b)).disabled((d) => d.bg(c)),
+          states: const <WidgetState>{WidgetState.disabled},
+          child: const SizedBox(width: 50, height: 50),
+        ),
+      ),
+    );
+    // Disabled style applies immediately (disabled wins over base).
+    expect(_boxColor(t), c);
+
+    final gesture = await t.createGesture(kind: PointerDeviceKind.mouse);
+    await gesture.addPointer(location: Offset.zero);
+    addTearDown(gesture.removePointer);
+    await gesture.moveTo(t.getCenter(find.byType(DecoratedBox)));
+    await t.pumpAndSettle();
+
+    // Still disabled — hover did NOT take effect.
+    expect(_boxColor(t), c);
+  });
+
   testWidgets('a Semantics(button) child survives the .tw chain', (t) async {
     await t.pumpWidget(
       Directionality(
