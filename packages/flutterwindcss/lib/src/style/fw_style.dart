@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 
+import 'fw_border_spec.dart';
 import 'fw_layer.dart';
 import 'fw_style_ops.dart';
 
@@ -32,7 +33,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     this.aspectRatio,
     this.background,
     this.gradient,
-    this.border,
+    this.borderSpec,
     this.borderRadius,
     this.boxShadow,
     this.foreground,
@@ -97,8 +98,11 @@ class FwStyle with FwStyleOps<FwStyle> {
   /// Gradient fill (replaces [background] when both set).
   final Gradient? gradient;
 
-  /// Border (uniform or per-side directional).
-  final BoxBorder? border;
+  /// Accumulating border description (uniform or per-side directional); resolves
+  /// to a concrete `BoxBorder` at resolve time. Renamed from M3's `border`
+  /// placeholder (spec §6.1; the field now holds an [FwBorderSpec], not a
+  /// `BoxBorder`).
+  final FwBorderSpec? borderSpec;
 
   /// Corner radii (directional).
   final BorderRadiusDirectional? borderRadius;
@@ -179,7 +183,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     double? aspectRatio,
     Color? background,
     Gradient? gradient,
-    BoxBorder? border,
+    FwBorderSpec? borderSpec,
     BorderRadiusDirectional? borderRadius,
     List<BoxShadow>? boxShadow,
     Color? foreground,
@@ -213,7 +217,7 @@ class FwStyle with FwStyleOps<FwStyle> {
       aspectRatio: aspectRatio ?? this.aspectRatio,
       background: background ?? this.background,
       gradient: gradient ?? this.gradient,
-      border: border ?? this.border,
+      borderSpec: borderSpec ?? this.borderSpec,
       borderRadius: borderRadius ?? this.borderRadius,
       boxShadow: boxShadow ?? this.boxShadow,
       foreground: foreground ?? this.foreground,
@@ -255,7 +259,7 @@ class FwStyle with FwStyleOps<FwStyle> {
       aspectRatio == other.aspectRatio &&
       background == other.background &&
       gradient == other.gradient &&
-      border == other.border &&
+      borderSpec == other.borderSpec &&
       borderRadius == other.borderRadius &&
       listEquals(boxShadow, other.boxShadow) &&
       foreground == other.foreground &&
@@ -290,7 +294,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     aspectRatio,
     background,
     gradient,
-    border,
+    borderSpec,
     borderRadius,
     boxShadow == null ? null : Object.hashAll(boxShadow!),
     foreground,
