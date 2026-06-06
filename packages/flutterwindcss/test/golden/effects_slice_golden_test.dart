@@ -21,8 +21,7 @@ Widget _frame(FwTokens tokens, TextDirection dir, Widget child) => FwTheme(
 
 Widget _card(BuildContext context) {
   final c = context.fw.colors;
-  return const SizedBox.shrink()
-      .tw
+  return const SizedBox.shrink().tw
       .w(28)
       .h(18)
       .bg(c.primary)

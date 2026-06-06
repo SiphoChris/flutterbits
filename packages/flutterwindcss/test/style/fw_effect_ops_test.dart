@@ -1,4 +1,3 @@
-import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutterwindcss/src/style/fw_style.dart';
 import 'package:flutterwindcss/src/tokens/scales.dart';

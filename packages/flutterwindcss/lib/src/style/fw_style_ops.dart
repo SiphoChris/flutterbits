@@ -17,8 +17,9 @@ import 'fw_style.dart';
 /// **color/border/radius** setters (gradient, per-edge directional border,
 /// per-corner directional radius, clip). Module 6 added the **typography**
 /// setters (text color, size, weight, leading, tracking, align, underline/
-/// line-through). Modules 7–9 extend this mixin with the remaining base setters
-/// (effects, layout, transforms).
+/// line-through). Module 7 added the **effects** setters (shadow, opacity, blur,
+/// backdrop-blur). Modules 8–10 extend this mixin with the remaining surface
+/// (layout widgets, transforms, animated theming).
 mixin FwStyleOps<T> {
   /// The current accumulated style.
   FwStyle get fwStyle;
