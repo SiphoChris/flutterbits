@@ -65,12 +65,12 @@ Widget _scene(BuildContext context) => FwColumn(
 
 void main() {
   testWidgets('layout slice — light LTR (row/stack/grid flow start→end)', (t) async {
-    await t.pumpWidget(_frame(FwTokens.light, TextDirection.ltr, Builder(builder: _scene)));
+    await t.pumpWidget(_frame(FwTokens.light, TextDirection.ltr, const Builder(builder: _scene)));
     await expectLater(find.byType(FwColumn), matchesGoldenFile('goldens/layout_light_ltr.png'));
   });
 
   testWidgets('layout slice — dark RTL (everything mirrors)', (t) async {
-    await t.pumpWidget(_frame(FwTokens.dark, TextDirection.rtl, Builder(builder: _scene)));
+    await t.pumpWidget(_frame(FwTokens.dark, TextDirection.rtl, const Builder(builder: _scene)));
     await expectLater(find.byType(FwColumn), matchesGoldenFile('goldens/layout_dark_rtl.png'));
   });
 }

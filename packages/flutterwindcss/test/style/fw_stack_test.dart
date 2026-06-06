@@ -40,8 +40,7 @@ void main() {
       ),
     );
     final stack = t.widget<Stack>(find.byType(Stack));
-    Key keyOf(Widget positioned) =>
-        ((positioned as PositionedDirectional).child as Container).key!;
+    Key keyOf(Widget positioned) => ((positioned as PositionedDirectional).child as Container).key!;
     expect(stack.children.map(keyOf).toList(), const [Key('b'), Key('a'), Key('c')]);
   });
 

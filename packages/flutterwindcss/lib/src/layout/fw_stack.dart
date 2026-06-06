@@ -33,12 +33,11 @@ class FwStack extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Decorate with the original index so the sort is stable (List.sort is not).
-    final indexed = <(int, Widget)>[
-      for (var i = 0; i < children.length; i++) (i, children[i]),
-    ]..sort((a, b) {
-      final byZ = _zOf(a.$2).compareTo(_zOf(b.$2));
-      return byZ != 0 ? byZ : a.$1.compareTo(b.$1);
-    });
+    final indexed = <(int, Widget)>[for (var i = 0; i < children.length; i++) (i, children[i])]
+      ..sort((a, b) {
+        final byZ = _zOf(a.$2).compareTo(_zOf(b.$2));
+        return byZ != 0 ? byZ : a.$1.compareTo(b.$1);
+      });
 
     return Stack(
       alignment: alignment,
@@ -109,8 +108,9 @@ class FwPositioned extends StatelessWidget {
   final int z;
 
   @override
-  Widget build(BuildContext context) => throw FlutterError(
-    'FwPositioned must be a direct child of FwStack — it carries inset/z data '
-    'that only FwStack interprets.',
-  );
+  Widget build(BuildContext context) =>
+      throw FlutterError(
+        'FwPositioned must be a direct child of FwStack — it carries inset/z data '
+        'that only FwStack interprets.',
+      );
 }

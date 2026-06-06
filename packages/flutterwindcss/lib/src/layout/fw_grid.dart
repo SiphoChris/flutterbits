@@ -14,7 +14,8 @@ sealed class FwGridTrack {
 /// to [flex] (Tailwind/CSS `1fr`, `2fr`, …). Renders as an [Expanded].
 final class FwFr extends FwGridTrack {
   /// Creates an `fr` track with the given [flex] weight (must be `> 0`).
-  const FwFr([this.flex = 1]) : assert(flex > 0, 'flutterwindcss: fr flex must be > 0 (got $flex).');
+  const FwFr([this.flex = 1])
+    : assert(flex > 0, 'flutterwindcss: fr flex must be > 0 (got $flex).');
 
   /// The flex weight (CSS `Nfr`).
   final int flex;

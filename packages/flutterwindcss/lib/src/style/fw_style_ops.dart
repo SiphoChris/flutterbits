@@ -18,8 +18,11 @@ import 'fw_style.dart';
 /// per-corner directional radius, clip). Module 6 added the **typography**
 /// setters (text color, size, weight, leading, tracking, align, underline/
 /// line-through). Module 7 added the **effects** setters (shadow, opacity, blur,
-/// backdrop-blur). Modules 8–10 extend this mixin with the remaining surface
-/// (layout widgets, transforms, animated theming).
+/// backdrop-blur). Module 8 shipped the **layout widgets** (`FwRow`/`FwColumn`/
+/// `FwWrap`/`FwStack`/`FwPositioned`/`FwGrid`) — dedicated multi-child widgets,
+/// *not* `.tw` setters (spec §6.0/§6.6) — and confirmed the container-query
+/// family (`containerSm…`) already shipped here in module 3. Modules 9–10 extend
+/// this mixin with the remaining surface (transforms, animated theming).
 mixin FwStyleOps<T> {
   /// The current accumulated style.
   FwStyle get fwStyle;

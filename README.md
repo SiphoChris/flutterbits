@@ -16,6 +16,10 @@
 
 ---
 
+![Flutterbits Banner](assets/flutterbits.png)
+
+---
+
 ## What is this?
 
 Two products in one monorepo, built so that **any [tweakcn](https://tweakcn.com)/shadcn theme you paste into a web generator becomes a working Flutter `theme.dart`** — theme portability no other Flutter UI library offers.
@@ -51,10 +55,11 @@ Flutter has no structure/style split and no CSS cascade — the widget tree *is*
 - **Color + border + radius setters (module 5)** — `bgGradient`; a directional, accumulating border (`FwBorderSpec`: uniform `border(w, {color})`, independent `borderWidth`/`borderColor` axes, per‑edge `borderS/E/T/B`); per‑corner directional radius (`rounded`/`roundedT/B/S/E`/`roundedNone`/`roundedFull`); and `clip`. Lands the content‑clip radius **deflation by border width** deferred from module 3, plus a clear assert for Flutter's "rounded borders must be uniform" limitation. Unit + LTR/RTL × light/dark goldens.
 - **Typography setters (module 6)** — `text` (color), `textSize`, `weight` (CSS `100…900` → `FontWeight`), `leading` (line‑height ×), `tracking` (letter‑spacing), `align`, and `underline`/`lineThrough` (which combine) — over module 3's `DefaultTextStyle`/`IconTheme` merge. Unit + LTR/RTL × light/dark goldens.
 - **Effects setters (module 7)** — `shadow` (theme `List<BoxShadow>`), `opacity`, `blur` (content), and `backdropBlur` — over module 3's shadow/opacity/`ImageFiltered`/`BackdropFilter` chain, with range/sign guards. Unit + light/dark goldens.
+- **Layout widgets (module 8)** — the six dedicated multi‑child widgets the single‑box `.tw` chain can't express: `FwRow`/`FwColumn` (flex with typed `gap`), `FwWrap`, `FwStack`/`FwPositioned` (directional `inset` + stable `z`‑order), and `FwGrid` (a sealed `FwFr`/`FwPx` column‑track grammar). All directional (RTL‑free), each chainable with `.tw` for box styling; `gap`/spacing use the framework's native `spacing`. (Container queries — `containerSm…` — already shipped with the module‑3 resolver.) Unit + LTR/RTL × light/dark goldens.
 
 **🚧 Next on the roadmap:**
 
-1. **Layout & the rest** — layout widgets (`FwRow`/`FwColumn`/`FwStack`/`FwGrid`) + container queries, transforms, and animated theming. (Each adds typed `.tw` setters / dedicated widgets over the already‑built resolver + render chain.)
+1. **The rest of the engine** — transforms (`scale`/`rotate`/`translate`) and animated theming (`FwAnimatedTheme`). (Each adds typed `.tw` setters / dedicated widgets over the already‑built resolver + render chain.)
 2. **`flutterbits` components**, the **registry + CLI** (`flutterbits add` / `diff`), and the **tweakcn → `theme.dart` generator**.
 
 See [`docs/superpowers/specs`](docs/superpowers/specs) for the full engine design and [`docs/superpowers/plans`](docs/superpowers/plans) for the implementation plans.
