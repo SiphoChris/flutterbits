@@ -174,16 +174,24 @@ Once the workspace holds multiple packages, **Melos** wraps the per-package comm
 
 ---
 
-## 11. Won't-do list (genuinely impossible — not merely expensive)
+## 11. Won't-do list
 
-**The bar for this list is strict (see §12 "Feasibility honesty"):** an item belongs here ONLY if it has **no faithful Flutter implementation at all** — not "needs a custom `RenderObject`," not "is a lot of code," not "needs a bespoke protocol." Cost is never grounds for this list; impossibility is. Before adding anything here you MUST state the concrete reason Flutter *cannot* express it. If the honest reason is effort, it is unfinished work, not a won't-do.
+Two — and only two — kinds of thing live here, kept strictly separate so the "impossible" bar is never used to launder a shortcut (see §12 "Feasibility honesty"). Every entry MUST name which kind it is and why.
 
-Genuinely outside Flutter's model:
+### 11a. Genuinely impossible — no faithful Flutter implementation exists
 
-- **True CSS cascade as a general mechanism** — an implicit, global "any property inherits down the tree unless overridden" cascade. Flutter has no such mechanism by design; styling is explicit. We provide the inheritances that matter as explicit `InheritedWidget`s (`DefaultTextStyle`, `IconTheme`, our token providers), and the engine documents precisely *what* inherits. (Note the nuance: a *specific* inherited property is trivially implementable — only the open-ended "everything cascades" semantics is not.)
+The bar is strict: an item belongs here ONLY if Flutter **cannot express it at all** — not "needs a custom `RenderObject`," not "is a lot of code," not "needs a bespoke protocol." Cost is never grounds for this sub-list; only impossibility is. State the concrete reason Flutter cannot express it. If the honest reason is effort, it is unfinished work, not a won't-do.
+
+- **True CSS cascade as a general mechanism** — an implicit, global "any property inherits down the tree unless overridden" cascade. Flutter has no such mechanism by design; styling is explicit. We provide the inheritances that matter as explicit `InheritedWidget`s (`DefaultTextStyle`, `IconTheme`, our token providers), and the engine documents precisely *what* inherits. (Nuance: a *specific* inherited property is trivially implementable — only the open-ended "everything cascades" semantics is not.)
 - **Pseudo-elements (`::before`/`::after`) as implicit, DOM-less content** — Flutter has no implicit content slots. The faithful idiom is explicit child composition (a helper that prepends/appends children is composition, not a pseudo-element). We do not fake implicit content.
 
-**Explicitly NOT on this list (implement them, don't apologize):** CSS Grid with `fr`/`px`/`auto`/`minmax` tracks, **column AND row tracks, cell/row spanning, and auto-placement** — all expressible with a custom grid `RenderObject` (`FwGrid`; see the grid spec). `subgrid` — implementable via a parent→child track-line-sharing protocol; build it unless a user explicitly de-scopes it. Sticky (slivers), container queries (`LayoutBuilder`), backdrop blur (`BackdropFilter`), hover/focus/keyboard — all Flutter idioms. Prefer a helper widget/`RenderObject` over a docs note. If a capability is real but not yet built, mark it **"not yet built"** with a plan — never "can't be done."
+### 11b. Feasible but deliberately de-scoped — by explicit decision, not impossibility
+
+These **could** be built (the mechanism is known and stated), but a product owner has explicitly signed off on leaving them out because the cost/benefit doesn't justify it. This is the ONLY sanctioned way to not-build something feasible (§12 "No silent scope reduction"): it requires a recorded decision and an honest "feasible, de-scoped" label — never a dishonest "impossible."
+
+- **CSS Grid `subgrid`** — *feasible* via a parent→child track-line-sharing protocol (a subgrid child reads the parent `RenderFwGrid`'s resolved track lines for the axis it subgrids; mechanism in the grid engine spec §2.4). **De-scoped for v1 by explicit decision (2026-06):** real-world `subgrid` usage is negligible, and the bespoke parent/child layout protocol is disproportionate to that demand. Documented as a known limitation on `FwGrid`; revisit only if a concrete need appears. *Everything else in CSS Grid — `fr`/`px`/`auto`/`minmax` tracks, row tracks, cell/row spanning, auto-placement, item alignment — IS built (grid engine spec).*
+
+Everything **not** in 11a or 11b is fair game and must not be refused on cost grounds: sticky (slivers), container queries (`LayoutBuilder`), backdrop blur (`BackdropFilter`), hover/focus/keyboard, and the rest of CSS Grid are all Flutter idioms. Prefer a helper widget/`RenderObject` over a docs note. If a capability is real but not yet built, mark it **"not yet built"** with a plan — never "can't be done."
 
 ---
 

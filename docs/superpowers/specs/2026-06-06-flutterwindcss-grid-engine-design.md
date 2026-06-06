@@ -12,9 +12,9 @@
 | **Cell/row spanning (`grid-column`/`grid-row`)** | "needs a custom RenderObject → out of v1" | needs a custom `RenderObject` — which is normal Flutter, not impossible | **BUILD** |
 | **Auto-placement (sparse + dense)** | out of scope | a pure-logic packing algorithm (CSS §8) | **BUILD** |
 | **Item + self alignment (justify/align items/self)** | out of scope | offset/size each child within its cell rect | **BUILD** |
-| **`subgrid`** | "out of v1" | possible via a parent→child track-line-sharing protocol; the hardest piece | **BUILD (phase 2)** — if a phase can't land correctly it is marked "not yet built — large", never "impossible" |
+| **`subgrid`** | "out of v1" | possible via a parent→child track-line-sharing protocol; the hardest piece | **DE-SCOPED (not built)** — *feasible*, but deliberately left out for v1 by explicit decision (negligible real-world usage); AGENTS.md §11b. Documented as a known `FwGrid` limitation, **not** as "impossible". |
 
-**Nothing here is impossible in Flutter.** A `RenderBox` with `ContainerRenderObjectMixin` can express arbitrary 2-D layout; `RenderFlex`/`RenderWrap`/`RenderTable` are existing proofs. The only genuine grid Non-Goal would be something with no Flutter expression — there is none in CSS Grid Level 1. (CSS masonry / `grid-template-areas` string parsing are sugar we can add later; not impossible either.)
+**Nothing here is impossible in Flutter.** A `RenderBox` with `ContainerRenderObjectMixin` can express arbitrary 2-D layout; `RenderFlex`/`RenderWrap`/`RenderTable` are existing proofs. Subgrid is the one item we *choose* not to build for v1 (cost ≫ demand), recorded honestly as a de-scope (AGENTS.md §11b), never as a limitation of the framework. (CSS masonry / `grid-template-areas` string parsing are sugar we can add later; not impossible either.)
 
 ## 2. Architecture
 
@@ -69,9 +69,11 @@ Rows reuse the identical track-sizing function on the cross axis; implicit rows 
 
 `FwGridAlign { stretch, start, end, center }` (directional: `start`/`end` resolve against `TextDirection` on the inline axis). Grid-level `alignItems`/`justifyItems` default `stretch`; per-item `alignSelf`/`justifySelf` override. (Content-distribution `align/justifyContent` for the case where tracks underflow the container is a **named follow-on** — mechanism: offset/space the track origins; listed here so it is a known, scoped capability, not a silent omission.)
 
-### 2.4 `subgrid` (phase 2)
+### 2.4 `subgrid` — DE-SCOPED for v1 (feasible, deliberately not built)
 
-A child `FwGrid(subgridColumns: true)` placed spanning *k* parent columns adopts the parent's *k* resolved column track lines instead of its own `columns`. **Mechanism:** `RenderFwGrid` exposes its resolved track offsets; a subgrid child reads the parent `RenderFwGrid` via `parent is RenderFwGrid` during layout and uses the slice of track lines covering its placement. This is a bespoke but bounded parent→child protocol (the genuinely hard part). It builds on §2.2 and lands after the core is correct and tested. If it cannot be made correct in a sitting, it is recorded **"not yet built — large (mechanism above)"**, never "impossible".
+`subgrid` is **feasible**: a child `FwGrid(subgridColumns: true)` placed spanning *k* parent columns would adopt the parent's *k* resolved column track lines instead of its own `columns`. **Mechanism:** `RenderFwGrid` exposes its resolved track offsets; a subgrid child reads the parent `RenderFwGrid` via `parent is RenderFwGrid` during layout and uses the slice of track lines covering its placement — a bespoke but bounded parent→child layout protocol.
+
+**Decision (2026-06, explicit sign-off):** we do **not** build it for v1. Real-world `subgrid` usage is negligible and the protocol's cost is disproportionate to that demand (AGENTS.md §11b). This is recorded as a **documented `FwGrid` limitation** — a deliberate de-scope, *not* a framework limitation and *not* "impossible". The doc-comment on `FwGrid` and the engine-spec grid row state it plainly so a developer knows it is unavailable and why. Revisit only on concrete demand.
 
 ## 3. Compatibility & migration
 
@@ -82,13 +84,12 @@ A child `FwGrid(subgridColumns: true)` placed spanning *k* parent columns adopts
 
 - **Unit (`RenderFwGrid`):** track sizing for every track type and mix (fr/px/auto/minmax), unbounded-width fr fallback, gap math, span clamping, sparse vs dense placement, explicit placement + collision with auto items, implicit-row growth, per-axis independence.
 - **Widget:** `FwGridItem` span renders across the right cells; `stretch` vs `start/center/end` self-alignment; RTL mirrors column order and `start` alignment (executable geometry via `getRect`, not only goldens — per the test-audit lesson).
-- **Golden:** a spanning + auto-placement + mixed-track scene, light/dark × LTR/RTL; a `minmax`/`auto` scene; (phase 2) a subgrid scene. Plus the regenerated M8 equivalence golden.
+- **Golden:** a spanning + auto-placement + mixed-track scene, light/dark × LTR/RTL; a `minmax`/`auto` scene. Plus the regenerated M8 equivalence golden. (No subgrid golden — de-scoped, §2.4.)
 
 ## 5. Delivery sequence (each phase: impl + unit + golden + analyzer-clean, no stubs)
 
 1. **Track model + `RenderFwGrid` skeleton** — `FwAuto`/`FwMinMax`, parent data, `FwGridItem`, the widget→render wiring; layout for **px/fr/auto** single-span items (replaces M8 internals at parity). 
 2. **Spanning + explicit placement + auto-placement (sparse+dense)** — the placement algorithm + multi-track sizing distribution.
 3. **`minmax` + alignment (items/self)** — clamp + cell alignment.
-4. **`subgrid`** — the parent track-line protocol (or the honest "not yet built — large" record).
 
-Phases land in order; the engine spec §6.6 + §12 grid row + AGENTS.md §11 are updated as each lands (no-drift).
+`subgrid` is **de-scoped** (§2.4) — not a phase. Phases land in order; the engine spec §6.6 + §12 grid row + AGENTS.md §11 are updated as each lands (no-drift), and the `FwGrid` doc-comment records the subgrid de-scope as a known limitation from phase 1.
