@@ -749,6 +749,12 @@ void main() {
 
 ---
 
+## As-built note (recorded post-TDD)
+
+One thing this plan did not anticipate, discovered while generating the Task 6 golden:
+
+- **Flutter cannot paint a per-side (directional) border with a `borderRadius`** — `BorderDirectional.paint` asserts `borderRadius == null`. So a chain like `.borderS(...).borderE(...).rounded(...)` crashes in Flutter's painter. Handled (extra TDD micro-cycle on `render_chain_test`, committed alongside Task 5): `ResolvedStyle.build` now raises a **clear debug `assert`** for `border is BorderDirectional && borderRadius != null` ("use a uniform border when rounding, or drop the radius"), turning a cryptic paint-time crash into an early, actionable error. The content **clip** still rounds freely under a per-side border; only the decoration stroke is constrained. Per-side *rounded* borders would need a custom `RenderObject` — out of v1 scope. The Task 6 golden was therefore changed from a per-side border to a **uniform** `border(2, color:)` + directional `roundedS` (which still mirrors under RTL) so it exercises a paintable combination. Recorded in engine spec §6.4 (Finding #3/#5) and §12 row 5.
+
 ## Self-review (spec coverage)
 
 - §6.5 `bgGradient` → Task 3. ✅

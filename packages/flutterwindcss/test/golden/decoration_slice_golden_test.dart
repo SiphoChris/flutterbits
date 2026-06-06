@@ -23,8 +23,7 @@ Widget _frame(FwTokens tokens, TextDirection dir, Widget child) => FwTheme(
 
 Widget _box(BuildContext context) {
   final c = context.fw.colors;
-  return SizedBox.shrink()
-      .tw
+  return const SizedBox.shrink().tw
       .w(28)
       .h(20)
       .bg(c.card)
@@ -35,7 +34,7 @@ Widget _box(BuildContext context) {
 
 void main() {
   testWidgets('decoration slice — light LTR', (t) async {
-    await t.pumpWidget(_frame(FwTokens.light, TextDirection.ltr, Builder(builder: _box)));
+    await t.pumpWidget(_frame(FwTokens.light, TextDirection.ltr, const Builder(builder: _box)));
     await expectLater(
       find.byType(FwStyled).first,
       matchesGoldenFile('goldens/decoration_light_ltr.png'),
@@ -43,7 +42,7 @@ void main() {
   });
 
   testWidgets('decoration slice — dark RTL (start border + start radius mirror)', (t) async {
-    await t.pumpWidget(_frame(FwTokens.dark, TextDirection.rtl, Builder(builder: _box)));
+    await t.pumpWidget(_frame(FwTokens.dark, TextDirection.rtl, const Builder(builder: _box)));
     await expectLater(
       find.byType(FwStyled).first,
       matchesGoldenFile('goldens/decoration_dark_rtl.png'),

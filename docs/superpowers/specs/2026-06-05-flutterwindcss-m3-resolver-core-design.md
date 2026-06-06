@@ -186,10 +186,10 @@ ways — each stricter/more correct, each now reflected in the engine spec:
    the first cut over-triggered on any state condition.)
 
 **Deferrals (tracked, not silent):**
-- **Content-clip radius deflation by border width (Finding #3)** → **module 5**. It is
-  coupled to the border width that module 5 introduces and was untestable in module 3
-  (no `.border`/`.rounded`/`.clip` setters ship here). Until then the chain emits the
-  content clip without deflation. Recorded on the engine spec §6.4 Finding #3 and the
-  module 5 row.
+- **Content-clip radius deflation by border width (Finding #3)** → **landed in module 5**
+  (✅ done). It was coupled to the border width module 5 introduces and untestable in
+  module 3 (no `.border`/`.rounded`/`.clip` setters shipped here). Module 5 now deflates
+  each content-clip corner by its adjacent per-edge border widths; with no border the
+  un-deflated radius is used. See engine spec §6.4 Finding #3 and the module 5 row.
 - **Opacity fold (Finding #11)** → deferred **perf** optimization. Module 3 always emits a
   true `Opacity` (always correct); the fold lands later behind the same tests.

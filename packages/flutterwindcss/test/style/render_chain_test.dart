@@ -117,10 +117,7 @@ void main() {
     // painter. The engine turns that into a clear, early assert.
     expect(
       () => const ResolvedStyle(
-        border: BorderDirectional(
-          start: BorderSide(width: 4),
-          end: BorderSide(width: 1),
-        ),
+        border: BorderDirectional(start: BorderSide(width: 4), end: BorderSide(width: 1)),
         borderRadius: BorderRadiusDirectional.all(Radius.circular(8)),
       ).build(const SizedBox()),
       throwsAssertionError,

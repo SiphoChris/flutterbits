@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutterwindcss/src/style/fw_border_spec.dart';
 import 'package:flutterwindcss/src/style/fw_style.dart';
 
 const _c = Color(0xFF112233);

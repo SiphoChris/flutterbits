@@ -12,10 +12,11 @@ import 'fw_style.dart';
 ///
 /// Module 3 shipped the **padding + bg** base setters (the engine's test
 /// vehicle, module design §1) plus the **complete** variant/responsive/container
-/// surface. Module 4 adds the **spacing + sizing** setters (margin, fixed/min/max
-/// sizing, fractional sizing + alignment, aspect/square). Modules 5–9 extend this
-/// mixin with the remaining base setters (color/border/radius, typography,
-/// effects, transforms).
+/// surface. Module 4 added the **spacing + sizing** setters (margin, fixed/min/max
+/// sizing, fractional sizing + alignment, aspect/square). Module 5 added the
+/// **color/border/radius** setters (gradient, per-edge directional border,
+/// per-corner directional radius, clip). Modules 6–9 extend this mixin with the
+/// remaining base setters (typography, effects, transforms).
 mixin FwStyleOps<T> {
   /// The current accumulated style.
   FwStyle get fwStyle;
@@ -224,7 +225,9 @@ mixin FwStyleOps<T> {
 
   /// Border on the bottom edge; merges with the other edges.
   T borderB({double? width, Color? color}) => fwRebuild(
-    fwStyle.copyWith(borderSpec: _borderSpec.merge(bottom: _edge(_borderSpec.bottom, width, color))),
+    fwStyle.copyWith(
+      borderSpec: _borderSpec.merge(bottom: _edge(_borderSpec.bottom, width, color)),
+    ),
   );
 
   // ---- Radius (per-corner merge; directional) ----
@@ -248,8 +251,9 @@ mixin FwStyleOps<T> {
   }
 
   /// Rounds every corner to [radius] logical px (overwrites all corners, last-wins).
-  T rounded(double radius) =>
-      fwRebuild(fwStyle.copyWith(borderRadius: BorderRadiusDirectional.all(Radius.circular(radius))));
+  T rounded(double radius) => fwRebuild(
+    fwStyle.copyWith(borderRadius: BorderRadiusDirectional.all(Radius.circular(radius))),
+  );
 
   /// Explicit synonym of [rounded] (the spec's named `roundedAll` surface).
   T roundedAll(double radius) => rounded(radius);
@@ -257,7 +261,10 @@ mixin FwStyleOps<T> {
   /// Rounds the top corners (topStart + topEnd); merges per-corner.
   T roundedT(double radius) => fwRebuild(
     fwStyle.copyWith(
-      borderRadius: _mergeRadius(topStart: Radius.circular(radius), topEnd: Radius.circular(radius)),
+      borderRadius: _mergeRadius(
+        topStart: Radius.circular(radius),
+        topEnd: Radius.circular(radius),
+      ),
     ),
   );
 
