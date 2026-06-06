@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../tokens/scales.dart';
+import 'fw_border_spec.dart';
 import 'fw_layer.dart';
 import 'fw_style.dart';
 
@@ -152,6 +153,79 @@ mixin FwStyleOps<T> {
 
   /// Solid background fill (last-wins).
   T bg(Color color) => fwRebuild(fwStyle.copyWith(background: color));
+
+  // ---- Gradient ----
+
+  /// Gradient background fill (replaces a solid [bg] when both are set; the
+  /// render chain prefers the gradient). Last-wins.
+  T bgGradient(Gradient gradient) => fwRebuild(fwStyle.copyWith(gradient: gradient));
+
+  // ---- Border (per-edge merge; color & width are independent axes) ----
+  //
+  // Widths are in **logical px** (Tailwind's 0/1/2/4/8 `fwBorderWidths` scale),
+  // NOT utility units — borders ride the border-width scale, not spacing. An edge
+  // paints only when width > 0; color defaults to BorderSide's opaque black until
+  // set (components pass `context.fw.colors.border`).
+
+  FwBorderSpec get _borderSpec => fwStyle.borderSpec ?? const FwBorderSpec();
+
+  BorderSide _withWidth(BorderSide? s, double width) =>
+      (s ?? const BorderSide()).copyWith(width: width, style: BorderStyle.solid);
+
+  BorderSide _withColor(BorderSide? s, Color color) =>
+      (s ?? const BorderSide(width: 0)).copyWith(color: color, style: BorderStyle.solid);
+
+  FwBorderSpec _borderEach(BorderSide Function(BorderSide?) f) {
+    final b = _borderSpec;
+    return FwBorderSpec(start: f(b.start), end: f(b.end), top: f(b.top), bottom: f(b.bottom));
+  }
+
+  BorderSide _edge(BorderSide? existing, double? width, Color? color) {
+    var s = (existing ?? const BorderSide(width: 0)).copyWith(style: BorderStyle.solid);
+    if (width != null) s = s.copyWith(width: width);
+    if (color != null) s = s.copyWith(color: color);
+    return s;
+  }
+
+  /// Uniform border of [width] logical px on every edge (plus [color] if given).
+  /// Tailwind's bare `border` is `border(1)`.
+  T border(double width, {Color? color}) => fwRebuild(
+    fwStyle.copyWith(
+      borderSpec: _borderEach((s) {
+        var side = _withWidth(s, width);
+        if (color != null) side = side.copyWith(color: color);
+        return side;
+      }),
+    ),
+  );
+
+  /// Sets the border [width] (logical px) on every edge, keeping each edge color.
+  T borderWidth(double width) =>
+      fwRebuild(fwStyle.copyWith(borderSpec: _borderEach((s) => _withWidth(s, width))));
+
+  /// Sets the border [color] on every edge, keeping each edge width.
+  T borderColor(Color color) =>
+      fwRebuild(fwStyle.copyWith(borderSpec: _borderEach((s) => _withColor(s, color))));
+
+  /// Border on the start edge (RTL-aware); merges with the other edges.
+  T borderS({double? width, Color? color}) => fwRebuild(
+    fwStyle.copyWith(borderSpec: _borderSpec.merge(start: _edge(_borderSpec.start, width, color))),
+  );
+
+  /// Border on the end edge (RTL-aware); merges with the other edges.
+  T borderE({double? width, Color? color}) => fwRebuild(
+    fwStyle.copyWith(borderSpec: _borderSpec.merge(end: _edge(_borderSpec.end, width, color))),
+  );
+
+  /// Border on the top edge; merges with the other edges.
+  T borderT({double? width, Color? color}) => fwRebuild(
+    fwStyle.copyWith(borderSpec: _borderSpec.merge(top: _edge(_borderSpec.top, width, color))),
+  );
+
+  /// Border on the bottom edge; merges with the other edges.
+  T borderB({double? width, Color? color}) => fwRebuild(
+    fwStyle.copyWith(borderSpec: _borderSpec.merge(bottom: _edge(_borderSpec.bottom, width, color))),
+  );
 
   // ---- Variant layering ----
 
