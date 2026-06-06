@@ -72,4 +72,54 @@ void main() {
   test('negative inset asserts', () {
     expect(() => FwPositioned(start: -1, child: const SizedBox()), throwsAssertionError);
   });
+
+  test('FwPositionedPatch asserts non-negative inset', () {
+    expect(() => FwPositionedPatch(top: -1), throwsAssertionError);
+  });
+
+  group('responsive', () {
+    Widget frameViewport(double width, Widget child) => MediaQuery(
+      data: MediaQueryData(size: Size(width, 600)),
+      child: Directionality(textDirection: TextDirection.ltr, child: child),
+    );
+
+    testWidgets('FwPositioned inset is overridden at the breakpoint', (t) async {
+      const stack = FwStack(
+        children: [
+          FwPositioned(
+            start: 1,
+            top: 1,
+            viewport: {FwBreakpoint.md: FwPositionedPatch(start: 5, top: 6)},
+            child: SizedBox(),
+          ),
+        ],
+      );
+      await t.pumpWidget(frameViewport(500, stack)); // below md
+      var pos = t.widget<PositionedDirectional>(find.byType(PositionedDirectional));
+      expect(pos.start, 4.0); // inset 1 × 4
+      expect(pos.top, 4.0);
+      await t.pumpWidget(frameViewport(800, stack)); // at md
+      pos = t.widget<PositionedDirectional>(find.byType(PositionedDirectional));
+      expect(pos.start, 20.0); // inset 5 × 4
+      expect(pos.top, 24.0); // inset 6 × 4
+    });
+
+    testWidgets('FwStack alignment is overridden at the breakpoint', (t) async {
+      const stack = FwStack(
+        viewport: {FwBreakpoint.md: FwStackPatch(alignment: AlignmentDirectional.center)},
+        children: [SizedBox()],
+      );
+      await t.pumpWidget(frameViewport(500, stack));
+      expect(t.widget<Stack>(find.byType(Stack)).alignment, AlignmentDirectional.topStart);
+      await t.pumpWidget(frameViewport(800, stack));
+      expect(t.widget<Stack>(find.byType(Stack)).alignment, AlignmentDirectional.center);
+    });
+
+    testWidgets('a fully static stack inserts no LayoutBuilder', (t) async {
+      await t.pumpWidget(
+        frameViewport(800, const FwStack(children: [SizedBox()])),
+      );
+      expect(find.byType(LayoutBuilder), findsNothing);
+    });
+  });
 }
