@@ -316,6 +316,52 @@ mixin FwStyleOps<T> {
   /// radius it clips to the rectangle (it never silently no-ops).
   T clip([Clip behavior = Clip.antiAlias]) => fwRebuild(fwStyle.copyWith(clipBehavior: behavior));
 
+  // ---- Typography ----
+  //
+  // Setters take clean, collision-free names (the FwStyle fields already own
+  // `fontSize`/`fontWeight`/`textAlign`, and FwStyle mixes in these ops). Sizes
+  // are logical px; `leading` is a line-height multiple; `tracking` is absolute
+  // logical px (Flutter's model), NOT em — to use the em-based FwTracking scale,
+  // multiply by the font size, e.g. `tracking(FwTracking.wide * FwFontSize.base.px)`.
+
+  /// Default text/icon color for descendants (Tailwind `text-{color}`).
+  T text(Color color) => fwRebuild(fwStyle.copyWith(foreground: color));
+
+  /// Default font size in logical px (Tailwind `text-{size}`); also sets icon
+  /// size. Pass a token value like `FwFontSize.lg.px`. Must be `> 0`.
+  T textSize(double px) {
+    assert(px > 0, 'flutterwindcss: font size must be > 0 (got $px).');
+    return fwRebuild(fwStyle.copyWith(fontSize: px));
+  }
+
+  /// Default font weight on the CSS scale `100..900` (Tailwind `font-{weight}`);
+  /// pass a token like `FwFontWeight.semibold`. Maps to a Flutter [FontWeight].
+  T weight(int weight) {
+    assert(
+      weight >= 100 && weight <= 900 && weight % 100 == 0,
+      'flutterwindcss: font weight must be 100..900 in steps of 100 (got $weight).',
+    );
+    return fwRebuild(fwStyle.copyWith(fontWeight: FontWeight.values[(weight ~/ 100) - 1]));
+  }
+
+  /// Default line-height as a multiple of the font size (Tailwind `leading-*`);
+  /// pass a token like `FwLeading.normal`. Must be `> 0`.
+  T leading(double multiple) {
+    assert(
+      multiple > 0,
+      'flutterwindcss: leading (line-height multiple) must be > 0 (got $multiple).',
+    );
+    return fwRebuild(fwStyle.copyWith(lineHeight: multiple));
+  }
+
+  /// Default letter-spacing in **absolute logical px** (Flutter's model;
+  /// Tailwind/`FwTracking` are em — multiply by the font size to convert). May be
+  /// negative (tighter tracking).
+  T tracking(double logicalPx) => fwRebuild(fwStyle.copyWith(letterSpacing: logicalPx));
+
+  /// Default text alignment (Tailwind `text-{align}`); `start`/`end` are RTL-aware.
+  T align(TextAlign align) => fwRebuild(fwStyle.copyWith(textAlign: align));
+
   // ---- Variant layering ----
 
   T _layer(FwCondition condition, FwStyle Function(FwStyle) build) =>

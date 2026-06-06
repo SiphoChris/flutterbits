@@ -64,6 +64,8 @@ These encode hard-won decisions. Violating any of them is a review failure.
 
 8. **Color API:** use `Color.withValues(alpha: ...)`. Never `withOpacity` (deprecated).
 
+9. **Any genuine limitation** should be noted in the docs so that devs are aware of what they can't do. Explicitly guard and assert against things that the dev can't or shouldnt do.
+
 ---
 
 ## 4. Coding conventions (Dart)
@@ -195,6 +197,7 @@ Everything else — sticky (slivers), container queries (`LayoutBuilder`), backd
 - **Surface assumptions.** If a task is ambiguous (which variant set? which platforms?), state the assumption you made inline rather than guessing silently.
 - **Never weaken the rules in §3 to make a task pass.** If a rule blocks you, stop and flag it — don't import Material, don't hardcode a color, don't nest wrappers to ship faster.
 - **Definition of done** = matches §6 (components) or compiles+tested+documented (everything else), analyzer clean, goldens reviewed.
+- Any genuine limitation should be noted in the docs so that devs are aware of what they can't do. Explicitly guard and assert against things that the dev can't or shouldnt do.
 
 ---
 
