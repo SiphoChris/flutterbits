@@ -3,11 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutterwindcss/flutterwindcss.dart';
 
 // Golden slice for the module 5 color/border/radius setters. The box carries a
-// semantic background, a thick **start** border + thin **end** border (so RTL
-// mirrors them), start-corner rounding, and an antialias clip (exercising the
-// Finding #3 radius deflation) — proving the typed decoration setters drive the
-// directional render chain end-to-end. Local generation is non-authoritative;
-// CI (Linux, pinned font) is the source of truth for these bytes (spec §10).
+// semantic background, a uniform border, **start-corner** rounding (so RTL
+// mirrors the rounded corners to the opposite side), and an antialias clip
+// (exercising the Finding #3 radius deflation) — proving the typed decoration
+// setters drive the directional render chain end-to-end. A uniform border is
+// used because Flutter rounds a border only when every edge is uniform (per-side
+// border + radius asserts; see render_chain_test). Local generation is
+// non-authoritative; CI (Linux, pinned font) is the source of truth (spec §10).
 Widget _frame(FwTokens tokens, TextDirection dir, Widget child) => FwTheme(
   tokens: tokens,
   child: Directionality(
@@ -26,8 +28,7 @@ Widget _box(BuildContext context) {
       .w(28)
       .h(20)
       .bg(c.card)
-      .borderS(width: 4, color: c.ring)
-      .borderE(width: 1, color: c.border)
+      .border(2, color: c.border)
       .roundedS(context.fw.radii.lg)
       .clip();
 }
