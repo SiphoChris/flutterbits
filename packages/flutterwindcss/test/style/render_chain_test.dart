@@ -111,6 +111,34 @@ void main() {
     expect(radius.topStart, const Radius.circular(r - w));
   });
 
+  test('per-side (directional) border + radius asserts in debug (Flutter cannot paint it)', () {
+    // Flutter paints a rounded border only when every edge is uniform; a
+    // BorderDirectional with differing edges + borderRadius crashes in its
+    // painter. The engine turns that into a clear, early assert.
+    expect(
+      () => const ResolvedStyle(
+        border: BorderDirectional(
+          start: BorderSide(width: 4),
+          end: BorderSide(width: 1),
+        ),
+        borderRadius: BorderRadiusDirectional.all(Radius.circular(8)),
+      ).build(const SizedBox()),
+      throwsAssertionError,
+    );
+  });
+
+  testWidgets('uniform border + radius paints fine (no assert)', (t) async {
+    await _pump(
+      t,
+      ResolvedStyle(
+        border: Border.all(width: 2),
+        borderRadius: const BorderRadiusDirectional.all(Radius.circular(8)),
+        background: const Color(0xFF112233),
+      ),
+    );
+    expect(find.byType(DecoratedBox), findsOneWidget);
+  });
+
   testWidgets('content clip without a border uses the un-deflated radius', (t) async {
     await _pump(
       t,

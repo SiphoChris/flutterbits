@@ -16,6 +16,18 @@ extension ResolvedStyleBuild on ResolvedStyle {
   /// content-blur → opacity → shadow(unclipped) → surface(backdrop?+decoration)
   /// → content-clip → padding → text/icon defaults → child`.
   Widget build(Widget child) {
+    // Flutter paints a rounded border only when every edge shares one color and
+    // width (a uniform `Border`); a per-side `BorderDirectional` + `borderRadius`
+    // crashes deep in the painter. Surface that as a clear, early assert instead
+    // (spec §6.4 Finding #5). The content clip below may still round freely — the
+    // limitation is only the decoration's stroke, not the clip.
+    assert(
+      !(border is BorderDirectional && borderRadius != null),
+      'flutterwindcss: a border radius cannot be combined with a per-side '
+      '(directional) border — Flutter rounds a border only when every edge shares '
+      'one color and width. Use a uniform border when rounding, or drop the radius.',
+    );
+
     Widget current = child;
 
     // Inner: default text/icon styling for descendants.
