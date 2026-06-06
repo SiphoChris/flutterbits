@@ -11,6 +11,7 @@ library;
 
 // Styling engine (Module 3). resolve/ResolvedStyle/the render chain are engine
 // internals (consumers never call them directly), so they are not exported.
+export 'src/style/fw_border_spec.dart';
 export 'src/style/fw_layer.dart';
 export 'src/style/fw_style.dart';
 export 'src/style/fw_style_ops.dart';
