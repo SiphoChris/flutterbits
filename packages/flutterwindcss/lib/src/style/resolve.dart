@@ -58,9 +58,9 @@ extension FwStyleResolve on FwStyle {
       opacity: merged.groupOpacity,
       blur: merged.contentBlur,
       backdropBlur: merged.backdropBlurSigma,
-      scale: merged.scale,
+      scale: merged.scaleFactor,
       rotation: merged.rotation,
-      translate: merged.translate,
+      translate: merged.translation,
       clipBehavior: merged.clipBehavior,
     );
   }
@@ -115,8 +115,8 @@ FwStyle _overlay(FwStyle base, FwStyle top) => base.copyWith(
   groupOpacity: top.groupOpacity,
   contentBlur: top.contentBlur,
   backdropBlurSigma: top.backdropBlurSigma,
-  scale: top.scale,
+  scaleFactor: top.scaleFactor,
   rotation: top.rotation,
-  translate: top.translate,
+  translation: top.translation,
   clipBehavior: top.clipBehavior,
 );

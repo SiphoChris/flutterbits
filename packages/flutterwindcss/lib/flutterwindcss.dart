@@ -24,8 +24,9 @@ export 'src/style/fw_style.dart';
 export 'src/style/fw_style_ops.dart';
 export 'src/style/fw_styled.dart';
 
-// Theme access (Module 2).
+// Theme access (Module 2) + animated theming (Module 10).
 export 'src/theme/context_fw.dart';
+export 'src/theme/fw_animated_theme.dart';
 export 'src/theme/fw_theme.dart';
 export 'src/theme/fw_theme_extension.dart';
 

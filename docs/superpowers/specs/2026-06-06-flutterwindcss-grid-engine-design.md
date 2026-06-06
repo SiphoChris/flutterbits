@@ -67,7 +67,7 @@ Rows reuse the identical track-sizing function on the cross axis; implicit rows 
 
 ### 2.3 Alignment vocabulary
 
-`FwGridAlign { stretch, start, end, center }` (directional: `start`/`end` resolve against `TextDirection` on the inline axis). Grid-level `alignItems`/`justifyItems` default `stretch`; per-item `alignSelf`/`justifySelf` override. (Content-distribution `align/justifyContent` for the case where tracks underflow the container is a **named follow-on** — mechanism: offset/space the track origins; listed here so it is a known, scoped capability, not a silent omission.)
+`FwGridAlign { stretch, start, end, center }` (directional: `start`/`end` resolve against `TextDirection` on the inline axis). Grid-level `alignItems`/`justifyItems` default `stretch`; per-item `alignSelf`/`justifySelf` override. **Content-distribution** `FwGridDistribute { start, end, center, spaceBetween, spaceAround, spaceEvenly }` (`justifyContent`/`alignContent`, default `start`) distributes *spare* space between tracks when they underflow a bounded axis with no `fr` track (an `fr` absorbs spare, so distribution is a no-op then) — mechanism: offset/space the track origins by the leftover. Inline distribution is inline-end aware under RTL. **Built.**
 
 ### 2.4 `subgrid` — DE-SCOPED for v1 (feasible, deliberately not built)
 
@@ -94,4 +94,4 @@ Rows reuse the identical track-sizing function on the cross axis; implicit rows 
 
 **All three landed** (2026-06): one `RenderFwGrid` covering px/fr/auto/minmax tracks (both axes), spanning, explicit + sparse/dense auto-placement, item/self alignment, RTL, and the responsive `FwGridPatch` surface. Unit: `fw_grid_test` (geometry-based — 19 cases). Golden: `grid_slice` (spanning + px/fr/auto, light/dark × LTR/RTL) + the unchanged M8 `layout_slice`/`layout_responsive`.
 
-**Not built (both honest, neither "impossible"):** `subgrid` — de-scoped (§2.4, AGENTS.md §11b); **content-distribution alignment** (`justify`/`align-content` for track underflow) — *not yet built* (mechanism: offset/space the track origins; rarely needed since `fr` absorbs spare space), recorded on the `FwGrid` doc-comment. Engine spec §6.6 + §12 grid row + AGENTS.md §11 updated (no-drift).
+**Content-distribution** (`justifyContent`/`alignContent`, the `FwGridDistribute` set) **was subsequently built** (§2.3) — so the only thing not built is **`subgrid`**, de-scoped by explicit decision (§2.4, AGENTS.md §11b). Engine spec §6.6 + §12 grid row + AGENTS.md §11 updated (no-drift).

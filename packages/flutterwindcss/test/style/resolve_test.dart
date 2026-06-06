@@ -81,6 +81,28 @@ void main() {
     expect(style.resolve(<WidgetState>{WidgetState.hovered}, viewportWidth: 500).background, _a);
   });
 
+  test('the OTHER nesting order hover:md resolves jointly too', () {
+    // hover((h) => h.md(...)) — a viewport condition nested under a state — must
+    // also require BOTH (symmetry with md:hover above; the flatten recursion is
+    // order-independent).
+    final style = const FwStyle().bg(_a).hover((h) => h.md((m) => m.bg(_b)));
+    expect(style.resolve(<WidgetState>{WidgetState.hovered}, viewportWidth: 800).background, _b);
+    // hover but narrow viewport -> base (inner md unsatisfied)
+    expect(style.resolve(<WidgetState>{WidgetState.hovered}, viewportWidth: 500).background, _a);
+    // wide viewport but not hovered -> base (outer hover unsatisfied)
+    expect(style.resolve(const <WidgetState>{}, viewportWidth: 800).background, _a);
+  });
+
+  test('container layer overrides a viewport layer at the same breakpoint+field', () {
+    // Both md, same field; container is the more specific context and is applied
+    // after viewport in resolution, so it wins when both match.
+    final style = const FwStyle().bg(_a).md((m) => m.bg(_b)).containerMd((m) => m.bg(_c));
+    expect(
+      style.resolve(const <WidgetState>{}, viewportWidth: 800, containerWidth: 800).background,
+      _c,
+    );
+  });
+
   // _overlay (resolve.dart) overlays ~28 fields; a regression that dropped any
   // single field from that list would otherwise pass the whole suite (the rest of
   // resolve_test exercises `background` only). This sets a distinct BASE and a
@@ -119,9 +141,9 @@ void main() {
       groupOpacity: 0.5,
       contentBlur: 2,
       backdropBlurSigma: 2,
-      scale: 1,
+      scaleFactor: 1,
       rotation: 0.1,
-      translate: const Offset(1, 1),
+      translation: const Offset(1, 1),
       clipBehavior: Clip.antiAlias,
     );
     final over = const FwStyle().copyWith(
@@ -152,9 +174,9 @@ void main() {
       groupOpacity: 0.25,
       contentBlur: 4,
       backdropBlurSigma: 4,
-      scale: 2,
+      scaleFactor: 2,
       rotation: 0.2,
-      translate: const Offset(2, 2),
+      translation: const Offset(2, 2),
       clipBehavior: Clip.hardEdge,
     );
     final r = base.addLayer(const FwStateCondition(WidgetState.hovered), over).resolve(

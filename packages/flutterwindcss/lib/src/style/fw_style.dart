@@ -46,9 +46,9 @@ class FwStyle with FwStyleOps<FwStyle> {
     this.groupOpacity,
     this.contentBlur,
     this.backdropBlurSigma,
-    this.scale,
+    this.scaleFactor,
     this.rotation,
-    this.translate,
+    this.translation,
     this.clipBehavior,
     this.layers = const <FwLayer>[],
   });
@@ -145,21 +145,30 @@ class FwStyle with FwStyleOps<FwStyle> {
   /// Backdrop blur sigma (logical px); written by the `backdropBlur` setter.
   final double? backdropBlurSigma;
 
-  // Transform (paint-only).
-  /// Uniform scale factor.
-  final double? scale;
+  // Transform (paint-only). Field names differ from the Tailwind-natural `.tw`
+  // setters (`scale`/`translate`) so the mixin can own those names (as with the
+  // M7 effect fields); `ResolvedStyle` keeps the terse render-chain names.
+  /// Uniform scale factor (set by the `scale` setter).
+  final double? scaleFactor;
 
-  /// Rotation in radians.
+  /// Rotation in radians (set by the `rotate` setter, which takes degrees).
   final double? rotation;
 
-  /// Translation offset.
-  final Offset? translate;
+  /// Translation offset in logical px (set by `translate`/`translateX/Y`).
+  final Offset? translation;
 
   // Overflow.
   /// Content clip behavior.
   final Clip? clipBehavior;
 
   /// Nested variant layers, in declaration order.
+  ///
+  /// **Layers are additive / override-only** (Tailwind-faithful): a matching
+  /// layer can *set* a field but cannot *unset* a base field back to its default
+  /// — resolution overlays via `copyWith`, where a `null` field means "keep". So
+  /// `bg(c).hover((h) => …)` can change the background on hover but no variant can
+  /// remove a base utility. This is a deliberate limitation of the accumulator
+  /// model, not a bug.
   final List<FwLayer> layers;
 
   @override
@@ -199,9 +208,9 @@ class FwStyle with FwStyleOps<FwStyle> {
     double? groupOpacity,
     double? contentBlur,
     double? backdropBlurSigma,
-    double? scale,
+    double? scaleFactor,
     double? rotation,
-    Offset? translate,
+    Offset? translation,
     Clip? clipBehavior,
     List<FwLayer>? layers,
   }) {
@@ -233,9 +242,9 @@ class FwStyle with FwStyleOps<FwStyle> {
       groupOpacity: groupOpacity ?? this.groupOpacity,
       contentBlur: contentBlur ?? this.contentBlur,
       backdropBlurSigma: backdropBlurSigma ?? this.backdropBlurSigma,
-      scale: scale ?? this.scale,
+      scaleFactor: scaleFactor ?? this.scaleFactor,
       rotation: rotation ?? this.rotation,
-      translate: translate ?? this.translate,
+      translation: translation ?? this.translation,
       clipBehavior: clipBehavior ?? this.clipBehavior,
       layers: layers ?? this.layers,
     );
@@ -275,9 +284,9 @@ class FwStyle with FwStyleOps<FwStyle> {
       groupOpacity == other.groupOpacity &&
       contentBlur == other.contentBlur &&
       backdropBlurSigma == other.backdropBlurSigma &&
-      scale == other.scale &&
+      scaleFactor == other.scaleFactor &&
       rotation == other.rotation &&
-      translate == other.translate &&
+      translation == other.translation &&
       clipBehavior == other.clipBehavior &&
       listEquals(layers, other.layers);
 
@@ -310,9 +319,9 @@ class FwStyle with FwStyleOps<FwStyle> {
     groupOpacity,
     contentBlur,
     backdropBlurSigma,
-    scale,
+    scaleFactor,
     rotation,
-    translate,
+    translation,
     clipBehavior,
     Object.hashAll(layers),
   ]);

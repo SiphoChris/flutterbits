@@ -197,6 +197,85 @@ void main() {
     });
   });
 
+  group('content distribution (justify/align-content)', () {
+    // Two fixed 30px columns in a 100px grid → 40px spare to distribute.
+    FwGrid cols(FwGridDistribute jc) => FwGrid(
+      columns: const [FwPx(30), FwPx(30)],
+      justifyContent: jc,
+      children: [_box('a'), _box('b')],
+    );
+
+    testWidgets('justifyContent end pushes the track block to the end', (t) async {
+      await _pump(t, cols(FwGridDistribute.end), width: 100);
+      expect(_rect(t, 'a').left, 40);
+      expect(_rect(t, 'b').left, 70);
+    });
+
+    testWidgets('justifyContent center centers the track block', (t) async {
+      await _pump(t, cols(FwGridDistribute.center), width: 100);
+      expect(_rect(t, 'a').left, 20);
+      expect(_rect(t, 'b').left, 50);
+    });
+
+    testWidgets('justifyContent spaceBetween spreads tracks to the edges', (t) async {
+      await _pump(t, cols(FwGridDistribute.spaceBetween), width: 100);
+      expect(_rect(t, 'a').left, 0);
+      expect(_rect(t, 'b').left, 70); // 30 + 40 spare between
+    });
+
+    testWidgets('justifyContent spaceEvenly puts equal space at ends and between', (t) async {
+      await _pump(t, cols(FwGridDistribute.spaceEvenly), width: 100);
+      // spare 40 over 3 equal gaps ≈ 13.33 each: a at 13.33, b at 13.33+30+13.33.
+      expect(_rect(t, 'a').left, closeTo(13.33, 0.1));
+      expect(_rect(t, 'b').left, closeTo(56.67, 0.1));
+    });
+
+    testWidgets('an fr track absorbs spare → justifyContent is a no-op', (t) async {
+      await _pump(
+        t,
+        FwGrid(
+          columns: const [FwFr(), FwPx(30)],
+          justifyContent: FwGridDistribute.end,
+          children: [_box('a'), _box('b')],
+        ),
+        width: 100,
+      );
+      expect(_rect(t, 'a').left, 0); // packed at start; the fr already filled the width
+    });
+
+    testWidgets('justifyContent end is inline-end aware under RTL', (t) async {
+      await _pump(t, cols(FwGridDistribute.end), width: 100, dir: TextDirection.rtl);
+      // Tracks pack to the inline end (= left in RTL); spare trails on the right.
+      // Column order still mirrors: col0 (a) sits to the right of col1 (b).
+      expect(_rect(t, 'b').left, 0);
+      expect(_rect(t, 'a').left, 30);
+    });
+
+    testWidgets('alignContent end pushes rows to the bottom (bounded height)', (t) async {
+      await t.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 100,
+              height: 100,
+              child: FwGrid(
+                columns: const [FwFr()],
+                rows: const [FwPx(20), FwPx(20)],
+                alignContent: FwGridDistribute.end,
+                children: [_box('a'), _box('b')],
+              ),
+            ),
+          ),
+        ),
+      );
+      // 2×20px rows = 40 content, 60 spare → pushed to bottom.
+      expect(_rect(t, 'a').top, 60);
+      expect(_rect(t, 'b').top, 80);
+    });
+  });
+
   group('RTL', () {
     testWidgets('column order mirrors: the first item sits on the right', (t) async {
       await _pump(
