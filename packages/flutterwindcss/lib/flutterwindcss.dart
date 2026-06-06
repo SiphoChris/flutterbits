@@ -12,6 +12,7 @@ library;
 // Layout widgets (Module 8) — multi-child structure the single-box `.tw` chain
 // cannot express (spec §6.0/§6.6).
 export 'src/layout/fw_flex.dart';
+export 'src/layout/fw_grid.dart';
 export 'src/layout/fw_stack.dart';
 export 'src/layout/fw_wrap.dart';
 
