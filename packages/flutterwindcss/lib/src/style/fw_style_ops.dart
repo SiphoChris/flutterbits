@@ -344,11 +344,19 @@ mixin FwStyleOps<T> {
 
   /// Default font weight on the CSS scale `100..900` (Tailwind `font-{weight}`);
   /// pass a token like `FwFontWeight.semibold`. Maps to a Flutter [FontWeight].
+  ///
+  /// Validated with a **runtime throw** (not an `assert`): the value indexes a
+  /// fixed-length list, so an assert — stripped in release — would surface an
+  /// invalid weight as an opaque `RangeError`. Throwing keeps the error clear and
+  /// the behavior defined in both debug and release.
   T weight(int weight) {
-    assert(
-      weight >= 100 && weight <= 900 && weight % 100 == 0,
-      'flutterwindcss: font weight must be 100..900 in steps of 100 (got $weight).',
-    );
+    if (weight < 100 || weight > 900 || weight % 100 != 0) {
+      throw ArgumentError.value(
+        weight,
+        'weight',
+        'flutterwindcss: font weight must be 100..900 in steps of 100',
+      );
+    }
     return fwRebuild(fwStyle.copyWith(fontWeight: FontWeight.values[(weight ~/ 100) - 1]));
   }
 

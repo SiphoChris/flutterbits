@@ -19,8 +19,11 @@ sealed class FwCondition {
   /// (enclosing constraint, `null` if no `LayoutBuilder` is in play).
   bool matches(Set<WidgetState> states, double? viewportWidth, double? containerWidth);
 
-  /// True for a state condition. Used to decide whether a
-  /// `FocusableActionDetector` is needed over the flattened layer set.
+  /// True for a state condition. Part of deciding whether live interaction
+  /// sourcing (`MouseRegion` + non-traversable `Focus` + `Listener`) is needed
+  /// over the flattened layer set (`FwStyled._needsLiveStateSourcing`). The
+  /// engine sources visual-only states with those primitives — never a
+  /// `FocusableActionDetector` (it can't be made non-traversable; §6.2).
   bool get isState => this is FwStateCondition;
 
   /// True for a viewport condition.

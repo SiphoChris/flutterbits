@@ -99,7 +99,7 @@ Until the first component lands, follow the component checklist below and the en
 
 - [ ] Styled through `.tw`, using semantic tokens for every themeable value.
 - [ ] Variants/sizes are typed enums with an exhaustive `switch` resolver.
-- [ ] Interaction states (hover/focus/pressed/disabled) handled via `FocusableActionDetector` + local state, Material-free.
+- [ ] Interaction states (hover/focus/pressed/disabled) handled Material-free. **An action-bearing component** (e.g. button) that owns focus + keyboard activation uses a **`FocusableActionDetector`** + local state — this is correct *for components*, and is distinct from the **engine's** visual-only `.tw` state sourcing, which deliberately uses `MouseRegion` + a non-traversable `Focus` + `Listener` (no tab stop) and **not** FAD (engine spec §6.2). Purely-decorative state styling on a non-interactive box stays in `.tw` variants; reach for FAD only when the component owns an action.
 - [ ] Keyboard activation wired via `ActivateIntent` → `CallbackAction`; a visible focus ring uses `context.fw.colors.ring`.
 - [ ] Wrapped in `Semantics(...)` with correct role/flags (`button: true`, `enabled:`, labels). Accessibility is **required**, not optional — Flutter supports it, so we ship it (target web/desktop included).
 - [ ] Directional layout throughout (§3.3).

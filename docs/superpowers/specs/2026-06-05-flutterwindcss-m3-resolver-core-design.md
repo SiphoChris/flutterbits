@@ -67,7 +67,7 @@ LTR/RTL/hover golden possible.
 | `ResolvedStyle`, `FwStyle.resolve` | `lib/src/style/resolve.dart` | Full §6.3: disabled-suppression-first; base → matching layers in declared order; recurse into nested styles (joint `md:hover:`); field-by-field last-wins merge. Produces the flattened, non-nullable-defaulted `ResolvedStyle`. |
 | `ResolvedStyle.build` | `lib/src/style/resolved_style.dart` | The complete §6.4 chain, outer→inner, each wrapper emitted only when its input is set; `_ShadowBox`/`_Surface` split + backdrop-blur layering; sizing reconciliation (§6.4 Finding #6); opacity folding (Finding #11); clip geometry (Finding #3). |
 | `_ShadowBox`, `_Surface` | (private, in `resolved_style.dart`) | Internal primitives for the unclipped-shadow / backdrop-clip split. Not exported. |
-| `FwStyled`, `.tw` | `lib/src/style/fw_styled.dart` | §6.2 `StatelessWidget`: conditional `MediaQuery`/`LayoutBuilder`/`FocusableActionDetector` insertion (computed over the *flattened* layer set); semantics-transparent; focus-traversal hygiene (visual-only states non-focusable, Finding #9); optional `states` injection param. The `.tw` entry extension. Hosts the representative base setters + the full variant/responsive/container methods. |
+| `FwStyled`, `.tw` | `lib/src/style/fw_styled.dart` | §6.2 `StatelessWidget`: conditional `MediaQuery`/`LayoutBuilder`/interaction-sourcing (`MouseRegion`+non-traversable-`Focus`+`Listener`, corrected — module 3, *not* `FocusableActionDetector`) insertion (computed over the *flattened* layer set); semantics-transparent; focus-traversal hygiene (visual-only states non-focusable, Finding #9); optional `states` injection param. The `.tw` entry extension. Hosts the representative base setters + the full variant/responsive/container methods. |
 
 **Deferred (later modules add setters + goldens only):** `margin`, `w/h/min/max`,
 fractional, `square`/`aspect` (M4); `bgGradient`, border (per-side + directional),
@@ -125,9 +125,11 @@ the flattened layer set actually contains that condition kind.
   apply only to axes without a fixed value; fixed + min/max on the same axis asserts in
   debug.
 - **Conditional ancestor insertion:** a purely-static style inserts no `MediaQuery`
-  reader / `LayoutBuilder` / `FocusableActionDetector`; a `hover:`-only style inserts a
-  **non-focusable** detector (no tab stop); an action-bearing style inserts a focusable
-  one.
+  reader / `LayoutBuilder` / interaction sourcing; a `hover:`-only style inserts
+  visual-only sourcing — `MouseRegion` + a **non-traversable** `Focus` + `Listener`
+  (no tab stop; corrected — module 3, *not* a `FocusableActionDetector`; see §7). A
+  focusable detector + visible `ring` belongs to an action-bearing **component**, not the
+  engine.
 - **Semantics transparency:** a `Semantics(button: true)` child survives a full `.tw`
   chain; a `hover:`-only box does **not** appear in focus traversal (§7).
 
@@ -141,8 +143,9 @@ engine. The exhaustive per-utility goldens are modules 4–9's job.
 ## 5. Risks carried into implementation
 
 - **R2** — no `MediaQuery` ⇒ base-only, never throw. Tests pump explicit sizes.
-- **R3** — `FocusableActionDetector` only when state-layer/action present; visual-only is
-  non-focusable.
+- **R3** — interaction sourcing (`MouseRegion` + non-traversable `Focus` + `Listener`)
+  only when a live-sourced state layer is present; visual-only is non-focusable (no tab
+  stop). Corrected — module 3: *not* a `FocusableActionDetector` (see §7).
 - **R5/R6** — `LayoutBuilder` inserted only for container layers; viewport stays
   `MediaQuery`-based; document the intrinsic-sizing caveat on `.containerXx`.
 - New: the **render-chain order test is the engine's most brittle test** — it is the
