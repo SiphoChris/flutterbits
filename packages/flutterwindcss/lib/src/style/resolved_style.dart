@@ -6,6 +6,13 @@ import 'package:flutter/widgets.dart';
 /// carries its non-null default since `FractionallySizedBox` needs one. The
 /// render chain ([build]) is in `resolved_style.build.dart` as an extension so
 /// this struct stays a pure value type.
+///
+/// **Intentionally identity-equality** (no `==`/`hashCode`): a `ResolvedStyle` is
+/// produced transiently inside `FwStyled.build` and consumed immediately by the
+/// render chain — it is never a widget field nor memoized, so value equality
+/// would be dead weight. (Persisted/diffed value types in the engine — `FwStyle`,
+/// `FwColors`, `FwBorderSpec`, … — do implement equality.) If a future caller
+/// memoizes on a `ResolvedStyle`, add equality then.
 @immutable
 class ResolvedStyle {
   /// Creates a resolved style. All fields optional; null = wrapper omitted.

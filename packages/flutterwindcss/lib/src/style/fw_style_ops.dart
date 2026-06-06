@@ -136,6 +136,10 @@ mixin FwStyleOps<T> {
   /// Fractional width, [factor] of the parent (e.g. `0.5` = half). [align]
   /// (default `centerStart` at resolve time) is the only control over fractional
   /// alignment (spec §6.5); it is shared with [hFraction] (last-wins).
+  ///
+  /// [align] only **sets** the alignment; omitting it keeps any previously-set
+  /// value (it cannot clear back to the default — `copyWith` treats `null` as
+  /// "keep"). To change it, pass an explicit [align].
   T wFraction(double factor, {AlignmentDirectional? align}) =>
       fwRebuild(fwStyle.copyWith(widthFactor: factor, factorAlignment: align));
 

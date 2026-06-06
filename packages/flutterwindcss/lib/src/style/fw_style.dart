@@ -160,6 +160,13 @@ class FwStyle with FwStyleOps<FwStyle> {
   final Clip? clipBehavior;
 
   /// Nested variant layers, in declaration order.
+  ///
+  /// **Layers are additive / override-only** (Tailwind-faithful): a matching
+  /// layer can *set* a field but cannot *unset* a base field back to its default
+  /// — resolution overlays via `copyWith`, where a `null` field means "keep". So
+  /// `bg(c).hover((h) => …)` can change the background on hover but no variant can
+  /// remove a base utility. This is a deliberate limitation of the accumulator
+  /// model, not a bug.
   final List<FwLayer> layers;
 
   @override
