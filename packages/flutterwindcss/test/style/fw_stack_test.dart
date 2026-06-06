@@ -64,7 +64,9 @@ void main() {
     );
   });
 
-  testWidgets('a plain child between two z-0 positioned children keeps declaration order', (t) async {
+  testWidgets('a plain child between two z-0 positioned children keeps declaration order', (
+    t,
+  ) async {
     // All z 0 → the stable sort must preserve declaration order across the
     // mixed positioned/plain set (no reordering of equal-z items).
     await t.pumpWidget(
@@ -79,9 +81,8 @@ void main() {
       ),
     );
     final stack = t.widget<Stack>(find.byType(Stack));
-    Key keyOf(Widget w) => w is PositionedDirectional
-        ? (w.child as Container).key!
-        : (w as Container).key!;
+    Key keyOf(Widget w) =>
+        w is PositionedDirectional ? (w.child as Container).key! : (w as Container).key!;
     expect(stack.children.map(keyOf).toList(), const [Key('p1'), Key('plain'), Key('p2')]);
   });
 

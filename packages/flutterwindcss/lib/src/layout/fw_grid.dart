@@ -88,6 +88,31 @@ enum FwGridAlign {
   center,
 }
 
+/// Distribution of **spare space between tracks** when the tracks don't fill the
+/// grid's available extent on an axis (CSS `justify-content`/`align-content`).
+/// Only takes effect when there is leftover space and no `fr` track on that axis
+/// (an `fr` track already absorbs all spare). `start` (the default) packs the
+/// tracks at the start edge.
+enum FwGridDistribute {
+  /// Pack tracks at the start (default; leftover space trails).
+  start,
+
+  /// Pack tracks at the end (leftover space leads).
+  end,
+
+  /// Center the track block; leftover space splits to both ends.
+  center,
+
+  /// Spread tracks so the first/last touch the edges; equal space between.
+  spaceBetween,
+
+  /// Equal space around each track (half-size gaps at the ends).
+  spaceAround,
+
+  /// Equal space between tracks and at both ends.
+  spaceEvenly,
+}
+
 /// Per-breakpoint override of an [FwGrid]'s layout (grid engine spec; carries the
 /// M8 responsive surface forward). `null` fields keep the base — notably to change
 /// the **column count** responsively (`grid-cols-1 md:grid-cols-3`).
@@ -103,6 +128,8 @@ class FwGridPatch {
     this.rowGap,
     this.alignItems,
     this.justifyItems,
+    this.justifyContent,
+    this.alignContent,
   }) : assert(
          columnGap == null || columnGap >= 0,
          'flutterwindcss: columnGap must be >= 0 (got $columnGap).',
@@ -129,6 +156,12 @@ class FwGridPatch {
 
   /// Overriding inline-axis item alignment, or `null`.
   final FwGridAlign? justifyItems;
+
+  /// Overriding inline-axis track distribution, or `null`.
+  final FwGridDistribute? justifyContent;
+
+  /// Overriding block-axis track distribution, or `null`.
+  final FwGridDistribute? alignContent;
 }
 
 /// A real CSS-Grid container (grid engine spec) backed by [RenderFwGrid].
@@ -144,18 +177,14 @@ class FwGridPatch {
 /// count, tracks, gaps, or alignment by screen/container width; a grid with
 /// neither resolves statically (no `MediaQuery`/`LayoutBuilder`).
 ///
-/// **Known limitations (both honest, neither "impossible"):**
-/// - `subgrid` — a deliberate v1 de-scope (negligible real-world usage), *not* a
-///   Flutter limitation (grid engine spec §2.4 / AGENTS.md §11b).
-/// - **Content-distribution alignment** (`justify-content`/`align-content`, i.e.
-///   distributing *spare* space between tracks when fixed tracks underflow the
-///   container) is **not yet built** — items/self alignment within cells *is*.
-///   Mechanism when built: offset/space the track origins by the leftover. It
-///   rarely bites because `fr` tracks already absorb spare space. Tracked.
+/// **Known limitation:** `subgrid` is **not** supported — a deliberate v1
+/// de-scope (negligible real-world usage), *not* a Flutter limitation (grid
+/// engine spec §2.4 / AGENTS.md §11b).
 ///
-/// Everything else in CSS Grid Level 1 (spanning, sparse + `dense` auto-placement,
-/// explicit placement, `fr`/`px`/`auto`/`minmax` tracks, item/self alignment) is
-/// supported.
+/// Everything else in CSS Grid Level 1 is supported: spanning, explicit
+/// placement, sparse + `dense` auto-placement, `fr`/`px`/`auto`/`minmax` tracks
+/// (both axes), item/self alignment ([alignItems]/[justifyItems]/`*Self`), and
+/// track content-distribution ([justifyContent]/[alignContent]).
 class FwGrid extends StatelessWidget {
   /// Creates a grid. [columns] must be non-empty; gaps must be `>= 0`.
   FwGrid({
@@ -167,6 +196,8 @@ class FwGrid extends StatelessWidget {
     this.rowGap = 0,
     this.alignItems = FwGridAlign.stretch,
     this.justifyItems = FwGridAlign.stretch,
+    this.justifyContent = FwGridDistribute.start,
+    this.alignContent = FwGridDistribute.start,
     this.dense = false,
     this.viewport,
     this.container,
@@ -199,6 +230,14 @@ class FwGrid extends StatelessWidget {
   /// Inline-axis (horizontal) alignment of items within their cells.
   final FwGridAlign justifyItems;
 
+  /// Inline-axis distribution of spare space between columns when they don't
+  /// fill the grid's width (CSS `justify-content`; default `start`).
+  final FwGridDistribute justifyContent;
+
+  /// Block-axis distribution of spare space between rows when they don't fill
+  /// the grid's height (CSS `align-content`; default `start`).
+  final FwGridDistribute alignContent;
+
   /// Auto-placement packing (CSS `grid-auto-flow: dense`): when `true`,
   /// later auto-placed items backfill earlier holes instead of only advancing a
   /// cursor. Default `false` (sparse, preserves source order).
@@ -215,7 +254,17 @@ class FwGrid extends StatelessWidget {
     final hasV = fwHasViewport(viewport);
     final hasC = fwHasContainer(container);
     if (!hasV && !hasC) {
-      return _raw(columns, rows, autoRows, columnGap, rowGap, alignItems, justifyItems, dense);
+      return _raw(
+        columns,
+        rows,
+        autoRows,
+        columnGap,
+        rowGap,
+        alignItems,
+        justifyItems,
+        justifyContent,
+        alignContent,
+      );
     }
     return fwBuildResponsive(
       context,
@@ -229,6 +278,8 @@ class FwGrid extends StatelessWidget {
         var rGap = rowGap;
         var ai = alignItems;
         var ji = justifyItems;
+        var jc = justifyContent;
+        var ac = alignContent;
         for (final p in fwActivePatches(viewport, container, vw, cw)) {
           cols = p.columns ?? cols;
           rws = p.rows ?? rws;
@@ -237,8 +288,10 @@ class FwGrid extends StatelessWidget {
           rGap = p.rowGap ?? rGap;
           ai = p.alignItems ?? ai;
           ji = p.justifyItems ?? ji;
+          jc = p.justifyContent ?? jc;
+          ac = p.alignContent ?? ac;
         }
-        return _raw(cols, rws, aRows, cGap, rGap, ai, ji, dense);
+        return _raw(cols, rws, aRows, cGap, rGap, ai, ji, jc, ac);
       },
     );
   }
@@ -251,7 +304,8 @@ class FwGrid extends StatelessWidget {
     double rGap,
     FwGridAlign ai,
     FwGridAlign ji,
-    bool dns,
+    FwGridDistribute jc,
+    FwGridDistribute ac,
   ) {
     assert(cols.isNotEmpty, 'flutterwindcss: FwGrid resolved to zero column tracks.');
     return _RawFwGrid(
@@ -262,7 +316,9 @@ class FwGrid extends StatelessWidget {
       rowGap: fwSpace(rGap),
       alignItems: ai,
       justifyItems: ji,
-      dense: dns,
+      justifyContent: jc,
+      alignContent: ac,
+      dense: dense,
       children: children,
     );
   }
@@ -390,6 +446,8 @@ class _RawFwGrid extends MultiChildRenderObjectWidget {
     required this.rowGap,
     required this.alignItems,
     required this.justifyItems,
+    required this.justifyContent,
+    required this.alignContent,
     required this.dense,
     required super.children,
   });
@@ -401,6 +459,8 @@ class _RawFwGrid extends MultiChildRenderObjectWidget {
   final double rowGap;
   final FwGridAlign alignItems;
   final FwGridAlign justifyItems;
+  final FwGridDistribute justifyContent;
+  final FwGridDistribute alignContent;
   final bool dense;
 
   @override
@@ -412,6 +472,8 @@ class _RawFwGrid extends MultiChildRenderObjectWidget {
     rowGap: rowGap,
     alignItems: alignItems,
     justifyItems: justifyItems,
+    justifyContent: justifyContent,
+    alignContent: alignContent,
     dense: dense,
     textDirection: Directionality.of(context),
   );
@@ -426,6 +488,8 @@ class _RawFwGrid extends MultiChildRenderObjectWidget {
       ..rowGap = rowGap
       ..alignItems = alignItems
       ..justifyItems = justifyItems
+      ..justifyContent = justifyContent
+      ..alignContent = alignContent
       ..dense = dense
       ..textDirection = Directionality.of(context);
   }
@@ -447,6 +511,8 @@ class RenderFwGrid extends RenderBox
     required double rowGap,
     required FwGridAlign alignItems,
     required FwGridAlign justifyItems,
+    required FwGridDistribute justifyContent,
+    required FwGridDistribute alignContent,
     required bool dense,
     required TextDirection textDirection,
   }) : _columns = columns,
@@ -456,6 +522,8 @@ class RenderFwGrid extends RenderBox
        _rowGap = rowGap,
        _alignItems = alignItems,
        _justifyItems = justifyItems,
+       _justifyContent = justifyContent,
+       _alignContent = alignContent,
        _dense = dense,
        _textDirection = textDirection;
 
@@ -532,6 +600,28 @@ class RenderFwGrid extends RenderBox
   set justifyItems(FwGridAlign v) {
     if (_justifyItems != v) {
       _justifyItems = v;
+      markNeedsLayout();
+    }
+  }
+
+  FwGridDistribute _justifyContent;
+
+  /// Inline-axis track distribution.
+  FwGridDistribute get justifyContent => _justifyContent;
+  set justifyContent(FwGridDistribute v) {
+    if (_justifyContent != v) {
+      _justifyContent = v;
+      markNeedsLayout();
+    }
+  }
+
+  FwGridDistribute _alignContent;
+
+  /// Block-axis track distribution.
+  FwGridDistribute get alignContent => _alignContent;
+  set alignContent(FwGridDistribute v) {
+    if (_alignContent != v) {
+      _alignContent = v;
       markNeedsLayout();
     }
   }
@@ -789,6 +879,58 @@ class RenderFwGrid extends RenderBox
     ];
   }
 
+  /// Whether an axis has any flex track (`fr` or `minmax(_, fr)`), which absorbs
+  /// all spare space → content-distribution is a no-op on that axis.
+  bool _axisHasFlex(List<FwGridTrack> tracks) =>
+      tracks.any((t) => t is FwFr || (t is FwMinMax && t.max is FwFr));
+
+  /// Track start origins along an axis after distributing spare space per
+  /// [distribute] (CSS `justify`/`align-content`). Returns the origins and the
+  /// axis extent (the grid's size on that axis). Distribution only applies when
+  /// the axis is bounded, has spare space, and has no flex track.
+  ({List<double> origins, double extent}) _distribute(
+    List<double> sizes,
+    double gap,
+    double available,
+    FwGridDistribute distribute,
+    bool hasFlex,
+  ) {
+    final n = sizes.length;
+    final content = _sum(sizes) + gap * (n - 1);
+    var leading = 0.0;
+    var between = 0.0;
+    var extent = content;
+    if (!hasFlex &&
+        distribute != FwGridDistribute.start &&
+        available.isFinite &&
+        available > content) {
+      final spare = available - content;
+      extent = available;
+      switch (distribute) {
+        case FwGridDistribute.start:
+          break;
+        case FwGridDistribute.end:
+          leading = spare;
+        case FwGridDistribute.center:
+          leading = spare / 2;
+        case FwGridDistribute.spaceBetween:
+          if (n > 1) between = spare / (n - 1);
+        case FwGridDistribute.spaceAround:
+          between = spare / n;
+          leading = between / 2;
+        case FwGridDistribute.spaceEvenly:
+          between = spare / (n + 1);
+          leading = between;
+      }
+    }
+    final origins = List<double>.filled(n, 0);
+    if (n > 0) origins[0] = leading;
+    for (var i = 1; i < n; i++) {
+      origins[i] = origins[i - 1] + sizes[i - 1] + gap + between;
+    }
+    return (origins: origins, extent: extent);
+  }
+
   @override
   void performLayout() {
     final children = getChildrenAsList();
@@ -810,14 +952,22 @@ class RenderFwGrid extends RenderBox
       intrinsic: (i) => _axisIntrinsic(children, i, horizontal: true, colSizesSoFar: null),
     );
 
-    // Per-child cell width (sum of spanned columns + interior gaps).
+    // Column origins + grid width (after inline content-distribution).
+    final colDist = _distribute(
+      colSizes,
+      _columnGap,
+      constraints.maxWidth,
+      _justifyContent,
+      _axisHasFlex(_columns),
+    );
+    final colOrigins = colDist.origins;
+
+    // Per-child cell width (origin of last spanned col + its size − origin of
+    // first spanned col — naturally folds in gaps and any distribution spacing).
     double cellWidthOf(FwGridParentData pd) {
       final span = pd.columnSpan.clamp(1, colCount);
-      var w = 0.0;
-      for (var c = pd.resolvedColumn; c < pd.resolvedColumn + span; c++) {
-        w += colSizes[c];
-      }
-      return w + _columnGap * (span - 1);
+      final last = pd.resolvedColumn + span - 1;
+      return colOrigins[last] + colSizes[last] - colOrigins[pd.resolvedColumn];
     }
 
     // Row sizing — content height of a row = max child height at its cell width.
@@ -839,23 +989,30 @@ class RenderFwGrid extends RenderBox
       },
     );
 
-    final gridWidth = _sum(colSizes) + _columnGap * (colCount - 1);
-    final gridHeight = _sum(rowSizes) + _rowGap * (rowCount - 1);
-    size = constraints.constrain(Size(gridWidth, gridHeight));
+    // Row origins + grid height (after block content-distribution).
+    final rowDist = _distribute(
+      rowSizes,
+      _rowGap,
+      constraints.maxHeight,
+      _alignContent,
+      _axisHasFlex(rowTracks),
+    );
+    final rowOrigins = rowDist.origins;
+
+    size = constraints.constrain(Size(colDist.extent, rowDist.extent));
 
     // Position + final layout.
     for (final child in children) {
       final pd = child.parentData! as FwGridParentData;
+      final colSpan = pd.columnSpan.clamp(1, colCount);
       final rowSpan = pd.rowSpan.clamp(1, rowCount - pd.resolvedRow);
+      final lastCol = pd.resolvedColumn + colSpan - 1;
+      final lastRow = pd.resolvedRow + rowSpan - 1;
 
-      final cellLeftLtr = _prefix(colSizes, pd.resolvedColumn, _columnGap);
-      final cellW = cellWidthOf(pd);
-      final cellTop = _prefix(rowSizes, pd.resolvedRow, _rowGap);
-      var cellH = 0.0;
-      for (var r = pd.resolvedRow; r < pd.resolvedRow + rowSpan; r++) {
-        cellH += rowSizes[r];
-      }
-      cellH += _rowGap * (rowSpan - 1);
+      final cellLeftLtr = colOrigins[pd.resolvedColumn];
+      final cellW = colOrigins[lastCol] + colSizes[lastCol] - cellLeftLtr;
+      final cellTop = rowOrigins[pd.resolvedRow];
+      final cellH = rowOrigins[lastRow] + rowSizes[lastRow] - cellTop;
 
       final justify = pd.justifySelf ?? _justifyItems;
       final alignV = pd.alignSelf ?? _alignItems;
@@ -880,15 +1037,6 @@ class RenderFwGrid extends RenderBox
           _textDirection == TextDirection.rtl ? size.width - cellLeftLtr - cellW : cellLeftLtr;
       pd.offset = Offset(cellLeft + dx, cellTop + dy);
     }
-  }
-
-  /// Sum of track sizes before [index] plus the gaps in between.
-  double _prefix(List<double> sizes, int index, double gap) {
-    var s = 0.0;
-    for (var i = 0; i < index; i++) {
-      s += sizes[i] + gap;
-    }
-    return s;
   }
 
   /// Max-content size of [index] along the axis: the largest single-track item's
