@@ -52,9 +52,12 @@ extension FwStyleResolve on FwStyle {
       lineHeight: merged.lineHeight,
       textAlign: merged.textAlign,
       textDecoration: merged.textDecoration,
-      opacity: merged.opacity,
-      blur: merged.blur,
-      backdropBlur: merged.backdropBlur,
+      // FwStyle uses descriptive names (groupOpacity/contentBlur/
+      // backdropBlurSigma) to free the .tw setter names; ResolvedStyle keeps the
+      // terse render-chain names. This is the one place the two vocabularies meet.
+      opacity: merged.groupOpacity,
+      blur: merged.contentBlur,
+      backdropBlur: merged.backdropBlurSigma,
       scale: merged.scale,
       rotation: merged.rotation,
       translate: merged.translate,
@@ -109,9 +112,9 @@ FwStyle _overlay(FwStyle base, FwStyle top) => base.copyWith(
   lineHeight: top.lineHeight,
   textAlign: top.textAlign,
   textDecoration: top.textDecoration,
-  opacity: top.opacity,
-  blur: top.blur,
-  backdropBlur: top.backdropBlur,
+  groupOpacity: top.groupOpacity,
+  contentBlur: top.contentBlur,
+  backdropBlurSigma: top.backdropBlurSigma,
   scale: top.scale,
   rotation: top.rotation,
   translate: top.translate,

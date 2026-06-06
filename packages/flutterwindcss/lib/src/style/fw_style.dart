@@ -43,9 +43,9 @@ class FwStyle with FwStyleOps<FwStyle> {
     this.lineHeight,
     this.textAlign,
     this.textDecoration,
-    this.opacity,
-    this.blur,
-    this.backdropBlur,
+    this.groupOpacity,
+    this.contentBlur,
+    this.backdropBlurSigma,
     this.scale,
     this.rotation,
     this.translate,
@@ -132,15 +132,18 @@ class FwStyle with FwStyleOps<FwStyle> {
   /// Default text decoration.
   final TextDecoration? textDecoration;
 
-  // Effects.
-  /// Group opacity (0..1).
-  final double? opacity;
+  // Effects. Named descriptively so the Tailwind-natural `.tw` setters
+  // (`opacity`/`blur`/`backdropBlur`) don't collide with these fields (the mixin
+  // can't redeclare a field name). `ResolvedStyle` keeps the terse render-chain
+  // names; the mapping lives in the resolve projection.
+  /// Group opacity (0..1); written by the `opacity` setter.
+  final double? groupOpacity;
 
-  /// Content blur sigma (logical px).
-  final double? blur;
+  /// Content blur sigma (logical px); written by the `blur` setter.
+  final double? contentBlur;
 
-  /// Backdrop blur sigma (logical px).
-  final double? backdropBlur;
+  /// Backdrop blur sigma (logical px); written by the `backdropBlur` setter.
+  final double? backdropBlurSigma;
 
   // Transform (paint-only).
   /// Uniform scale factor.
@@ -193,9 +196,9 @@ class FwStyle with FwStyleOps<FwStyle> {
     double? lineHeight,
     TextAlign? textAlign,
     TextDecoration? textDecoration,
-    double? opacity,
-    double? blur,
-    double? backdropBlur,
+    double? groupOpacity,
+    double? contentBlur,
+    double? backdropBlurSigma,
     double? scale,
     double? rotation,
     Offset? translate,
@@ -227,9 +230,9 @@ class FwStyle with FwStyleOps<FwStyle> {
       lineHeight: lineHeight ?? this.lineHeight,
       textAlign: textAlign ?? this.textAlign,
       textDecoration: textDecoration ?? this.textDecoration,
-      opacity: opacity ?? this.opacity,
-      blur: blur ?? this.blur,
-      backdropBlur: backdropBlur ?? this.backdropBlur,
+      groupOpacity: groupOpacity ?? this.groupOpacity,
+      contentBlur: contentBlur ?? this.contentBlur,
+      backdropBlurSigma: backdropBlurSigma ?? this.backdropBlurSigma,
       scale: scale ?? this.scale,
       rotation: rotation ?? this.rotation,
       translate: translate ?? this.translate,
@@ -269,9 +272,9 @@ class FwStyle with FwStyleOps<FwStyle> {
       lineHeight == other.lineHeight &&
       textAlign == other.textAlign &&
       textDecoration == other.textDecoration &&
-      opacity == other.opacity &&
-      blur == other.blur &&
-      backdropBlur == other.backdropBlur &&
+      groupOpacity == other.groupOpacity &&
+      contentBlur == other.contentBlur &&
+      backdropBlurSigma == other.backdropBlurSigma &&
       scale == other.scale &&
       rotation == other.rotation &&
       translate == other.translate &&
@@ -304,9 +307,9 @@ class FwStyle with FwStyleOps<FwStyle> {
     lineHeight,
     textAlign,
     textDecoration,
-    opacity,
-    blur,
-    backdropBlur,
+    groupOpacity,
+    contentBlur,
+    backdropBlurSigma,
     scale,
     rotation,
     translate,
