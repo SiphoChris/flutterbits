@@ -88,8 +88,10 @@ Rows reuse the identical track-sizing function on the cross axis; implicit rows 
 
 ## 5. Delivery sequence (each phase: impl + unit + golden + analyzer-clean, no stubs)
 
-1. **Track model + `RenderFwGrid` skeleton** — `FwAuto`/`FwMinMax`, parent data, `FwGridItem`, the widget→render wiring; layout for **px/fr/auto** single-span items (replaces M8 internals at parity). 
-2. **Spanning + explicit placement + auto-placement (sparse+dense)** — the placement algorithm + multi-track sizing distribution.
-3. **`minmax` + alignment (items/self)** — clamp + cell alignment.
+1. ✅ **Track model + `RenderFwGrid`** — `FwAuto`/`FwMinMax`, parent data, `FwGridItem`, widget→render wiring; **px/fr/auto** track sizing (replaces the M8 flex internals — goldens unchanged, i.e. pixel-parity for the M8 subset).
+2. ✅ **Spanning + explicit placement + auto-placement (sparse + `dense`)** — the placement algorithm + multi-track intrinsic distribution.
+3. ✅ **`minmax` + alignment (items/self)** — fr-with-floor clamp + cell alignment (`stretch`/`start`/`end`/`center`, RTL-aware inline).
 
-`subgrid` is **de-scoped** (§2.4) — not a phase. Phases land in order; the engine spec §6.6 + §12 grid row + AGENTS.md §11 are updated as each lands (no-drift), and the `FwGrid` doc-comment records the subgrid de-scope as a known limitation from phase 1.
+**All three landed** (2026-06): one `RenderFwGrid` covering px/fr/auto/minmax tracks (both axes), spanning, explicit + sparse/dense auto-placement, item/self alignment, RTL, and the responsive `FwGridPatch` surface. Unit: `fw_grid_test` (geometry-based — 19 cases). Golden: `grid_slice` (spanning + px/fr/auto, light/dark × LTR/RTL) + the unchanged M8 `layout_slice`/`layout_responsive`.
+
+**Not built (both honest, neither "impossible"):** `subgrid` — de-scoped (§2.4, AGENTS.md §11b); **content-distribution alignment** (`justify`/`align-content` for track underflow) — *not yet built* (mechanism: offset/space the track origins; rarely needed since `fr` absorbs spare space), recorded on the `FwGrid` doc-comment. Engine spec §6.6 + §12 grid row + AGENTS.md §11 updated (no-drift).
