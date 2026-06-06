@@ -91,12 +91,11 @@ class FwStack extends StatelessWidget {
   /// The children ordered for painting: a **stable** sort by `z`, then by
   /// declaration order (`List.sort` is not stable, so we sort `(index, child)`).
   List<Widget> _ordered() {
-    final indexed = <(int, Widget)>[
-      for (var i = 0; i < children.length; i++) (i, children[i]),
-    ]..sort((a, b) {
-      final byZ = _zOf(a.$2).compareTo(_zOf(b.$2));
-      return byZ != 0 ? byZ : a.$1.compareTo(b.$1);
-    });
+    final indexed = <(int, Widget)>[for (var i = 0; i < children.length; i++) (i, children[i])]
+      ..sort((a, b) {
+        final byZ = _zOf(a.$2).compareTo(_zOf(b.$2));
+        return byZ != 0 ? byZ : a.$1.compareTo(b.$1);
+      });
     return [for (final (_, w) in indexed) w];
   }
 
@@ -212,7 +211,10 @@ class FwPositioned extends StatelessWidget {
 
   /// Resolves the effective inset (in utility units) against the active widths,
   /// folding any matching responsive patches onto the base. Called by [FwStack].
-  (double?, double?, double?, double?) resolveInsets(double? viewportWidth, double? containerWidth) {
+  (double?, double?, double?, double?) resolveInsets(
+    double? viewportWidth,
+    double? containerWidth,
+  ) {
     var s = start;
     var e = end;
     var t = top;
@@ -227,8 +229,9 @@ class FwPositioned extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => throw FlutterError(
-    'FwPositioned must be a direct child of FwStack — it carries inset/z data '
-    'that only FwStack interprets.',
-  );
+  Widget build(BuildContext context) =>
+      throw FlutterError(
+        'FwPositioned must be a direct child of FwStack — it carries inset/z data '
+        'that only FwStack interprets.',
+      );
 }

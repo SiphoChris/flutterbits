@@ -116,9 +116,7 @@ void main() {
     });
 
     testWidgets('a fully static stack inserts no LayoutBuilder', (t) async {
-      await t.pumpWidget(
-        frameViewport(800, const FwStack(children: [SizedBox()])),
-      );
+      await t.pumpWidget(frameViewport(800, const FwStack(children: [SizedBox()])));
       expect(find.byType(LayoutBuilder), findsNothing);
     });
   });

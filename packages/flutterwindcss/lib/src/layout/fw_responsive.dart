@@ -21,8 +21,7 @@ import '../tokens/scales.dart';
 /// Builds a layout subtree with the viewport/container widths it needs, inserting
 /// only the required ancestors: a `MediaQuery` read for viewport responsiveness
 /// and a single `LayoutBuilder` for container queries (spec §6.2, R5/R6).
-typedef FwResponsiveChildBuilder =
-    Widget Function(double? viewportWidth, double? containerWidth);
+typedef FwResponsiveChildBuilder = Widget Function(double? viewportWidth, double? containerWidth);
 
 /// Resolves the widths [build] needs. [needsViewport] reads `MediaQuery`;
 /// [needsContainer] wraps in one `LayoutBuilder` (which measures the box's
@@ -35,10 +34,11 @@ Widget fwBuildResponsive(
 }) {
   if (needsContainer) {
     return LayoutBuilder(
-      builder: (ctx, constraints) => build(
-        needsViewport ? MediaQuery.maybeOf(ctx)?.size.width : null,
-        constraints.maxWidth.isFinite ? constraints.maxWidth : null,
-      ),
+      builder:
+          (ctx, constraints) => build(
+            needsViewport ? MediaQuery.maybeOf(ctx)?.size.width : null,
+            constraints.maxWidth.isFinite ? constraints.maxWidth : null,
+          ),
     );
   }
   return build(needsViewport ? MediaQuery.maybeOf(context)?.size.width : null, null);

@@ -32,7 +32,7 @@ Spec §12 row 8 bundles "the `.containerSm…` query family on `.tw`" with the l
 
 7. **`mainAxisSize` defaults to `MainAxisSize.max`** on `FwRow`/`FwColumn` (Flutter's default; spec §6.6) — documented on the constructor so a web refugee expecting shrink-to-fit opts into `MainAxisSize.min` explicitly.
 
-8. **Responsive layout-property layering is deferred (minimal v1), documented.** Spec §6.6 said responsive layering "applies to layout widgets too (e.g. a responsive `gap`) … where it makes sense." For v1 the layout widgets take **concrete** values; **box-level** responsiveness still works by chaining `.tw` on the widget (`FwRow(...).tw.md((s)=>s.p(4))`). Responsive *layout-property* layering (a `gap` that changes at `md:`) would require each layout widget to host the `FwStyle` layer engine + `MediaQuery`/`LayoutBuilder` — out of v1 scope. Corrects §6.6's last paragraph to state this explicitly as a documented limitation (AGENTS.md §3.9, §11 spirit) with the upgrade path (host an `FwStyle` layer in a later module).
+8. **Responsive layout-property layering is fully built (production — corrected from an initial "deferred" draft).** Spec §6.6 requires responsive layering on layout widgets ("a responsive `gap` … via the same layer engine"). Each widget takes optional `viewport`/`container` maps `Map<FwBreakpoint, Patch>`, where `Patch` is a per-widget bag of nullable fields (`FwFlexPatch`/`FwWrapPatch`/`FwGridPatch`/`FwStackPatch`/`FwPositionedPatch`). At build the widget folds matching patches onto its static base — mobile-first, largest breakpoint wins, container after viewport — reusing the box engine's `FwBreakpoint` min-width semantics and `FwStyled`'s conditional `MediaQuery`/`LayoutBuilder` insertion (a static widget inserts neither). Covers responsive `gap`/alignment, grid **column count**, and positioned **inset**. `z` is non-responsive by nature (paint order, not a per-breakpoint value). Shared plumbing in `layout/fw_responsive.dart`. **Static usage is unchanged** (scalar params); responsive is opt-in via the maps. (This supersedes an initial draft that deferred this — deferring a spec-required capability was wrong; see Task 7.)
 
 ---
 
@@ -40,18 +40,20 @@ Spec §12 row 8 bundles "the `.containerSm…` query family on `.tw`" with the l
 
 ```
 packages/flutterwindcss/lib/src/layout/      # NEW directory
-  fw_flex.dart      # FwRow, FwColumn
-  fw_wrap.dart      # FwWrap
-  fw_stack.dart     # FwStack, FwPositioned
-  fw_grid.dart      # FwGridTrack (sealed) + FwFr/FwPx, FwGrid
+  fw_responsive.dart # shared responsive plumbing (Task 7): width sourcing + patch folding
+  fw_flex.dart      # FwRow, FwColumn (+ FwFlexPatch)
+  fw_wrap.dart      # FwWrap (+ FwWrapPatch)
+  fw_stack.dart     # FwStack, FwPositioned (+ FwStackPatch, FwPositionedPatch)
+  fw_grid.dart      # FwGridTrack (sealed) + FwFr/FwPx, FwGrid (+ FwGridPatch)
 packages/flutterwindcss/lib/flutterwindcss.dart   # add four exports
 packages/flutterwindcss/test/style/
-  fw_flex_test.dart
-  fw_wrap_test.dart
-  fw_stack_test.dart
-  fw_grid_test.dart
+  fw_flex_test.dart     # + responsive cases
+  fw_wrap_test.dart     # + responsive cases
+  fw_stack_test.dart    # + responsive cases
+  fw_grid_test.dart     # + responsive cases (incl. responsive column count)
 packages/flutterwindcss/test/golden/
-  layout_slice_golden_test.dart   # flex + stack + grid, light LTR + dark RTL
+  layout_slice_golden_test.dart       # flex + stack + grid, light LTR + dark RTL
+  layout_responsive_golden_test.dart  # same scene narrow vs wide (Task 7)
 ```
 
 Split by responsibility (flex / wrap / stack / grid), each file small and focused — matching the per-concern layout of `lib/src/style/`.
@@ -945,6 +947,19 @@ void main() {
   - **README "✅ Shipped" list:** add a module 8 bullet (the six layout widgets, directional, gap via native spacing, `FwGrid` fr/px grammar); update the "🚧 Next on the roadmap" line to drop layout widgets + container queries (container queries already shipped) and leave transforms + animated theming.
 - [ ] **Step 5 — Re-run analyze + test after doc edits** (`flutter analyze --fatal-infos --fatal-warnings` + `flutter test`) → clean + green.
 - [ ] **Step 6 — Commit.** `docs: align spec/README + ops header to module 8 as-built`
+
+---
+
+## Task 7: Responsive layout-property layering (production — un-defers Design decision 8)
+
+**Files:** Create `lib/src/layout/fw_responsive.dart`; modify `fw_flex.dart`/`fw_wrap.dart`/`fw_grid.dart`/`fw_stack.dart` (add `viewport`/`container` patch maps + a `*Patch` type each + resolution in `build`); extend the four unit tests with responsive cases; create `test/golden/layout_responsive_golden_test.dart`; update spec §6.6/§8/§12, README, ops header.
+
+- [x] **Shared plumbing** (`fw_responsive.dart`): `fwBuildResponsive` (inserts a `MediaQuery` read for viewport, one `LayoutBuilder` for container, neither when static), `fwActivePatches` (yields matching patches sorted ascending by `FwBreakpoint.minWidth` — largest wins; viewport before container), `fwHasViewport`/`fwHasContainer`.
+- [x] **Per-widget patch types** (nullable-field bags): `FwFlexPatch` (gap/alignments/mainAxisSize), `FwWrapPatch` (gap/runGap/alignments/direction), `FwGridPatch` (columns/gaps/crossAxisAlignment — responsive **column count**), `FwStackPatch` (alignment/clip), `FwPositionedPatch` (start/end/top/bottom inset). `z` is **not** responsive (structural paint order).
+- [x] **Resolution in each `build`**: fold matching patches onto the static base values, last-wins per field; build the framework primitive with the resolved values. `FwStack` sources widths when it *or any positioned child* declares a responsive override, and resolves each child's inset.
+- [x] **Static path untouched**: scalar params unchanged; a widget with no maps inserts no `MediaQuery`/`LayoutBuilder`.
+- [x] **Tests**: each `fw_*_test.dart` gains responsive cases (breakpoint cross-over, largest-wins cascade, container-vs-viewport, "static inserts no LayoutBuilder"); `layout_responsive_golden_test` pumps one scene at narrow (<md) and wide (≥md) — gap widens, grid goes 1→3 columns.
+- [x] **No-drift**: spec §6.6 responsive paragraph rewritten to as-built (not deferred), §8 lists the patch types, §12 row 8 marks responsive built; README + ops header updated.
 
 ---
 

@@ -120,8 +120,7 @@ class FwColumn extends StatelessWidget {
   final Map<FwBreakpoint, FwFlexPatch>? container;
 
   @override
-  Widget build(BuildContext context) =>
-      _buildFlex(Axis.vertical, _Flexish.column(this), context);
+  Widget build(BuildContext context) => _buildFlex(Axis.vertical, _Flexish.column(this), context);
 }
 
 // ---- Shared flex builder (FwRow and FwColumn differ only in axis) ----

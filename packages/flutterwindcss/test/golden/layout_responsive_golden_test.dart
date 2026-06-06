@@ -44,7 +44,9 @@ Widget _scene(BuildContext context) {
           columns: const [FwFr()],
           columnGap: 1,
           rowGap: 1,
-          viewport: const {FwBreakpoint.md: FwGridPatch(columns: [FwFr(), FwFr(), FwFr()])},
+          viewport: const {
+            FwBreakpoint.md: FwGridPatch(columns: [FwFr(), FwFr(), FwFr()]),
+          },
           children: [_swatch(c.primary), _swatch(c.secondary), _swatch(c.accent)],
         ),
       ],
@@ -55,11 +57,17 @@ Widget _scene(BuildContext context) {
 void main() {
   testWidgets('responsive layout — narrow viewport (below md: tight gap, 1 column)', (t) async {
     await t.pumpWidget(_frame(500, FwTokens.light, const Builder(builder: _scene)));
-    await expectLater(find.byType(FwColumn), matchesGoldenFile('goldens/layout_responsive_narrow.png'));
+    await expectLater(
+      find.byType(FwColumn),
+      matchesGoldenFile('goldens/layout_responsive_narrow.png'),
+    );
   });
 
   testWidgets('responsive layout — wide viewport (md+: wide gap, 3 columns)', (t) async {
     await t.pumpWidget(_frame(900, FwTokens.light, const Builder(builder: _scene)));
-    await expectLater(find.byType(FwColumn), matchesGoldenFile('goldens/layout_responsive_wide.png'));
+    await expectLater(
+      find.byType(FwColumn),
+      matchesGoldenFile('goldens/layout_responsive_wide.png'),
+    );
   });
 }
