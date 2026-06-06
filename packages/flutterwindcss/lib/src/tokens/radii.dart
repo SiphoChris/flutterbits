@@ -46,9 +46,18 @@ class FwRadii {
   /// Pill/fully-rounded sentinel (`9999`).
   double get full => 9999;
 
-  /// Linearly interpolates the derived set via the [base].
-  static FwRadii lerp(FwRadii a, FwRadii b, double t) =>
-      FwRadii.fromBase(a.base + (b.base - a.base) * t);
+  /// Linearly interpolates **every field** independently (corrected — audit: the
+  /// old `fromBase(lerp(base))` re-derived `sm…xl` and so was inconsistent with
+  /// `==`/`hashCode` for a directly-constructed set whose steps don't follow the
+  /// base ratios). For stock `fromBase` themes the result is identical, since each
+  /// step is a linear function of `base`.
+  static FwRadii lerp(FwRadii a, FwRadii b, double t) => FwRadii(
+    base: a.base + (b.base - a.base) * t,
+    sm: a.sm + (b.sm - a.sm) * t,
+    md: a.md + (b.md - a.md) * t,
+    lg: a.lg + (b.lg - a.lg) * t,
+    xl: a.xl + (b.xl - a.xl) * t,
+  );
 
   // Direct-constructor instances may set sm/md/lg/xl independently of base,
   // so compare all five fields rather than base alone.

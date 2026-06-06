@@ -177,9 +177,13 @@ class FwGridPatch {
 /// count, tracks, gaps, or alignment by screen/container width; a grid with
 /// neither resolves statically (no `MediaQuery`/`LayoutBuilder`).
 ///
-/// **Known limitation:** `subgrid` is **not** supported — a deliberate v1
+/// **Known limitations:** `subgrid` is **not** supported — a deliberate v1
 /// de-scope (negligible real-world usage), *not* a Flutter limitation (grid
-/// engine spec §2.4 / AGENTS.md §11b).
+/// engine spec §2.4 / AGENTS.md §11b). Also, this is a **row-flow** grid with a
+/// fixed column count: a partial-explicit item (`rowStart` given, column auto)
+/// whose requested row is already full advances to the next row rather than
+/// growing an implicit column (CSS would add one; this grammar has no implicit
+/// columns). Give such items room or place them fully (`columnStart` + `rowStart`).
 ///
 /// Everything else in CSS Grid Level 1 is supported: spanning, explicit
 /// placement, sparse + `dense` auto-placement, `fr`/`px`/`auto`/`minmax` tracks
@@ -427,12 +431,6 @@ class FwGridParentData extends ContainerBoxParentData<RenderBox> {
 
   /// Block self-alignment override.
   FwGridAlign? alignSelf;
-
-  /// Resolved 0-based column index (set during layout).
-  int resolvedColumn = 0;
-
-  /// Resolved 0-based row index (set during layout).
-  int resolvedRow = 0;
 }
 
 /// The `MultiChildRenderObjectWidget` half of [FwGrid] (created with already
@@ -655,10 +653,22 @@ class RenderFwGrid extends RenderBox
     }
   }
 
-  /// Row-major auto-placement (sparse) honoring explicit lines + spans. Returns
-  /// the total row count. Each child's parent data gets resolvedColumn/Row.
-  int _place(List<RenderBox> children, int colCount) {
-    // Occupancy as a growable list of row bitsets (List<bool> per row).
+  /// Resolves where each child sits, returning per-child `(col, row)` cells (in
+  /// `children` order) and the total row count — **without** mutating parent data,
+  /// so it is safe to call from intrinsic/dry-layout queries as well as layout.
+  ///
+  /// **Two-pass, CSS-faithful (corrected — audit):** pass 1 reserves every
+  /// *fully* explicit item (both `columnStart` and `rowStart` given); pass 2
+  /// auto-places the rest (partial-explicit + auto) into the remaining holes, so
+  /// an auto item can never steal a cell an explicit item asked for. Sparse
+  /// advances a cursor; `dense` first-fits from the origin. A partial-explicit
+  /// item locks the given axis and searches the other; if its requested row is
+  /// full it advances (this row-flow grammar has no implicit columns to grow —
+  /// documented on [FwGrid]).
+  ({List<({int col, int row})> cells, int rowCount}) _place(
+    List<RenderBox> children,
+    int colCount,
+  ) {
     final occupancy = <List<bool>>[];
     List<bool> rowAt(int r) {
       while (occupancy.length <= r) {
@@ -687,29 +697,40 @@ class RenderFwGrid extends RenderBox
       }
     }
 
+    final cells = List<({int col, int row})?>.filled(children.length, null);
+
+    // Pass 1 — reserve fully-explicit items first (CSS places these before auto).
+    for (var i = 0; i < children.length; i++) {
+      final pd = children[i].parentData! as FwGridParentData;
+      if (pd.columnStart != null && pd.rowStart != null) {
+        final colSpan = pd.columnSpan.clamp(1, colCount);
+        final c = (pd.columnStart! - 1).clamp(0, colCount - colSpan);
+        final r = pd.rowStart! - 1;
+        occupy(r, c, colSpan, pd.rowSpan);
+        cells[i] = (col: c, row: r);
+      }
+    }
+
+    // Pass 2 — auto-place the rest into the holes left by the reserved items.
     var cursorRow = 0;
     var cursorCol = 0;
-
-    for (final child in children) {
-      final pd = child.parentData! as FwGridParentData;
+    for (var i = 0; i < children.length; i++) {
+      if (cells[i] != null) continue;
+      final pd = children[i].parentData! as FwGridParentData;
       final colSpan = pd.columnSpan.clamp(1, colCount);
       final rowSpan = pd.rowSpan;
 
       int r;
       int c;
-      if (pd.columnStart != null && pd.rowStart != null) {
-        // Fully explicit.
-        c = (pd.columnStart! - 1).clamp(0, colCount - colSpan);
-        r = pd.rowStart! - 1;
-      } else if (pd.columnStart != null) {
-        // Fixed column, find the first free row at that column.
+      if (pd.columnStart != null) {
+        // Locked column; first free row.
         c = (pd.columnStart! - 1).clamp(0, colCount - colSpan);
         r = 0;
         while (!fits(r, c, colSpan, rowSpan)) {
           r++;
         }
       } else if (pd.rowStart != null) {
-        // Fixed row, advance columns within it.
+        // Locked row; first free column (advances rows if the row fills).
         r = pd.rowStart! - 1;
         c = 0;
         while (!fits(r, c, colSpan, rowSpan)) {
@@ -720,7 +741,6 @@ class RenderFwGrid extends RenderBox
           }
         }
       } else if (_dense) {
-        // Dense: first-fit scan from the origin (backfills earlier holes).
         r = 0;
         c = 0;
         while (!fits(r, c, colSpan, rowSpan)) {
@@ -731,7 +751,6 @@ class RenderFwGrid extends RenderBox
           }
         }
       } else {
-        // Fully auto (sparse): advance the cursor row-major.
         r = cursorRow;
         c = cursorCol;
         while (!fits(r, c, colSpan, rowSpan)) {
@@ -749,10 +768,10 @@ class RenderFwGrid extends RenderBox
         }
       }
       occupy(r, c, colSpan, rowSpan);
-      pd.resolvedColumn = c;
-      pd.resolvedRow = r;
+      cells[i] = (col: c, row: r);
     }
-    return occupancy.length;
+
+    return (cells: <({int col, int row})>[for (final e in cells) e!], rowCount: occupancy.length);
   }
 
   /// Resolves track sizes along one axis. [intrinsic] yields the content size of
@@ -784,7 +803,8 @@ class RenderFwGrid extends RenderBox
             case FwPx(:final size):
               sizes[i] = intrinsic(i).clamp(minPx, size);
             case FwAuto():
-              sizes[i] = intrinsic(i) < minPx ? minPx : intrinsic(i);
+              // clamp(minPx, ∞) == max(minPx, content), evaluating intrinsic once.
+              sizes[i] = intrinsic(i).clamp(minPx, double.infinity);
             case FwFr():
               isFlex[i] = true;
               flexFloor[i] = minPx;
@@ -844,25 +864,27 @@ class RenderFwGrid extends RenderBox
         if (isFlex[i] && !pinned[i]) totalFlex += flexOf(i);
       }
       if (totalFlex == 0) break;
-      var repinned = false;
+      // One unit per pass, from the pass-start remaining (corrected — audit:
+      // computing each track's share against an already-reduced `remaining` used
+      // a stale total and spuriously pinned later tracks, losing space).
+      final unit = remaining / totalFlex;
+      final violators = <int>[];
       for (var i = 0; i < tracks.length; i++) {
-        if (!isFlex[i] || pinned[i]) continue;
-        final share = remaining * flexOf(i) / totalFlex;
-        if (share < floors[i]) {
-          sizes[i] = floors[i];
-          remaining -= floors[i];
-          pinned[i] = true;
-          repinned = true;
-        }
+        if (isFlex[i] && !pinned[i] && unit * flexOf(i) < floors[i]) violators.add(i);
       }
-      if (!repinned) {
-        // No more floor violations: assign final shares to the unpinned tracks.
+      if (violators.isEmpty) {
+        // No floor violations at this unit: assign the final shares and finish.
         for (var i = 0; i < tracks.length; i++) {
-          if (isFlex[i] && !pinned[i]) {
-            sizes[i] = remaining * flexOf(i) / totalFlex;
-          }
+          if (isFlex[i] && !pinned[i]) sizes[i] = unit * flexOf(i);
         }
         break;
+      }
+      // Pin every violator to its floor (using the same pass-start unit), drop
+      // their floors from `remaining`, then re-resolve the rest next pass.
+      for (final i in violators) {
+        sizes[i] = floors[i];
+        remaining -= floors[i];
+        pinned[i] = true;
       }
       if (remaining < 0) remaining = 0;
     }
@@ -931,28 +953,29 @@ class RenderFwGrid extends RenderBox
     return (origins: origins, extent: extent);
   }
 
-  @override
-  void performLayout() {
-    final children = getChildrenAsList();
+  /// Resolved track geometry for [constraints] — placement, track sizes, origins
+  /// (after content-distribution), and the grid size. **Pure** (no `child.layout`,
+  /// no parent-data mutation): it uses only child intrinsics, so it is reused by
+  /// [performLayout], the intrinsic-size queries, and [computeDryLayout].
+  ({
+    List<({int col, int row})> cells,
+    List<double> colSizes,
+    List<double> colOrigins,
+    List<double> rowSizes,
+    List<double> rowOrigins,
+    Size size,
+  })
+  _computeTracks(BoxConstraints constraints, List<RenderBox> children) {
     final colCount = _columns.length;
+    final placement = _place(children, colCount);
+    final cells = placement.cells;
 
-    if (children.isEmpty) {
-      size = constraints.constrain(Size.zero);
-      return;
-    }
-
-    final rowCount = _place(children, colCount);
-
-    // Column sizing — content size of a column = max max-intrinsic width of the
-    // single-column items in it; spanning items distribute across their columns.
     final colSizes = _resolveAxis(
       tracks: _columns,
       available: constraints.maxWidth,
       gap: _columnGap,
-      intrinsic: (i) => _axisIntrinsic(children, i, horizontal: true, colSizesSoFar: null),
+      intrinsic: (i) => _colIntrinsic(children, cells, i),
     );
-
-    // Column origins + grid width (after inline content-distribution).
     final colDist = _distribute(
       colSizes,
       _columnGap,
@@ -962,34 +985,22 @@ class RenderFwGrid extends RenderBox
     );
     final colOrigins = colDist.origins;
 
-    // Per-child cell width (origin of last spanned col + its size − origin of
-    // first spanned col — naturally folds in gaps and any distribution spacing).
-    double cellWidthOf(FwGridParentData pd) {
+    // Cell width for child i: last spanned col's right minus first col's origin
+    // (folds in gaps + any distribution spacing).
+    double cellWidthOf(int i) {
+      final pd = children[i].parentData! as FwGridParentData;
       final span = pd.columnSpan.clamp(1, colCount);
-      final last = pd.resolvedColumn + span - 1;
-      return colOrigins[last] + colSizes[last] - colOrigins[pd.resolvedColumn];
+      final col = cells[i].col;
+      return colOrigins[col + span - 1] + colSizes[col + span - 1] - colOrigins[col];
     }
 
-    // Row sizing — content height of a row = max child height at its cell width.
-    final rowTracks = _rowTracks(rowCount);
+    final rowTracks = _rowTracks(placement.rowCount);
     final rowSizes = _resolveAxis(
       tracks: rowTracks,
       available: constraints.maxHeight,
       gap: _rowGap,
-      intrinsic: (r) {
-        var h = 0.0;
-        for (final child in children) {
-          final pd = child.parentData! as FwGridParentData;
-          if (pd.rowSpan == 1 && pd.resolvedRow == r) {
-            final ch = child.getMaxIntrinsicHeight(cellWidthOf(pd));
-            if (ch > h) h = ch;
-          }
-        }
-        return h;
-      },
+      intrinsic: (r) => _rowIntrinsic(children, cells, rowTracks, r, cellWidthOf),
     );
-
-    // Row origins + grid height (after block content-distribution).
     final rowDist = _distribute(
       rowSizes,
       _rowGap,
@@ -997,22 +1008,42 @@ class RenderFwGrid extends RenderBox
       _alignContent,
       _axisHasFlex(rowTracks),
     );
-    final rowOrigins = rowDist.origins;
 
-    size = constraints.constrain(Size(colDist.extent, rowDist.extent));
+    return (
+      cells: cells,
+      colSizes: colSizes,
+      colOrigins: colOrigins,
+      rowSizes: rowSizes,
+      rowOrigins: rowDist.origins,
+      size: constraints.constrain(Size(colDist.extent, rowDist.extent)),
+    );
+  }
 
-    // Position + final layout.
-    for (final child in children) {
+  @override
+  void performLayout() {
+    final children = getChildrenAsList();
+    if (children.isEmpty) {
+      size = constraints.constrain(Size.zero);
+      return;
+    }
+    final colCount = _columns.length;
+    final g = _computeTracks(constraints, children);
+    size = g.size;
+
+    for (var i = 0; i < children.length; i++) {
+      final child = children[i];
       final pd = child.parentData! as FwGridParentData;
+      final col = g.cells[i].col;
+      final row = g.cells[i].row;
       final colSpan = pd.columnSpan.clamp(1, colCount);
-      final rowSpan = pd.rowSpan.clamp(1, rowCount - pd.resolvedRow);
-      final lastCol = pd.resolvedColumn + colSpan - 1;
-      final lastRow = pd.resolvedRow + rowSpan - 1;
+      final rowSpan = pd.rowSpan.clamp(1, g.rowSizes.length - row);
+      final lastCol = col + colSpan - 1;
+      final lastRow = row + rowSpan - 1;
 
-      final cellLeftLtr = colOrigins[pd.resolvedColumn];
-      final cellW = colOrigins[lastCol] + colSizes[lastCol] - cellLeftLtr;
-      final cellTop = rowOrigins[pd.resolvedRow];
-      final cellH = rowOrigins[lastRow] + rowSizes[lastRow] - cellTop;
+      final cellLeftLtr = g.colOrigins[col];
+      final cellW = g.colOrigins[lastCol] + g.colSizes[lastCol] - cellLeftLtr;
+      final cellTop = g.rowOrigins[row];
+      final cellH = g.rowOrigins[lastRow] + g.rowSizes[lastRow] - cellTop;
 
       final justify = pd.justifySelf ?? _justifyItems;
       final alignV = pd.alignSelf ?? _alignItems;
@@ -1039,29 +1070,79 @@ class RenderFwGrid extends RenderBox
     }
   }
 
-  /// Max-content size of [index] along the axis: the largest single-track item's
-  /// max-intrinsic main size; spanning items distribute evenly across the tracks
-  /// they span (grid engine spec §2.2 step 3).
-  double _axisIntrinsic(
-    List<RenderBox> children,
-    int index, {
-    required bool horizontal,
-    required List<double>? colSizesSoFar,
-  }) {
+  /// Max-content contribution to **column** track [index]: a span-1 item gives its
+  /// full max-intrinsic width; a spanning item gives its width **minus the fixed
+  /// (`px`) tracks in its span**, split across the span's non-fixed tracks (CSS
+  /// §11.5 / grid spec §2.2 step 3 — corrected — audit; the previous even `/span`
+  /// split ignored fixed tracks).
+  double _colIntrinsic(List<RenderBox> children, List<({int col, int row})> cells, int index) {
     var best = 0.0;
-    for (final child in children) {
-      final pd = child.parentData! as FwGridParentData;
-      final span = horizontal ? pd.columnSpan.clamp(1, _columns.length) : pd.rowSpan;
-      final start = horizontal ? pd.resolvedColumn : pd.resolvedRow;
+    for (var i = 0; i < children.length; i++) {
+      final pd = children[i].parentData! as FwGridParentData;
+      final span = pd.columnSpan.clamp(1, _columns.length);
+      final start = cells[i].col;
       if (index < start || index >= start + span) continue;
-      final intrinsic =
-          horizontal
-              ? child.getMaxIntrinsicWidth(double.infinity)
-              : child.getMaxIntrinsicHeight(double.infinity);
-      final contribution = intrinsic / span; // even distribution across the span
-      if (contribution > best) best = contribution;
+      final intrinsic = children[i].getMaxIntrinsicWidth(double.infinity);
+      if (span == 1) {
+        if (intrinsic > best) best = intrinsic;
+        continue;
+      }
+      final excess = _spanExcess(intrinsic, _columns, start, span);
+      if (excess != null && excess > best) best = excess;
     }
     return best;
+  }
+
+  /// Max-content contribution to **row** track [r], measuring each occupying
+  /// child's height at its resolved cell width. Span-1 → full height; spanning →
+  /// height minus fixed (`px`) rows in the span, split across the non-fixed rows
+  /// (so a row-spanning item DOES size the auto rows it covers — corrected —
+  /// audit; the previous code ignored every `rowSpan > 1` item).
+  double _rowIntrinsic(
+    List<RenderBox> children,
+    List<({int col, int row})> cells,
+    List<FwGridTrack> rowTracks,
+    int r,
+    double Function(int i) cellWidthOf,
+  ) {
+    var best = 0.0;
+    for (var i = 0; i < children.length; i++) {
+      final pd = children[i].parentData! as FwGridParentData;
+      final span = pd.rowSpan;
+      final start = cells[i].row;
+      if (r < start || r >= start + span) continue;
+      final h = children[i].getMaxIntrinsicHeight(cellWidthOf(i));
+      if (span == 1) {
+        if (h > best) best = h;
+        continue;
+      }
+      final excess = _spanExcess(h, rowTracks, start, span);
+      if (excess != null && excess > best) best = excess;
+    }
+    return best;
+  }
+
+  /// The per-non-fixed-track share of a spanning item's [intrinsic] size: subtract
+  /// the fixed (`px` / `minmax(_, px)`) tracks in `[start, start+span)` and divide
+  /// the remainder across the non-fixed tracks. Returns `null` if the span has no
+  /// non-fixed track (a spanning item over only fixed tracks sizes none of them).
+  double? _spanExcess(double intrinsic, List<FwGridTrack> tracks, int start, int span) {
+    var fixed = 0.0;
+    var nonFixed = 0;
+    for (var t = start; t < start + span && t < tracks.length; t++) {
+      final track = tracks[t];
+      final px =
+          track is FwPx
+              ? track.size
+              : (track is FwMinMax && track.max is FwPx ? (track.max as FwPx).size : null);
+      if (px != null) {
+        fixed += px;
+      } else {
+        nonFixed++;
+      }
+    }
+    if (nonFixed == 0) return null;
+    return (intrinsic - fixed) / nonFixed;
   }
 
   double _inlineDelta(FwGridAlign a, double free) {
@@ -1084,26 +1165,37 @@ class RenderFwGrid extends RenderBox
     FwGridAlign.end => free,
   };
 
+  // Intrinsics + dry layout, all derived from the pure `_computeTracks` so they
+  // are consistent with `performLayout` and side-effect-free (corrected — audit:
+  // the old `_intrinsicWidth` mutated child parent data, and there were no height
+  // intrinsics or dry layout — so the grid mislaid under `IntrinsicHeight` and
+  // threw on `getDryLayout`).
   @override
-  double computeMinIntrinsicWidth(double height) => _intrinsicWidth();
+  double computeMinIntrinsicWidth(double height) => _natural().width;
 
   @override
-  double computeMaxIntrinsicWidth(double height) => _intrinsicWidth();
+  double computeMaxIntrinsicWidth(double height) => _natural().width;
 
-  double _intrinsicWidth() {
-    // Sum of column intrinsics + gaps (fixed tracks use their size).
+  @override
+  double computeMinIntrinsicHeight(double width) =>
+      _natural(maxWidth: width.isFinite ? width : double.infinity).height;
+
+  @override
+  double computeMaxIntrinsicHeight(double width) =>
+      _natural(maxWidth: width.isFinite ? width : double.infinity).height;
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
     final children = getChildrenAsList();
-    if (children.isEmpty) return 0;
-    _place(children, _columns.length);
-    var total = 0.0;
-    for (var i = 0; i < _columns.length; i++) {
-      total += switch (_columns[i]) {
-        FwPx(:final size) => size,
-        FwMinMax(:final minPx) => minPx,
-        _ => _axisIntrinsic(children, i, horizontal: true, colSizesSoFar: null),
-      };
-    }
-    return total + _columnGap * (_columns.length - 1);
+    if (children.isEmpty) return constraints.constrain(Size.zero);
+    return _computeTracks(constraints, children).size;
+  }
+
+  /// The grid's natural (content) size at an optional bounded [maxWidth].
+  Size _natural({double maxWidth = double.infinity}) {
+    final children = getChildrenAsList();
+    if (children.isEmpty) return Size.zero;
+    return _computeTracks(BoxConstraints(maxWidth: maxWidth), children).size;
   }
 
   @override
