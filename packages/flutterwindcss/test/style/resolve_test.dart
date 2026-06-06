@@ -141,9 +141,9 @@ void main() {
       groupOpacity: 0.5,
       contentBlur: 2,
       backdropBlurSigma: 2,
-      scale: 1,
+      scaleFactor: 1,
       rotation: 0.1,
-      translate: const Offset(1, 1),
+      translation: const Offset(1, 1),
       clipBehavior: Clip.antiAlias,
     );
     final over = const FwStyle().copyWith(
@@ -174,9 +174,9 @@ void main() {
       groupOpacity: 0.25,
       contentBlur: 4,
       backdropBlurSigma: 4,
-      scale: 2,
+      scaleFactor: 2,
       rotation: 0.2,
-      translate: const Offset(2, 2),
+      translation: const Offset(2, 2),
       clipBehavior: Clip.hardEdge,
     );
     final r = base.addLayer(const FwStateCondition(WidgetState.hovered), over).resolve(

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/widgets.dart';
 
 import '../tokens/scales.dart';
@@ -23,8 +25,9 @@ import 'fw_style.dart';
 /// *not* `.tw` setters (spec §6.0/§6.6), with first-class responsive
 /// layout-property layering via per-widget `viewport`/`container` patch maps —
 /// and confirmed the container-query family (`containerSm…`) already shipped here
-/// in module 3. Modules 9–10 extend this mixin with the remaining surface
-/// (transforms, animated theming).
+/// in module 3. Module 9 added the **transform** setters (`scale`/`rotate`/
+/// `translate`/`translateX`/`translateY`, paint-only). Module 10 (animated
+/// theming) is a dedicated widget, not a `.tw` setter.
 mixin FwStyleOps<T> {
   /// The current accumulated style.
   FwStyle get fwStyle;
@@ -430,6 +433,39 @@ mixin FwStyleOps<T> {
     assert(sigma >= 0, 'flutterwindcss: backdrop blur sigma must be >= 0 (got $sigma).');
     return fwRebuild(fwStyle.copyWith(backdropBlurSigma: sigma));
   }
+
+  // ---- Transform (paint-only; does NOT change the box's layout footprint) ----
+  //
+  // Like CSS `transform`, these change painting + hit-testing but not layout — a
+  // `.scale(1.5)` box still occupies its unscaled size and can visually overlap
+  // siblings (spec §6.4). `rotate` is in **degrees** (Tailwind `rotate-*`);
+  // `translate*` are in **utility units** (× 4 px, Tailwind `translate-*`);
+  // `scale` is **uniform** (Tailwind `scale-*`). Composition order is fixed by the
+  // render chain (T·R·S — scale, then rotate, then translate).
+
+  /// Uniform scale factor (Tailwind `scale-*`; `1.0` = identity, `<1` shrinks,
+  /// negatives flip). Paint-only — does not reflow siblings. Per-axis `scale-x`/
+  /// `scale-y` are not in v1 (the engine's scale field is uniform).
+  T scale(double factor) => fwRebuild(fwStyle.copyWith(scaleFactor: factor));
+
+  /// Rotation in **degrees**, clockwise (Tailwind `rotate-*`; stored internally
+  /// as radians). Paint-only.
+  T rotate(double degrees) => fwRebuild(fwStyle.copyWith(rotation: degrees * math.pi / 180.0));
+
+  Offset get _translation => fwStyle.translation ?? Offset.zero;
+
+  /// Translation by ([x], [y]) **utility units** (Tailwind `translate-*`).
+  /// Physical axes (not directional — matches CSS `translate`). Paint-only.
+  T translate(double x, double y) =>
+      fwRebuild(fwStyle.copyWith(translation: Offset(fwSpace(x), fwSpace(y))));
+
+  /// Horizontal translation (utility units), keeping any vertical translate.
+  T translateX(double x) =>
+      fwRebuild(fwStyle.copyWith(translation: Offset(fwSpace(x), _translation.dy)));
+
+  /// Vertical translation (utility units), keeping any horizontal translate.
+  T translateY(double y) =>
+      fwRebuild(fwStyle.copyWith(translation: Offset(_translation.dx, fwSpace(y))));
 
   // ---- Variant layering ----
 
