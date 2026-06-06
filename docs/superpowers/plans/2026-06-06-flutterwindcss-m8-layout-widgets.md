@@ -1,5 +1,7 @@
 # flutterwindcss Module 8 — Layout Widgets Implementation Plan
 
+> **⚠️ Historical plan — partially superseded.** `FwRow`/`FwColumn`/`FwWrap`/`FwStack`/`FwPositioned` are as-built per this plan. **`FwGrid` was subsequently rebuilt** as a real CSS-grid custom `RenderObject` (`RenderFwGrid`) — the flex-backed `Expanded`/`SizedBox` chunking described below is no longer how it works. For the as-built grid see `docs/superpowers/specs/2026-06-06-flutterwindcss-grid-engine-design.md`. This doc is kept for historical context.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. ALSO REQUIRED per task: `superpowers:test-driven-development`. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ship the six multi-child layout widgets the single-box `.tw` chain structurally cannot express — `FwRow`/`FwColumn`/`FwWrap`/`FwStack`/`FwPositioned`/`FwGrid` — as dedicated, directional, golden-tested widgets (spec §6.6, delivery table §12 row 8).

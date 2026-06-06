@@ -477,6 +477,13 @@ mixin FwStyleOps<T> {
       _layer(const FwStateCondition(WidgetState.hovered), build);
 
   /// Applies the built style while focused.
+  ///
+  /// Note: the engine's visual-only state sourcing uses a **non-traversable**
+  /// `Focus` (§6.2), so a bare `.tw` box is never itself focusable — a `focus:`
+  /// layer on a non-interactive box therefore won't trigger on its own. Focus +
+  /// a visible ring belong to an **interactive component** (which owns the action
+  /// and a real focusable detector); use `focus:` there, or feed `focused` via
+  /// `FwStyled.states`.
   T focus(FwStyle Function(FwStyle) build) =>
       _layer(const FwStateCondition(WidgetState.focused), build);
 

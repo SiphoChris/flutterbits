@@ -335,6 +335,81 @@ void main() {
     });
   });
 
+  group('audit fixes', () {
+    testWidgets('stacked minmax(min,1fr) floors do not lose space (no underflow)', (t) async {
+      // Each fr share is 50 but track0 floors at 60; the remainder (40) must go
+      // entirely to track1 (≥35), not get track1 spuriously pinned to 35.
+      await _pump(
+        t,
+        FwGrid(
+          columns: const [FwMinMax(60, FwFr()), FwMinMax(35, FwFr())],
+          children: [_box('a'), _box('b')],
+        ),
+        width: 100,
+      );
+      expect(_rect(t, 'a').width, 60);
+      expect(_rect(t, 'b').width, 40); // was 35 before the fix (5px lost)
+    });
+
+    testWidgets('a row-spanning item sizes the auto rows it covers', (t) async {
+      await _pump(
+        t,
+        FwGrid(
+          columns: const [FwFr()],
+          children: [const FwGridItem(rowSpan: 2, child: SizedBox(key: Key('a'), height: 100))],
+        ),
+        width: 100,
+      );
+      // 2 auto rows split the 100px content → cell height 100; the item fills it.
+      expect(_rect(t, 'a').height, 100);
+    });
+
+    testWidgets('a span subtracts fixed tracks before sizing the auto track', (t) async {
+      // [px(10), auto]; the span-2 item is 100 wide → auto track = 100 − 10 = 90
+      // (not 100/2 = 50). Verified via a 0-width probe in the auto column.
+      await _pump(
+        t,
+        FwGrid(
+          columns: const [FwPx(10), FwAuto()],
+          children: [
+            const FwGridItem(
+              columnSpan: 2,
+              child: SizedBox(key: Key('span'), width: 100, height: 10),
+            ),
+            const SizedBox(key: Key('probeA')), // row1 col0 (10px)
+            const SizedBox(key: Key('probeB')), // row1 col1 (auto)
+          ],
+        ),
+        width: 300,
+      );
+      expect(_rect(t, 'probeB').left, 10);
+      expect(_rect(t, 'probeB').width, 90); // excess-over-fixed, not 50
+    });
+
+    testWidgets('reports a non-zero intrinsic height under IntrinsicHeight', (t) async {
+      // Before the fix RenderFwGrid had no height intrinsics → 0 under
+      // IntrinsicHeight, collapsing the child. Now it reports the row content.
+      await t.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: IntrinsicHeight(
+              child: SizedBox(
+                width: 50,
+                child: FwGrid(
+                  columns: const [FwFr()],
+                  children: [const SizedBox(key: Key('a'), height: 30)],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(_rect(t, 'a').height, 30); // not collapsed to 0
+    });
+  });
+
   group('guards', () {
     test('empty columns asserts', () {
       expect(() => FwGrid(columns: const [], children: const []), throwsAssertionError);

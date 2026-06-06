@@ -44,7 +44,7 @@ Flutter has no structure/style split and no CSS cascade — the widget tree *is*
 
 ## Project status
 
-> **Early development.** The foundation is being built module‑by‑module, each one fully implemented, tested, and reviewed before the next begins — no stubs, no "TODO: productionize later."
+> **Engine complete; monorepo early.** The **`flutterwindcss` styling engine is complete** (modules 0–10 — tokens, theme access, the `FwStyle` resolver + `.tw` surface, layout widgets, a real CSS-grid render object, transforms, and animated theming). The wider monorepo is still early: the `flutterbits` components, the registry + CLI, and the tweakcn→`theme.dart` generator are next. Everything ships fully implemented, tested, and reviewed — no stubs, no "TODO: productionize later."
 
 **✅ Shipped (`flutterwindcss`):**
 
