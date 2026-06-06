@@ -77,4 +77,52 @@ void main() {
   test('empty columns asserts', () {
     expect(() => FwGrid(columns: const [], children: const []), throwsAssertionError);
   });
+
+  test('FwGridPatch asserts non-negative gaps', () {
+    expect(() => FwGridPatch(columnGap: -1), throwsAssertionError);
+    expect(() => FwGridPatch(rowGap: -1), throwsAssertionError);
+  });
+
+  group('responsive', () {
+    Widget frameViewport(double width, Widget child) => MediaQuery(
+      data: MediaQueryData(size: Size(width, 600)),
+      child: Directionality(textDirection: TextDirection.ltr, child: child),
+    );
+
+    testWidgets('viewport patch changes the column count (grid-cols responsive)', (t) async {
+      final grid = FwGrid(
+        columns: const [FwFr()], // 1 column below md
+        viewport: const {
+          FwBreakpoint.md: FwGridPatch(columns: [FwFr(), FwFr(), FwFr()]), // 3 columns at md
+        },
+        children: const [SizedBox(), SizedBox(), SizedBox()],
+      );
+      // 1 column → 3 rows.
+      await t.pumpWidget(frameViewport(500, grid));
+      expect(find.byType(Row), findsNWidgets(3));
+      // 3 columns → 1 row.
+      await t.pumpWidget(frameViewport(800, grid));
+      expect(find.byType(Row), findsNWidgets(1));
+    });
+
+    testWidgets('viewport patch changes the gaps', (t) async {
+      final grid = FwGrid(
+        columns: const [FwFr(), FwFr()],
+        columnGap: 1,
+        rowGap: 1,
+        viewport: const {FwBreakpoint.md: FwGridPatch(columnGap: 3, rowGap: 4)},
+        children: const [SizedBox(), SizedBox(), SizedBox(), SizedBox()],
+      );
+      await t.pumpWidget(frameViewport(800, grid));
+      expect(t.widget<Column>(find.byType(Column)).spacing, 16.0); // rowGap 4 × 4
+      expect(t.widget<Row>(find.byType(Row).first).spacing, 12.0); // columnGap 3 × 4
+    });
+
+    testWidgets('static grid inserts no LayoutBuilder', (t) async {
+      await t.pumpWidget(
+        frameViewport(800, FwGrid(columns: const [FwFr()], children: const [SizedBox()])),
+      );
+      expect(find.byType(LayoutBuilder), findsNothing);
+    });
+  });
 }
