@@ -64,6 +64,27 @@ void main() {
     );
   });
 
+  testWidgets('a plain child between two z-0 positioned children keeps declaration order', (t) async {
+    // All z 0 → the stable sort must preserve declaration order across the
+    // mixed positioned/plain set (no reordering of equal-z items).
+    await t.pumpWidget(
+      _wrap(
+        FwStack(
+          children: [
+            FwPositioned(z: 0, child: Container(key: const Key('p1'))),
+            Container(key: const Key('plain')),
+            FwPositioned(z: 0, child: Container(key: const Key('p2'))),
+          ],
+        ),
+      ),
+    );
+    final stack = t.widget<Stack>(find.byType(Stack));
+    Key keyOf(Widget w) => w is PositionedDirectional
+        ? (w.child as Container).key!
+        : (w as Container).key!;
+    expect(stack.children.map(keyOf).toList(), const [Key('p1'), Key('plain'), Key('p2')]);
+  });
+
   testWidgets('a bare FwPositioned outside FwStack throws a clear error', (t) async {
     await t.pumpWidget(_wrap(const FwPositioned(child: SizedBox())));
     expect(t.takeException(), isA<FlutterError>());
@@ -118,6 +139,22 @@ void main() {
     testWidgets('a fully static stack inserts no LayoutBuilder', (t) async {
       await t.pumpWidget(frameViewport(800, const FwStack(children: [SizedBox()])));
       expect(find.byType(LayoutBuilder), findsNothing);
+    });
+
+    testWidgets('container patch keys off the enclosing constraint (LayoutBuilder)', (t) async {
+      const stack = FwStack(
+        container: {FwBreakpoint.sm: FwStackPatch(alignment: AlignmentDirectional.center)},
+        children: [SizedBox()],
+      );
+      await t.pumpWidget(
+        frameViewport(2000, const Center(child: SizedBox(width: 300, child: stack))),
+      );
+      expect(find.byType(LayoutBuilder), findsOneWidget);
+      expect(t.widget<Stack>(find.byType(Stack)).alignment, AlignmentDirectional.topStart);
+      await t.pumpWidget(
+        frameViewport(2000, const Center(child: SizedBox(width: 700, child: stack))),
+      );
+      expect(t.widget<Stack>(find.byType(Stack)).alignment, AlignmentDirectional.center);
     });
   });
 }

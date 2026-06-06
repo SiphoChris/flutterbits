@@ -79,5 +79,22 @@ void main() {
       await t.pumpWidget(frameViewport(800, const FwWrap(children: [SizedBox()])));
       expect(find.byType(LayoutBuilder), findsNothing);
     });
+
+    testWidgets('container patch keys off the enclosing constraint (LayoutBuilder)', (t) async {
+      const wrap = FwWrap(
+        gap: 1,
+        container: {FwBreakpoint.sm: FwWrapPatch(gap: 5)},
+        children: [SizedBox()],
+      );
+      await t.pumpWidget(
+        frameViewport(2000, const Center(child: SizedBox(width: 300, child: wrap))),
+      );
+      expect(find.byType(LayoutBuilder), findsOneWidget);
+      expect(t.widget<Wrap>(find.byType(Wrap)).spacing, 4.0); // 300 < sm(640) → base 1 → 4
+      await t.pumpWidget(
+        frameViewport(2000, const Center(child: SizedBox(width: 700, child: wrap))),
+      );
+      expect(t.widget<Wrap>(find.byType(Wrap)).spacing, 20.0); // 700 >= sm → 5 → 20
+    });
   });
 }

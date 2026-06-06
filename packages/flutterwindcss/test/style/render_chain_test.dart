@@ -162,4 +162,44 @@ void main() {
     final radius = clip.borderRadius as BorderRadiusDirectional;
     expect(radius.topStart, const Radius.circular(10));
   });
+
+  testWidgets('deflated content-clip radius clamps at 0 when border ≥ radius', (t) async {
+    await _pump(
+      t,
+      ResolvedStyle(
+        clipBehavior: Clip.antiAlias,
+        borderRadius: const BorderRadiusDirectional.all(Radius.circular(2)),
+        border: Border.all(width: 5), // 5 > 2 → corner would go negative
+        background: const Color(0xFF112233),
+      ),
+    );
+    final clip = t.widget<ClipRRect>(find.byType(ClipRRect));
+    final radius = clip.borderRadius as BorderRadiusDirectional;
+    expect(radius.topStart, Radius.zero); // clamped, not negative
+  });
+
+  // --- Render-chain ORDER pins (the build() doc-comment pins outer→inner and
+  // says "do not reorder without updating render_chain_test.dart"; these pin the
+  // pairs that were previously unverified). ---
+
+  testWidgets('content blur is OUTSIDE group opacity', (t) async {
+    await _pump(t, const ResolvedStyle(opacity: 0.5, blur: 4, background: Color(0xFF111111)));
+    final blur = find.byType(ImageFiltered).first;
+    expect(find.descendant(of: blur, matching: find.byType(Opacity)), findsOneWidget);
+  });
+
+  testWidgets('transform is OUTSIDE content blur', (t) async {
+    await _pump(t, const ResolvedStyle(scale: 1.5, blur: 4));
+    final transform = find.byType(Transform).first;
+    expect(find.descendant(of: transform, matching: find.byType(ImageFiltered)), findsOneWidget);
+  });
+
+  testWidgets('content clip is OUTSIDE inner padding', (t) async {
+    await _pump(
+      t,
+      const ResolvedStyle(clipBehavior: Clip.antiAlias, padding: EdgeInsetsDirectional.all(8)),
+    );
+    final clip = find.byType(ClipRRect).first;
+    expect(find.descendant(of: clip, matching: find.byType(Padding)), findsOneWidget);
+  });
 }
