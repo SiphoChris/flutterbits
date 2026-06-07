@@ -33,6 +33,28 @@ jobs:
           path: packages/flutterwindcss/test/**/failures/
           if-no-files-found: ignore
 
+  example-app:
+    # The engine showcase (apps/example) is the runnable compile target + smoke-test
+    # vehicle (AGENTS.md §9). Analyze, format-check, and run its widget smoke tests
+    # so a change that breaks the example — or the engine API it consumes — fails CI.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/example
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.41.9
+      - run: flutter pub get
+      - name: Analyze (zero warnings)
+        run: flutter analyze --fatal-infos --fatal-warnings
+      - name: Format check
+        run: dart format --output=none --set-exit-if-changed --line-length 100 .
+      - name: Smoke tests (every section, light/dark, LTR/RTL)
+        run: flutter test
+
   floor-compat:
     # Verifies the toolchain floor (AGENTS.md §2): the package must compile and
     # its unit tests must pass on the MINIMUM supported Flutter/Dart. Goldens are

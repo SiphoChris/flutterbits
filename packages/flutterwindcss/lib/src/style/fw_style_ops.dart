@@ -547,7 +547,10 @@ mixin FwStyleOps<T> {
   T hueRotate(double degrees) => _applyColorFilter(_hueRotateMatrix(degrees));
 
   /// Object-fit for the child content (Tailwind `object-*`): wraps it in a
-  /// `FittedBox`. Mainly for images/replaced content.
+  /// `FittedBox`. Mainly for images/replaced content. Needs a **bounded** box to
+  /// fit into (set a size, or place it where the parent constrains it); under an
+  /// unbounded constraint on the fitted axis it safely degrades to no scaling
+  /// (the child renders at its natural size) rather than throwing.
   T fit(BoxFit fit) => fwRebuild(fwStyle.copyWith(boxFit: fit));
 
   // ---- Transform (paint-only; does NOT change the box's layout footprint) ----

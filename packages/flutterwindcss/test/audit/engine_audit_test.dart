@@ -176,6 +176,13 @@ void main() {
       expect(() => const FwGridItem(rowStart: 5, child: SizedBox()), returnsNormally);
     });
 
+    test('FwGridItem asserts against an absurd span (rowSpan drives implicit rows)', () {
+      // rowSpan grows the occupancy grid unboundedly; cap it like the start lines.
+      expect(() => FwGridItem(rowSpan: 1000000, child: const SizedBox()), throwsAssertionError);
+      expect(() => FwGridItem(columnSpan: 1000000, child: const SizedBox()), throwsAssertionError);
+      expect(() => const FwGridItem(rowSpan: 3, columnSpan: 2, child: SizedBox()), returnsNormally);
+    });
+
     testWidgets('auto row height comes from content (max-intrinsic)', (tester) async {
       await pumpGrid(
         tester,
@@ -297,6 +304,110 @@ void main() {
       expect(() => const FwStyle().textSize(0), throwsAssertionError);
       expect(() => const FwStyle().opacity(1.5), throwsAssertionError);
       expect(() => const FwStyle().blur(-1), throwsAssertionError);
+    });
+  });
+
+  // ----------------------------------------------------------- module 12 hardening
+
+  group('color filters compose order-sensitively', () {
+    test('brightness→contrast differs from contrast→brightness (non-commutative)', () {
+      // brightness(b) then contrast(c): out = c·(b·in) + bias  (bias = 127.5·(1-c))
+      // contrast(c) then brightness(b): out = b·(c·in + bias)  → bias scaled by b.
+      // So the composed bias differs when b != 1 — order is preserved.
+      final a = const FwStyle().brightness(2).contrast(0.5).colorMatrix!;
+      final b = const FwStyle().contrast(0.5).brightness(2).colorMatrix!;
+      expect(a[0], moreOrLessEquals(1, epsilon: 1e-9)); // both: slope 2·0.5 = 1
+      expect(b[0], moreOrLessEquals(1, epsilon: 1e-9));
+      // Bias differs: a = 63.75 (contrast applied last), b = 127.5 (×2).
+      expect(a[4], moreOrLessEquals(63.75, epsilon: 1e-6));
+      expect(b[4], moreOrLessEquals(127.5, epsilon: 1e-6));
+    });
+
+    test('a single filter leaves the alpha row untouched', () {
+      final m = const FwStyle().brightness(1.5).contrast(1.2).colorMatrix!;
+      // Alpha row [15..19] stays [0,0,0,1,0] — filters never touch alpha.
+      expect(m.sublist(15), <double>[0, 0, 0, 1, 0]);
+    });
+  });
+
+  group('object-fit constraint behavior', () {
+    testWidgets('fit scales content within a bounded box (cover fills)', (tester) async {
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: FwTheme(
+            tokens: FwTokens.light,
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: 200,
+                height: 100,
+                child: const SizedBox(
+                  key: Key('content'),
+                  width: 20,
+                  height: 20,
+                ).tw.fit(BoxFit.cover),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      // 20×20 content covered into 200×100 ⇒ uniform scale 10× ⇒ 200×200 painted.
+      expect(tester.getSize(find.byKey(const Key('content'))).width, moreOrLessEquals(20));
+      expect(find.byType(FittedBox), findsOneWidget);
+    });
+
+    testWidgets('fit under an unbounded width does not throw (degrades to no scale)', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: FwTheme(
+            tokens: FwTokens.light,
+            child: Row(
+              // Row gives the child UNBOUNDED main-axis (width) constraints.
+              children: <Widget>[
+                const SizedBox(key: Key('c'), width: 30, height: 20).tw.fit(BoxFit.cover),
+              ],
+            ),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('grid RTL right-packs under a forced-wide box (pin, not a bug)', () {
+    testWidgets('start-distributed px tracks pack to the right edge in RTL', (tester) async {
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.rtl,
+          child: FwTheme(
+            tokens: FwTokens.light,
+            child: Align(
+              alignment: Alignment.topLeft,
+              // Force the grid wider (300) than its 100px of tracks.
+              child: SizedBox(
+                width: 300,
+                height: 60,
+                child: FwGrid(
+                  columnGap: 0,
+                  columns: const <FwGridTrack>[FwPx(50), FwPx(50)],
+                  children: const <Widget>[
+                    SizedBox(key: Key('a'), height: 10),
+                    SizedBox(key: Key('b'), height: 10),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      // RTL: the first (start) cell sits at the RIGHT edge of the full 300 width.
+      expect(tester.getTopLeft(find.byKey(const Key('a'))).dx, moreOrLessEquals(250));
+      expect(tester.getTopLeft(find.byKey(const Key('b'))).dx, moreOrLessEquals(200));
     });
   });
 }
