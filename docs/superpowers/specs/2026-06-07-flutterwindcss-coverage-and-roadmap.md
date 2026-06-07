@@ -21,6 +21,48 @@ Tailwind utility — we build "the things that matter and aren't a hard add."
 - **Don't rebuild what already works.** Two properties of the typed API mean some Tailwind
   features need no new code (see below).
 
+## Distance to Tailwind (current — audited 2026-06-07)
+
+Verified against the code by an adversarial review pass. Headline:
+
+- **~85–90% of high-traffic, daily-use Tailwind utilities are built**, and **~70–75% of
+  Tailwind's *portable* utility surface** overall. The remaining distance is **breadth in
+  the long tail**, not depth in the core.
+- **Everything developers reach for daily is done:** spacing, sizing, color, typography
+  (incl. line-clamp/truncate/family), borders + radius, shadows, opacity, blur, gradients,
+  the full color-filter set + object-fit, transforms, the complete flex/grid/stack layout
+  vocabulary, responsive + container variants, and hover/focus/pressed/disabled states.
+- **Two multipliers** make effective coverage higher than a raw class count: arbitrary
+  values are native, and `bgGradient`/`shadow` are pass-through (radial/conic gradients and
+  arbitrary shadows already work).
+- **Legitimately out (not counted against the engine):** animation → `flutter_animate`
+  (§11b); forms/prose/tables/SVG/`sr-only` → the flutterbits component layer.
+- **Genuinely impossible / no analog (tiny):** true CSS cascade, pseudo-elements/`content`,
+  `float`/`clear`, `text-transform` as a render-time style, `will-change`.
+
+**Highest-value NOT-BUILT items** (excluding the out/delegated set), by value × ease:
+
+1. **`group-*` / `peer-*`** (M–L) — parent/sibling state propagation; the most-used missing
+   interactivity feature. `FwGroup` ancestor broadcasting via `InheritedWidget` + a new
+   resolver condition.
+2. **Overflow / scroll** (`overflow-auto/scroll`) (M) — a scroll widget (`overflow-hidden`
+   already = `.clip()`).
+3. **`cursor-*` + `pointer-events-none`** (S each) — `MouseRegion(cursor:)` / `IgnorePointer`;
+   cheap, high everyday value on web/desktop.
+4. **Transform extras** — `skew`, `scale-x/y`, `transform-origin` (M) — extend the composed
+   `Matrix4` (field already present, currently uniform).
+5. **`divide-*`** (S–M) — a separator flag on `FwRow`/`FwColumn`.
+6. **`mix-blend-mode`** (M) and **named-scale sugar** (`shadow-md`/`bg-gradient-to-r`, S).
+
+By-demand / larger: sticky (L, slivers), scroll-snap (L), backdrop color filters (M),
+dashed borders (M, custom painter), `bg-image` (S–M), `font-style: italic` (S).
+
+**Engine audit status:** an adversarial review of the full engine (resolver cascade, render
+chain, grid render object, tokens/lerp, modules 11–12) found **no correctness bugs**; one
+hardening gap was fixed (`FwGridItem` span cap, matching the existing line-number cap) and
+the object-fit bounded-constraint behavior was documented. The example app now has widget
+smoke tests (every section, light/dark, LTR/RTL) and is covered by CI.
+
 ## Two things that are already "free"
 
 1. **Arbitrary values are native.** Tailwind needs `w-[37px]`; here you write `.w(37)`. The

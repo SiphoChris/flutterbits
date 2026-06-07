@@ -353,6 +353,19 @@ class FwGridItem extends ParentDataWidget<FwGridParentData> {
     super.key,
   }) : assert(columnSpan >= 1, 'flutterwindcss: columnSpan must be >= 1 (got $columnSpan).'),
        assert(rowSpan >= 1, 'flutterwindcss: rowSpan must be >= 1 (got $rowSpan).'),
+       // Cap spans like the start lines: rowSpan grows the implicit-row occupancy
+       // grid, so an absurd value would allocate unboundedly (columnSpan is also
+       // clamped to the column count at layout, but cap it here for symmetry).
+       assert(
+         columnSpan <= _fwMaxGridLine,
+         'flutterwindcss: columnSpan $columnSpan exceeds the sane cap '
+         '($_fwMaxGridLine) — almost certainly a typo.',
+       ),
+       assert(
+         rowSpan <= _fwMaxGridLine,
+         'flutterwindcss: rowSpan $rowSpan exceeds the sane cap '
+         '($_fwMaxGridLine) — almost certainly a typo.',
+       ),
        assert(
          columnStart == null || columnStart >= 1,
          'flutterwindcss: columnStart is a 1-based line (got $columnStart).',
