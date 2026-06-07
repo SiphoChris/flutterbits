@@ -68,10 +68,21 @@ class TypographySection extends StatelessWidget {
         ),
         ShowcaseSection(
           title: 'Tracking (letter spacing)',
+          description:
+              'tracking() takes absolute px — multiply the em FwTracking scale by the font size '
+              '(here ×lg). Most visible on caps.',
           children: <Widget>[
-            const Text('tighter').tw.tracking(FwTracking.tighter).textSize(FwFontSize.lg.px),
-            const Text('normal').tw.tracking(FwTracking.normal).textSize(FwFontSize.lg.px),
-            const Text('WIDEST').tw.tracking(FwTracking.widest).textSize(FwFontSize.lg.px),
+            for (final (label, em) in const <(String, double)>[
+              ('tighter', FwTracking.tighter),
+              ('tight', FwTracking.tight),
+              ('normal', FwTracking.normal),
+              ('wide', FwTracking.wide),
+              ('wider', FwTracking.wider),
+              ('widest', FwTracking.widest),
+            ])
+              Text(
+                '$label · LETTER SPACING',
+              ).tw.tracking(em * FwFontSize.lg.px).textSize(FwFontSize.lg.px),
           ],
         ),
         ShowcaseSection(

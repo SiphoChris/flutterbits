@@ -75,35 +75,57 @@ class ColorBorderRadiusSection extends StatelessWidget {
               ],
             ),
             DemoTile(
-              label: 'per-edge (square): borderS · borderT · borderE+borderB',
+              label: 'per-edge (square): each edge individually, then all four at once',
               child: FwWrap(
-                gap: 4,
-                runGap: 4,
+                gap: 6,
+                runGap: 6,
                 children: <Widget>[
-                  demoChip(
-                    'borderS(4)',
+                  // Each edge on its own, high-contrast so the single stroke is clear.
+                  _edgeBox(context, 'S', (b) => b.borderS(width: 4, color: t.colors.primary)),
+                  _edgeBox(context, 'T', (b) => b.borderT(width: 4, color: t.colors.primary)),
+                  _edgeBox(context, 'E', (b) => b.borderE(width: 4, color: t.colors.primary)),
+                  _edgeBox(context, 'B', (b) => b.borderB(width: 4, color: t.colors.primary)),
+                  // All four, each a distinct colour — proves per-edge accumulation.
+                  _edgeBox(
+                    context,
+                    '4×',
                     (b) => b
-                        .bg(t.colors.muted)
-                        .text(t.colors.mutedForeground)
-                        .borderS(width: 4, color: t.colors.primary),
-                  ),
-                  demoChip(
-                    'borderT(4)',
-                    (b) => b
-                        .bg(t.colors.muted)
-                        .text(t.colors.mutedForeground)
-                        .borderT(width: 4, color: t.colors.accent),
-                  ),
-                  demoChip(
-                    'borderE+borderB',
-                    (b) => b
-                        .bg(t.colors.muted)
-                        .text(t.colors.mutedForeground)
-                        .borderE(width: 3, color: t.colors.primary)
-                        .borderB(width: 3, color: t.colors.accent),
+                        .borderT(width: 4, color: FwPalette.red.shade500)
+                        .borderE(width: 4, color: FwPalette.green.shade500)
+                        .borderB(width: 4, color: FwPalette.blue.shade500)
+                        .borderS(width: 4, color: FwPalette.amber.shade500),
                   ),
                 ],
               ),
+            ),
+          ],
+        ),
+        ShowcaseSection(
+          title: 'Border style (dashed / dotted)',
+          description:
+              'borderDashed / borderDotted — Flutter has no dashed BorderSide, so these are painted. '
+              'Uniform borders only; they follow the corner radius. The drop-to-upload staple.',
+          children: <Widget>[
+            FwWrap(
+              gap: 6,
+              runGap: 6,
+              children: <Widget>[
+                Center(child: const Text('Drop files').tw.text(t.colors.mutedForeground)).tw
+                    .w(36)
+                    .h(18)
+                    .bg(t.colors.muted)
+                    .rounded(t.radii.lg)
+                    .border(2, color: t.colors.mutedForeground)
+                    .borderDashed,
+                const SizedBox(
+                  width: 110,
+                  height: 64,
+                ).tw.rounded(t.radii.lg).border(2, color: t.colors.primary).borderDotted,
+                const SizedBox(
+                  width: 110,
+                  height: 64,
+                ).tw.border(2, color: t.colors.border).borderDashed,
+              ],
             ),
           ],
         ),
@@ -146,15 +168,32 @@ class ColorBorderRadiusSection extends StatelessWidget {
     );
   }
 
+  /// A fixed box showing a single (or multi) per-edge border, high-contrast.
+  Widget _edgeBox(BuildContext context, String label, FwStyled Function(FwStyled) edges) {
+    final t = context.fw;
+    return DemoTile(
+      label: label,
+      child: edges(
+        Center(
+          child: Text(label).tw.textSize(FwFontSize.xs.px).text(t.colors.mutedForeground),
+        ).tw.w(16).h(14).bg(t.colors.card),
+      ),
+    );
+  }
+
+  /// Clip demo: a rotated bar paints beyond the box (rotation overflows the box's
+  /// paint bounds — unlike an oversized child, which the tight `w/h` constraints
+  /// would just clamp). Without `clip()` the bar's ends poke past the rounded
+  /// corners; with it, the bar is cut to the rounded shape.
   Widget _clipDemo(BuildContext context, {required bool clip}) {
     final t = context.fw;
-    final child = const SizedBox(width: 110, height: 28).tw.bg(t.colors.accent).rotate(22);
-    final base = child.tw
-        .w(26)
-        .h(14)
-        .bg(t.colors.muted)
-        .rounded(t.radii.lg)
-        .border(1, color: t.colors.border);
+    final bar = const SizedBox(
+      width: 150,
+      height: 26,
+    ).tw.bgGradientToEnd(<Color>[t.colors.primary, t.colors.destructive]).rotate(28);
+    final base = Center(
+      child: bar,
+    ).tw.w(26).h(26).bg(t.colors.muted).rounded(t.radii.xl).border(2, color: t.colors.border);
     return DemoTile(label: clip ? 'clip()' : 'no clip', child: clip ? base.clip() : base);
   }
 

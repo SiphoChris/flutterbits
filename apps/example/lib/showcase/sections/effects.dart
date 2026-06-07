@@ -18,16 +18,22 @@ class EffectsSection extends StatelessWidget {
       children: <Widget>[
         ShowcaseSection(
           title: 'Shadow',
-          description: 'shadow(List<BoxShadow>) from the theme elevation scale.',
+          description:
+              'shadow(List<BoxShadow>) — the full theme elevation scale. 2xl is a large, '
+              'offset-down modal shadow, so it reads softly; the generous spacing gives each '
+              'shadow room to show.',
           children: <Widget>[
             FwWrap(
-              gap: 6,
-              runGap: 6,
+              gap: 14,
+              runGap: 18,
               children: <Widget>[
+                _shadow(context, '2xs', t.shadows.xs2),
+                _shadow(context, 'xs', t.shadows.xs),
                 _shadow(context, 'sm', t.shadows.sm),
                 _shadow(context, 'md', t.shadows.md),
                 _shadow(context, 'lg', t.shadows.lg),
                 _shadow(context, 'xl', t.shadows.xl),
+                _shadow(context, '2xl', t.shadows.xl2),
               ],
             ),
           ],
@@ -187,8 +193,8 @@ class EffectsSection extends StatelessWidget {
     return DemoTile(
       label: label,
       child: const SizedBox(
-        width: 56,
-        height: 40,
+        width: 72,
+        height: 52,
       ).tw.bg(t.colors.card).rounded(t.radii.md).border(1, color: t.colors.border).shadow(shadow),
     );
   }
