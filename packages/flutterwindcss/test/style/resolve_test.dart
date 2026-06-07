@@ -270,4 +270,148 @@ void main() {
     expect(r.padding, const EdgeInsetsDirectional.all(16)); // preserved (p(4) = 16px)
     expect(r.fontSize, 16); // preserved
   });
+
+  // ---- Module 14: group/peer channel resolution ----
+
+  group('group/peer resolution', () {
+    Set<WidgetState> hovered() => <WidgetState>{WidgetState.hovered};
+
+    test('a group layer applies only when the group channel holds the state', () {
+      final style = const FwStyle()
+          .bg(_a)
+          .addLayer(
+            const FwGroupCondition(FwRelation.group, WidgetState.hovered),
+            const FwStyle().bg(_b),
+          );
+      // No group channel → base.
+      expect(style.resolve(const <WidgetState>{}).background, _a);
+      // Group hovered → override.
+      expect(
+        style
+            .resolve(
+              const <WidgetState>{},
+              groupStates: <String?, Set<WidgetState>>{null: hovered()},
+            )
+            .background,
+        _b,
+      );
+      // Peer hovered must NOT satisfy a group layer.
+      expect(
+        style
+            .resolve(
+              const <WidgetState>{},
+              peerStates: <String?, Set<WidgetState>>{null: hovered()},
+            )
+            .background,
+        _a,
+      );
+    });
+
+    test('a peer layer applies only when the peer channel holds the state', () {
+      final style = const FwStyle()
+          .bg(_a)
+          .addLayer(
+            const FwGroupCondition(FwRelation.peer, WidgetState.focused),
+            const FwStyle().bg(_b),
+          );
+      expect(
+        style
+            .resolve(
+              const <WidgetState>{},
+              peerStates: <String?, Set<WidgetState>>{
+                null: <WidgetState>{WidgetState.focused},
+              },
+            )
+            .background,
+        _b,
+      );
+      expect(
+        style
+            .resolve(
+              const <WidgetState>{},
+              groupStates: <String?, Set<WidgetState>>{
+                null: <WidgetState>{WidgetState.focused},
+              },
+            )
+            .background,
+        _a,
+      );
+    });
+
+    test('a named group layer reads its own channel key', () {
+      final style = const FwStyle()
+          .bg(_a)
+          .addLayer(
+            const FwGroupCondition(FwRelation.group, WidgetState.hovered, name: 'sidebar'),
+            const FwStyle().bg(_b),
+          );
+      // Default channel hovered but not 'sidebar' → base.
+      expect(
+        style
+            .resolve(
+              const <WidgetState>{},
+              groupStates: <String?, Set<WidgetState>>{null: hovered()},
+            )
+            .background,
+        _a,
+      );
+      // 'sidebar' hovered → override.
+      expect(
+        style
+            .resolve(
+              const <WidgetState>{},
+              groupStates: <String?, Set<WidgetState>>{'sidebar': hovered()},
+            )
+            .background,
+        _b,
+      );
+    });
+
+    test('disabled suppresses group-hover within the group channel', () {
+      final style = const FwStyle()
+          .bg(_a)
+          .addLayer(
+            const FwGroupCondition(FwRelation.group, WidgetState.hovered),
+            const FwStyle().bg(_b),
+          )
+          .addLayer(
+            const FwGroupCondition(FwRelation.group, WidgetState.disabled),
+            const FwStyle().bg(_c),
+          );
+      final r = style.resolve(
+        const <WidgetState>{},
+        groupStates: <String?, Set<WidgetState>>{
+          null: <WidgetState>{WidgetState.disabled, WidgetState.hovered},
+        },
+      );
+      expect(r.background, _c); // group-hover dropped; group-disabled applied
+    });
+
+    test('a group-hover layer outranks a breakpoint layer (state tier)', () {
+      final style = const FwStyle()
+          .bg(_a)
+          .md((m) => m.bg(_b)) // tier 0
+          .addLayer(
+            const FwGroupCondition(FwRelation.group, WidgetState.hovered),
+            const FwStyle().bg(_c),
+          );
+      final r = style.resolve(
+        const <WidgetState>{},
+        viewportWidth: 800,
+        groupStates: <String?, Set<WidgetState>>{null: hovered()},
+      );
+      expect(r.background, _c); // group state beats md, despite md declared first
+    });
+
+    test('the box own-states do not leak into the group channel', () {
+      // A group-hover layer must NOT fire just because the box itself is hovered.
+      final style = const FwStyle()
+          .bg(_a)
+          .addLayer(
+            const FwGroupCondition(FwRelation.group, WidgetState.hovered),
+            const FwStyle().bg(_b),
+          );
+      expect(style.resolve(<WidgetState>{WidgetState.hovered}).background, _a);
+    });
+  });
 }
