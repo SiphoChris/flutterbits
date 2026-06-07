@@ -17,6 +17,7 @@ import 'sections/states.dart';
 import 'sections/tokens.dart';
 import 'sections/transforms.dart';
 import 'sections/typography.dart';
+import 'sections/utilities.dart';
 
 /// Root widget: owns brightness, text direction, and the selected category.
 class ShowcaseApp extends StatefulWidget {
@@ -115,6 +116,7 @@ class _Shell extends StatelessWidget {
     ShowcaseCategory.states => const StatesSection(),
     ShowcaseCategory.interactivity => const InteractivitySection(),
     ShowcaseCategory.groupPeer => const GroupPeerSection(),
+    ShowcaseCategory.utilities => const UtilitiesSection(),
     ShowcaseCategory.responsive => const ResponsiveSection(),
     ShowcaseCategory.layout => const LayoutSection(),
   };

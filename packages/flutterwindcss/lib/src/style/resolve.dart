@@ -1,8 +1,49 @@
 import 'package:flutter/widgets.dart';
 
+import '../tokens/tokens.dart';
 import 'fw_layer.dart';
 import 'fw_style.dart';
 import 'resolved_style.dart';
+
+/// Theme-token pre-resolution for the named-scale sugar (module 15).
+///
+/// `roundedMd`/`shadowSm`/… store a *step* enum; this pass — run by `FwStyled`
+/// at build, where a [FwTokens] is in scope — converts each step into the
+/// concrete `borderRadius`/`boxShadow` against the active theme, recursing into
+/// nested layers so `hover:shadow-lg` works. It runs **before** [resolve] so
+/// `resolve` itself stays context-free (spec §6.3). A node that sets both a step
+/// and the corresponding raw value asserts: the accumulator can't last-wins
+/// across two fields, so the author must pick one.
+extension FwStyleTokenResolve on FwStyle {
+  /// Returns a copy with every radius/shadow step (here and in nested layers)
+  /// resolved against [tokens]; styles with no steps are returned unchanged.
+  FwStyle resolveTokenSteps(FwTokens tokens) {
+    final newLayers = <FwLayer>[
+      for (final (condition, nested) in layers) (condition, nested.resolveTokenSteps(tokens)),
+    ];
+    var out = copyWith(layers: newLayers);
+    if (radiusStep != null) {
+      assert(
+        borderRadius == null,
+        'flutterwindcss: do not mix a radius step (roundedSm/Md/Lg/Xl) with a raw '
+        'rounded*(value) in the same chain — last-wins cannot order two fields. '
+        'Pick one (use rounded(context.fw.radii.md) for per-corner control).',
+      );
+      out = out.copyWith(
+        borderRadius: BorderRadiusDirectional.all(Radius.circular(radiusStep!.resolve(tokens))),
+      );
+    }
+    if (shadowStep != null) {
+      assert(
+        boxShadow == null,
+        'flutterwindcss: do not mix a shadow step (shadowSm/Md/…) with a raw '
+        'shadow(list) in the same chain — last-wins cannot order two fields.',
+      );
+      out = out.copyWith(boxShadow: shadowStep!.resolve(tokens));
+    }
+    return out;
+  }
+}
 
 /// Drops hover/focus/pressed from [states] when `disabled` is present (spec §6.3
 /// Finding #7); otherwise returns [states] unchanged.
@@ -65,8 +106,10 @@ extension FwStyleResolve on FwStyle {
       background: merged.background,
       gradient: merged.gradient,
       border: merged.borderSpec?.resolve(),
+      borderStyle: merged.borderStyle,
       borderRadius: merged.borderRadius,
       boxShadow: merged.boxShadow,
+      ringSpec: merged.ringSpec,
       foreground: merged.foreground,
       fontSize: merged.fontSize,
       fontWeight: merged.fontWeight,
@@ -204,8 +247,10 @@ FwStyle _overlay(FwStyle base, FwStyle top) => base.copyWith(
   background: top.background,
   gradient: top.gradient,
   borderSpec: top.borderSpec,
+  borderStyle: top.borderStyle,
   borderRadius: top.borderRadius,
   boxShadow: top.boxShadow,
+  ringSpec: top.ringSpec,
   foreground: top.foreground,
   fontSize: top.fontSize,
   fontWeight: top.fontWeight,

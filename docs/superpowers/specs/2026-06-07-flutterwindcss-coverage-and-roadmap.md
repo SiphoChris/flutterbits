@@ -77,8 +77,12 @@ smoke tests (every section, light/dark, LTR/RTL) and is covered by CI.
 | Spacing (padding/margin, directional) | ✅ (negative margins `-m-*` ⬜ — not yet built, §"By-demand") |
 | Sizing (w/h/min/max, fractional, aspect, square) | ✅ |
 | Color: background, text color | ✅ |
-| Gradients | ✅ via pass-through (`bgGradient`); named sugar ⬜ |
+| Gradients | ✅ pass-through (`bgGradient`) + direction sugar `bgGradientTo*` (module 15) |
 | Border (uniform + per-edge, width/color) | ✅ |
+| Border style: dashed / dotted (drop-zones) | ✅ (module 15, custom painter) |
+| Focus `ring` (+ offset) | ✅ (module 15) |
+| Named-scale sugar: `shadow-md`, `rounded-lg` | ✅ (module 15, theme-resolved) |
+| Overflow / scroll (`overflow-auto/scroll`, `FwScroll`) | ✅ (module 15) |
 | Border-radius (per-corner, directional) | ✅ |
 | Typography: size, weight, leading, tracking, align, underline/strike | ✅ |
 | Typography: family, line-clamp/truncate, text-overflow, whitespace | ✅ (module 11) |
@@ -132,21 +136,27 @@ Feasible, larger, or lower-frequency. Each is a real idiom, none is a wall.
 |---|---|---|---|
 | ~~**`group-*` / `peer-*`** (parent/sibling state propagation)~~ | ✅ shipped (module 14). `FwGroup` broadcasts its state to descendants and hosts the peer channel `FwPeer`s publish into (one scope, two channels — Flutter has no sibling selectors); `FwGroupCondition` (relation + state + name) the resolver matches; `groupHover`/`peerHover`/… setters. Named groups/peers supported. | resolver + new widgets | — |
 | ~~Transform extras (`skew`, `scale-x/y`, `transform-origin`)~~ | ✅ shipped (module 13). 3D `rotate-x/y`/`perspective` remain ⬜ (by-demand) | `.tw` transform | — |
-| **Overflow / scroll** (`overflow-auto/scroll`) | `SingleChildScrollView`/`Scrollbar` — needs a *scroll widget*, not a single-box layer (`overflow-hidden` already = `.clip()`) | new widget | **M** |
-| **Named-scale sugar** (`shadow-md`, `rounded-lg`, `bg-gradient-to-r`) | thin `.tw` aliases over the existing tokens (`context.fw.shadows.md`/`radii.lg`) + `LinearGradient` helpers. The *values* already exist; only the chainable aliases don't. | `.tw` | **S** |
-| **`ring` utility** | outer box-shadow/border helper reading `context.fw.colors.ring` (shadcn focus rings) | `.tw` effects | **S–M** |
+| ~~**Overflow / scroll** (`overflow-auto/scroll`)~~ | ✅ shipped (module 15) — `FwScroll` (`SingleChildScrollView` + `RawScrollbar`, Material-free). `overflow-hidden` is `.clip()`. | new widget | — |
+| ~~**Named-scale sugar** (`shadow-md`, `rounded-lg`, `bg-gradient-to-r`)~~ | ✅ shipped (module 15) — `shadowSm/Md/…`, `roundedSm/Md/Lg/Xl` (theme-resolved via a gated build-time pass), gradient `bgGradientTo*`. | `.tw` | — |
+| ~~**`ring` utility**~~ | ✅ shipped (module 15) — `ring(width, {color, offset, offsetColor})`, a zero-blur spread shadow composed with `shadow`. | `.tw` effects | — |
+| ~~**Dashed/dotted borders**~~ | ✅ shipped (module 15) — `borderDashed`/`borderDotted` via `FwDashedBorderPainter` (uniform). | `.tw` border | — |
 | **`divide-*`** (borders between flex children) | a flag on `FwRow`/`FwColumn` that inserts directional separators | layout widgets | **S–M** |
 | **Negative margins** (`-m-*`) | split positive/negative per edge — positive via `Padding`, negative via `Transform.translate` (paint-only) or a custom parent-data offset. *Currently asserts with a clear "not yet supported" message* (margin renders via `Padding`, non-negative only). | `.tw` spacing | **M** |
 | **`bg-image`** (background-image) | `DecorationImage` on the surface decoration | `.tw` decoration | **S–M** |
 | **`mix-blend-mode`** | `BlendMode` via a `saveLayer`/`ShaderMask` wrapper | `.tw` effects | **M** |
-| **Dashed/dotted borders** | custom painter — Flutter's `BorderSide` has no dashed style | `.tw` border | **M** |
 | **3D transforms** (`rotate-x/y`, `perspective`) | `Matrix4.setEntry` perspective + `rotateX/Y` | `.tw` transform | **M** |
-| **`space-x/space-y`** | sibling-spacing inserter on flex (largely subsumed by `gap` — document `gap` as the idiom) | layout widgets | **S** |
 | **Backdrop color filters** (`backdrop-brightness`…) | harder — `BackdropFilter` takes an `ImageFilter`, not a `ColorFilter` | `.tw` effects | **M** |
 | **Sticky** (`position: sticky`) | `SliverPersistentHeader` (sliver context) | new widget | **L** |
 | **Scroll-snap / scroll-margin** | `ScrollPhysics`/`PageView`-style | new widget | **L** |
 
-None of these is impossible — each names its Flutter mechanism and is scheduled, not refused (AGENTS.md §11/§12). They are deliberately **not** built yet because the shipped surface already covers ~85–90% of daily-driver Tailwind; these are long-tail breadth.
+**`space-x-*` / `space-y-*`: already covered — use `gap`.** Tailwind's `space-*` inserts margin
+*between* siblings; Flutter's `Flex.spacing` (which `FwRow`/`FwColumn`'s `gap` uses) is exactly
+that — space between, no trailing edge. So `gap` is the faithful, better equivalent; there is no
+separate `space-*` API by design (a redundant one would just wrap `gap`).
+
+None of the remaining items is impossible — each names its Flutter mechanism and is scheduled, not
+refused (AGENTS.md §11/§12). They are deliberately **not** built yet because the shipped surface
+covers the daily-driver set; these are long-tail breadth.
 
 ### Tier 3 — Delegate (don't build into the engine)
 
@@ -175,25 +185,28 @@ list-building site (you know each child's index), so they need no engine feature
 3. **Module 14 — Group/peer:** ✅ **shipped** — `FwGroup`/`FwPeer`, `group-*`/`peer-*`
    variants (named), the `FwGroupCondition` resolver member. See
    `2026-06-07-flutterwindcss-m14-group-peer-design.md`.
-4. **Then, by demand:** the Tier 2 list, prioritized by what real flutterbits components need.
-5. **Never (in the engine):** an element-animation subsystem (→ `flutter_animate`); `prose`
+4. **Module 15 — Ergonomics + completeness:** ✅ **shipped** — gradient direction sugar,
+   `ring`, named-scale `shadow*`/`rounded*` sugar, `FwScroll`, dashed/dotted borders.
+5. **Then, by demand:** the remaining Tier 2 list, prioritized by what real flutterbits
+   components need.
+6. **Never (in the engine):** an element-animation subsystem (→ `flutter_animate`); `prose`
    and forms (→ flutterbits); the §11a impossible set.
 
-## Pre-docs completeness recommendation (audit 2026-06-07)
+## Pre-docs completeness — done (module 15, 2026-06-07)
 
-The engine is genuinely complete-feeling for the core; the roadmap above is verified accurate
-against the code. Before the docs launch, the cheapest first-impression wins (optional, owner's
-call — none blocks docs):
+All three pre-docs recommendations shipped in **module 15**, plus dashed borders (raised by a real
+drop-zone need):
 
-- **Named-scale sugar (S)** — `shadowMd`/`shadowLg`, `roundedLg`, `bgGradientToR/B/...`. Pure
-  ergonomics over existing tokens; makes the surface read like Tailwind muscle-memory.
-- **A scroll widget (M)** — `overflow-auto/scroll`. The one missing primitive a dev is likely to
-  reach for in the first ten minutes (`overflow-hidden` already = `.clip()`).
-- **`ring` helper (S–M)** — pairs naturally with the first flutterbits component (shadcn focus
-  rings); could land with that component instead.
+- ✅ **Named-scale sugar** — `shadowXs2/Xs/Sm/Md/Lg/Xl/2xl`/`shadowNone`, `roundedSm/Md/Lg/Xl`
+  (theme-resolved at build), and gradient `bgGradientTo{Top,Bottom,Start,End,…}` + `bgLinear`.
+- ✅ **Scroll** — `FwScroll` (`overflow-auto/scroll`), Material-free.
+- ✅ **Focus `ring`** — `ring(width, {color, offset, offsetColor})`.
+- ✅ **Dashed/dotted borders** — `borderDashed`/`borderDotted` (drop-to-upload zones).
 
-Everything else in Tier 2 ships as documented by-demand. The point of recording them here is that
-**nothing is silently dropped** — each has a mechanism and a size.
+The engine now covers the daily-driver set **and** the most-noticed long-tail. Remaining Tier 2
+items (divide, bg-image, mix-blend, 3D transforms, sticky, scroll-snap, backdrop color filters,
+negative margins) ship by-demand — each recorded above with a mechanism and size, **nothing
+silently dropped**.
 
 ## Non-goals reaffirmed
 

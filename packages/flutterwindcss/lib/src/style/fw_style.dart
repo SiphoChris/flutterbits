@@ -4,7 +4,9 @@ import 'package:flutter/services.dart' show MouseCursor;
 
 import 'fw_border_spec.dart';
 import 'fw_layer.dart';
+import 'fw_ring.dart';
 import 'fw_style_ops.dart';
+import 'fw_token_steps.dart';
 
 /// One nested style layer: the condition under which it applies and the style to
 /// merge when it does. The style may itself contain layers (joint `md:hover:`).
@@ -35,8 +37,12 @@ class FwStyle with FwStyleOps<FwStyle> {
     this.background,
     this.gradient,
     this.borderSpec,
+    this.borderStyle,
     this.borderRadius,
+    this.radiusStep,
     this.boxShadow,
+    this.shadowStep,
+    this.ringSpec,
     this.foreground,
     this.fontSize,
     this.fontWeight,
@@ -120,11 +126,29 @@ class FwStyle with FwStyleOps<FwStyle> {
   /// `BoxBorder`).
   final FwBorderSpec? borderSpec;
 
+  /// Border line style (set by `borderDashed`/`borderDotted`/`borderSolid`); a
+  /// non-solid style paints the border via `FwDashedBorderPainter` (module 15).
+  final FwBorderStyle? borderStyle;
+
   /// Corner radii (directional).
   final BorderRadiusDirectional? borderRadius;
 
+  /// Named radius step (set by `roundedSm`/`Md`/`Lg`/`Xl`); resolved against the
+  /// theme into [borderRadius] by `FwStyled` at build (module 15). Mutually
+  /// exclusive with a raw [borderRadius] in the same node (asserts).
+  final FwRadiusStep? radiusStep;
+
   /// Drop shadows (token scale).
   final List<BoxShadow>? boxShadow;
+
+  /// Named shadow step (set by `shadowSm`/`Md`/…/`shadowNone`); resolved against
+  /// the theme into [boxShadow] by `FwStyled` at build (module 15). Mutually
+  /// exclusive with a raw [boxShadow] in the same node (asserts).
+  final FwShadowStep? shadowStep;
+
+  /// Focus-ring spec (set by `ring`); rendered as composed box-shadows alongside
+  /// [boxShadow] so a ring and a drop shadow coexist. Module 15.
+  final FwRing? ringSpec;
 
   // Foreground / text.
   /// Default text/icon color for descendants.
@@ -270,8 +294,12 @@ class FwStyle with FwStyleOps<FwStyle> {
     Color? background,
     Gradient? gradient,
     FwBorderSpec? borderSpec,
+    FwBorderStyle? borderStyle,
     BorderRadiusDirectional? borderRadius,
+    FwRadiusStep? radiusStep,
     List<BoxShadow>? boxShadow,
+    FwShadowStep? shadowStep,
+    FwRing? ringSpec,
     Color? foreground,
     double? fontSize,
     FontWeight? fontWeight,
@@ -319,8 +347,12 @@ class FwStyle with FwStyleOps<FwStyle> {
       background: background ?? this.background,
       gradient: gradient ?? this.gradient,
       borderSpec: borderSpec ?? this.borderSpec,
+      borderStyle: borderStyle ?? this.borderStyle,
       borderRadius: borderRadius ?? this.borderRadius,
+      radiusStep: radiusStep ?? this.radiusStep,
       boxShadow: boxShadow ?? this.boxShadow,
+      shadowStep: shadowStep ?? this.shadowStep,
+      ringSpec: ringSpec ?? this.ringSpec,
       foreground: foreground ?? this.foreground,
       fontSize: fontSize ?? this.fontSize,
       fontWeight: fontWeight ?? this.fontWeight,
@@ -376,8 +408,12 @@ class FwStyle with FwStyleOps<FwStyle> {
       background == other.background &&
       gradient == other.gradient &&
       borderSpec == other.borderSpec &&
+      borderStyle == other.borderStyle &&
       borderRadius == other.borderRadius &&
+      radiusStep == other.radiusStep &&
       listEquals(boxShadow, other.boxShadow) &&
+      shadowStep == other.shadowStep &&
+      ringSpec == other.ringSpec &&
       foreground == other.foreground &&
       fontSize == other.fontSize &&
       fontWeight == other.fontWeight &&
@@ -426,8 +462,12 @@ class FwStyle with FwStyleOps<FwStyle> {
     background,
     gradient,
     borderSpec,
+    borderStyle,
     borderRadius,
+    radiusStep,
     boxShadow == null ? null : Object.hashAll(boxShadow!),
+    shadowStep,
+    ringSpec,
     foreground,
     fontSize,
     fontWeight,

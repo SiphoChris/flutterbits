@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../theme/context_fw.dart';
 import 'fw_group.dart';
 import 'fw_layer.dart';
 import 'fw_style.dart';
@@ -82,6 +83,21 @@ class FwStyled extends StatelessWidget with FwStyleOps<FwStyled> {
   /// does NOT trigger this box's own live sourcing.
   bool get _needsRelationStates => _anyCondition((c) => c.isRelation);
 
+  /// Whether any style node (base or nested layer) carries a radius/shadow *step*
+  /// (module 15 named-scale sugar). The only thing that makes `FwStyled` read the
+  /// theme (`context.fw`) — gated so a non-sugar box stays theme-agnostic.
+  bool get _needsTokenSteps {
+    bool walk(FwStyle s) {
+      if (s.radiusStep != null || s.shadowStep != null) return true;
+      for (final (_, nested) in s.layers) {
+        if (walk(nested)) return true;
+      }
+      return false;
+    }
+
+    return walk(style);
+  }
+
   @override
   Widget build(BuildContext context) {
     // Container layers need the enclosing constraint width via a LayoutBuilder.
@@ -99,6 +115,12 @@ class FwStyled extends StatelessWidget with FwStyleOps<FwStyled> {
     final viewportWidth =
         _anyCondition((c) => c.isViewport) ? MediaQuery.maybeOf(context)?.size.width : null;
 
+    // Named-scale sugar (module 15): resolve radius/shadow steps against the
+    // active theme into concrete values BEFORE resolve(), which stays
+    // context-free. Gated so a non-sugar box never reads the theme. Conditions
+    // are unchanged by this pass, so the *needs* checks below read the original.
+    final effectiveStyle = _needsTokenSteps ? style.resolveTokenSteps(context.fw) : style;
+
     // Read the nearest FwGroup scope only when a group/peer layer is present
     // (otherwise no dependency is created). Sourcing is the FwGroup/FwPeer's job;
     // this box is a pure reader that rebuilds via its scope dependency.
@@ -111,7 +133,7 @@ class FwStyled extends StatelessWidget with FwStyleOps<FwStyled> {
     // Component-managed states arrive via [states] and resolve statelessly.
     if (_needsLiveStateSourcing) {
       return _FwStyledInteractive(
-        style: style,
+        style: effectiveStyle,
         injected: states ?? const <WidgetState>{},
         viewportWidth: viewportWidth,
         containerWidth: containerWidth,
@@ -121,7 +143,7 @@ class FwStyled extends StatelessWidget with FwStyleOps<FwStyled> {
       );
     }
 
-    final ResolvedStyle resolved = style.resolve(
+    final ResolvedStyle resolved = effectiveStyle.resolve(
       states ?? const <WidgetState>{},
       viewportWidth: viewportWidth,
       containerWidth: containerWidth,

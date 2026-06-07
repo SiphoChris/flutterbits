@@ -6,7 +6,9 @@ import '../tokens/scales.dart';
 import '../tokens/typography.dart';
 import 'fw_border_spec.dart';
 import 'fw_layer.dart';
+import 'fw_ring.dart';
 import 'fw_style.dart';
+import 'fw_token_steps.dart';
 
 /// The chainable builder utilities, defined once and shared by both [FwStyle]
 /// (`T = FwStyle`, for nested-layer callbacks) and `FwStyled` (`T = FwStyled`,
@@ -222,6 +224,70 @@ mixin FwStyleOps<T> {
   /// render chain prefers the gradient). Last-wins.
   T bgGradient(Gradient gradient) => fwRebuild(fwStyle.copyWith(gradient: gradient));
 
+  // ---- Gradient direction sugar (Tailwind `bg-gradient-to-*`) ----
+  //
+  // Thin aliases over `bgGradient(LinearGradient(...))`. The dev supplies the
+  // colors (normally `context.fw.colors.*`); only the *direction* is sugar. The
+  // horizontal/diagonal variants are **RTL-aware** — `toEnd` flows toward the
+  // reading end (≈ Tailwind `to-r` in LTR, flipped in RTL) via
+  // `AlignmentDirectional` — which is both directional-by-default (§3.3) and a
+  // small improvement over Tailwind's physical `to-r`.
+
+  T _linear(
+    AlignmentGeometry begin,
+    AlignmentGeometry end,
+    List<Color> colors,
+    List<double>? stops,
+  ) {
+    assert(
+      colors.length >= 2,
+      'flutterwindcss: a gradient needs >= 2 colors (got ${colors.length}).',
+    );
+    return bgGradient(LinearGradient(begin: begin, end: end, colors: colors, stops: stops));
+  }
+
+  /// Linear gradient with explicit [begin]/[end] (default top→bottom) — the
+  /// general form behind the `bgGradientTo*` direction helpers.
+  T bgLinear({
+    AlignmentGeometry begin = Alignment.topCenter,
+    AlignmentGeometry end = Alignment.bottomCenter,
+    required List<Color> colors,
+    List<double>? stops,
+  }) => _linear(begin, end, colors, stops);
+
+  /// Gradient flowing upward (Tailwind `bg-gradient-to-t`). Vertical → physical
+  /// `Alignment` (no reading-direction component to flip).
+  T bgGradientToTop(List<Color> colors, {List<double>? stops}) =>
+      _linear(Alignment.bottomCenter, Alignment.topCenter, colors, stops);
+
+  /// Gradient flowing downward (Tailwind `bg-gradient-to-b`).
+  T bgGradientToBottom(List<Color> colors, {List<double>? stops}) =>
+      _linear(Alignment.topCenter, Alignment.bottomCenter, colors, stops);
+
+  /// Gradient flowing toward the reading start (RTL-aware; ≈ Tailwind `to-l` in LTR).
+  T bgGradientToStart(List<Color> colors, {List<double>? stops}) =>
+      _linear(AlignmentDirectional.centerEnd, AlignmentDirectional.centerStart, colors, stops);
+
+  /// Gradient flowing toward the reading end (RTL-aware; ≈ Tailwind `to-r` in LTR).
+  T bgGradientToEnd(List<Color> colors, {List<double>? stops}) =>
+      _linear(AlignmentDirectional.centerStart, AlignmentDirectional.centerEnd, colors, stops);
+
+  /// Gradient flowing toward the top-start corner (≈ Tailwind `to-tl` in LTR).
+  T bgGradientToTopStart(List<Color> colors, {List<double>? stops}) =>
+      _linear(AlignmentDirectional.bottomEnd, AlignmentDirectional.topStart, colors, stops);
+
+  /// Gradient flowing toward the top-end corner (≈ Tailwind `to-tr` in LTR).
+  T bgGradientToTopEnd(List<Color> colors, {List<double>? stops}) =>
+      _linear(AlignmentDirectional.bottomStart, AlignmentDirectional.topEnd, colors, stops);
+
+  /// Gradient flowing toward the bottom-start corner (≈ Tailwind `to-bl` in LTR).
+  T bgGradientToBottomStart(List<Color> colors, {List<double>? stops}) =>
+      _linear(AlignmentDirectional.topEnd, AlignmentDirectional.bottomStart, colors, stops);
+
+  /// Gradient flowing toward the bottom-end corner (≈ Tailwind `to-br` in LTR).
+  T bgGradientToBottomEnd(List<Color> colors, {List<double>? stops}) =>
+      _linear(AlignmentDirectional.topStart, AlignmentDirectional.bottomEnd, colors, stops);
+
   // ---- Border (per-edge merge; color & width are independent axes) ----
   //
   // Widths are in **logical px** (Tailwind's 0/1/2/4/8 `fwBorderWidths` scale),
@@ -302,6 +368,23 @@ mixin FwStyleOps<T> {
     ),
   );
 
+  // ---- Border line style (Tailwind `border-solid/dashed/dotted`) ----
+  //
+  // A non-solid style paints the border via `FwDashedBorderPainter` (Flutter's
+  // `BorderSide` has no dashed style). Requires a **uniform** border (set the
+  // width/color with `border(w, {color})`); combining with a per-side border
+  // asserts at build (the render chain).
+
+  /// Dashed border (Tailwind `border-dashed`) — the drop-zone staple.
+  T get borderDashed => fwRebuild(fwStyle.copyWith(borderStyle: FwBorderStyle.dashed));
+
+  /// Dotted border (Tailwind `border-dotted`).
+  T get borderDotted => fwRebuild(fwStyle.copyWith(borderStyle: FwBorderStyle.dotted));
+
+  /// Solid border (Tailwind `border-solid`; the default) — resets a dashed/dotted
+  /// style, e.g. in a state or responsive layer.
+  T get borderSolid => fwRebuild(fwStyle.copyWith(borderStyle: FwBorderStyle.solid));
+
   // ---- Radius (per-corner merge; directional) ----
   //
   // Radius args are in **logical px** (token values like `t.radii.md`,
@@ -369,6 +452,26 @@ mixin FwStyleOps<T> {
 
   /// Pill / fully-rounded corners (radius 9999).
   T get roundedFull => rounded(9999);
+
+  // ---- Radius named-scale sugar (Tailwind `rounded-sm/md/lg/xl`) ----
+  //
+  // These round ALL corners to the active theme's `radii.{step}` (resolved by
+  // FwStyled at build), so `roundedMd` == `rounded(context.fw.radii.md)` and
+  // tracks the theme's `--radius`. For per-corner control use the raw
+  // `rounded`/`roundedT/B/S/E(value)`; mixing a step with a raw radius in the
+  // same chain asserts (the engine can't last-wins across the two — pick one).
+
+  /// Rounds all corners to the theme `radii.sm` (Tailwind `rounded-sm`).
+  T get roundedSm => fwRebuild(fwStyle.copyWith(radiusStep: FwRadiusStep.sm));
+
+  /// Rounds all corners to the theme `radii.md` (Tailwind `rounded-md`).
+  T get roundedMd => fwRebuild(fwStyle.copyWith(radiusStep: FwRadiusStep.md));
+
+  /// Rounds all corners to the theme `radii.lg` (Tailwind `rounded-lg`).
+  T get roundedLg => fwRebuild(fwStyle.copyWith(radiusStep: FwRadiusStep.lg));
+
+  /// Rounds all corners to the theme `radii.xl` (Tailwind `rounded-xl`).
+  T get roundedXl => fwRebuild(fwStyle.copyWith(radiusStep: FwRadiusStep.xl));
 
   // ---- Clip ----
 
@@ -513,6 +616,56 @@ mixin FwStyleOps<T> {
   /// Drop shadow from the theme scale; pass a resolved list like
   /// `context.fw.shadows.md` (an empty list = no shadow). Last-wins.
   T shadow(List<BoxShadow> shadows) => fwRebuild(fwStyle.copyWith(boxShadow: shadows));
+
+  // ---- Shadow named-scale sugar (Tailwind `shadow-xs/sm/md/lg/xl/2xl/none`) ----
+  //
+  // Resolve the active theme's `shadows.{step}` at build, so `shadowMd` ==
+  // `shadow(context.fw.shadows.md)` and tracks a themed shadow scale. Mixing a
+  // step with a raw `shadow(list)` in the same chain asserts (pick one).
+
+  /// Theme `shadow-2xs` (Tailwind `shadow-2xs`).
+  T get shadowXs2 => fwRebuild(fwStyle.copyWith(shadowStep: FwShadowStep.xs2));
+
+  /// Theme `shadow-xs` (Tailwind `shadow-xs`).
+  T get shadowXs => fwRebuild(fwStyle.copyWith(shadowStep: FwShadowStep.xs));
+
+  /// Theme `shadow-sm` (Tailwind `shadow-sm`).
+  T get shadowSm => fwRebuild(fwStyle.copyWith(shadowStep: FwShadowStep.sm));
+
+  /// Theme `shadow-md` (Tailwind `shadow-md`).
+  T get shadowMd => fwRebuild(fwStyle.copyWith(shadowStep: FwShadowStep.md));
+
+  /// Theme `shadow-lg` (Tailwind `shadow-lg`).
+  T get shadowLg => fwRebuild(fwStyle.copyWith(shadowStep: FwShadowStep.lg));
+
+  /// Theme `shadow-xl` (Tailwind `shadow-xl`).
+  T get shadowXl => fwRebuild(fwStyle.copyWith(shadowStep: FwShadowStep.xl));
+
+  /// Theme `shadow-2xl` (Tailwind `shadow-2xl`).
+  T get shadow2xl => fwRebuild(fwStyle.copyWith(shadowStep: FwShadowStep.xl2));
+
+  /// No shadow (Tailwind `shadow-none`) — handy to drop a shadow in a layer.
+  T get shadowNone => fwRebuild(fwStyle.copyWith(shadowStep: FwShadowStep.none));
+
+  /// Focus-ring of [width] logical px in [color] (Tailwind `ring-*`) — a
+  /// zero-blur spread shadow. Pass a token (`context.fw.colors.ring`). With
+  /// [offset] > 0 a gap in [offsetColor] (default white) sits between the box and
+  /// the ring (`ring-offset-*`). Composes with `shadow` (both render). Last-wins.
+  /// The ring follows the box's `rounded*` shape. [width]/[offset] must be `>= 0`.
+  T ring(
+    double width, {
+    required Color color,
+    double offset = 0,
+    Color offsetColor = const Color(0xFFFFFFFF),
+  }) {
+    assert(width >= 0, 'flutterwindcss: ring width must be >= 0 (got $width).');
+    assert(offset >= 0, 'flutterwindcss: ring offset must be >= 0 (got $offset).');
+    return fwRebuild(
+      fwStyle.copyWith(
+        ringSpec: FwRing(width: width, color: color, offset: offset, offsetColor: offsetColor),
+      ),
+    );
+  }
 
   /// Group opacity `0.0..1.0` (Tailwind `opacity-*`); `fwOpacity(50)` maps the
   /// `0..100` scale. Applies to the whole box as one layer.

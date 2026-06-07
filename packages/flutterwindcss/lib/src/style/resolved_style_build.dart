@@ -2,6 +2,8 @@ import 'dart:ui' as ui show ImageFilter;
 
 import 'package:flutter/widgets.dart';
 
+import 'fw_border_spec.dart';
+import 'fw_dashed_border.dart';
 import 'resolved_style.dart';
 
 /// Builds the fixed outer→inner primitive chain for a [ResolvedStyle] (spec
@@ -89,25 +91,65 @@ extension ResolvedStyleBuild on ResolvedStyle {
       current = ClipRRect(clipBehavior: clipBehavior!, borderRadius: clipRadius, child: current);
     }
 
+    // A dashed/dotted border is NOT a decoration stroke (Flutter's BorderSide has
+    // no dashed style); it is painted on top by FwDashedBorderPainter (module 15).
+    // So the decoration omits the border in that case, and the painter draws it.
+    final dashed = borderStyle != null && borderStyle != FwBorderStyle.solid && border != null;
+    final BoxBorder? decoBorder = dashed ? null : border;
+
     // Surface: optional backdrop blur clipped to the box, then the decoration
     // composited on top so a semi-transparent fill frosts the backdrop.
-    final hasDecoration = background != null || gradient != null || border != null;
+    final hasDecoration = background != null || gradient != null || decoBorder != null;
     if (backdropBlur != null) {
       current = ClipRRect(
         borderRadius: borderRadius ?? BorderRadius.zero,
         child: BackdropFilter(
           filter: ui.ImageFilter.blur(sigmaX: backdropBlur!, sigmaY: backdropBlur!),
-          child: hasDecoration ? _decorate(current) : current,
+          child: hasDecoration ? _decorate(current, decoBorder) : current,
         ),
       );
     } else if (hasDecoration) {
-      current = _decorate(current);
+      current = _decorate(current, decoBorder);
+    }
+
+    // Paint the dashed/dotted border over the surface. The directional radius
+    // needs a text direction, which the render chain lacks — a Builder supplies
+    // the ambient Directionality so the resolved radius is correct under RTL.
+    if (dashed) {
+      assert(
+        border!.isUniform,
+        'flutterwindcss: dashed/dotted borders must be uniform — set the width and '
+        'colour with border(w, {color}), not a per-side borderS/E/T/B.',
+      );
+      final side = switch (border!) {
+        Border(:final top) => top,
+        BorderDirectional(:final top) => top,
+        _ => const BorderSide(width: 0),
+      };
+      final inner = current;
+      current = Builder(
+        builder:
+            (context) => CustomPaint(
+              foregroundPainter: FwDashedBorderPainter(
+                width: side.width,
+                color: side.color,
+                dotted: borderStyle == FwBorderStyle.dotted,
+                borderRadius: borderRadius?.resolve(Directionality.of(context)),
+              ),
+              child: inner,
+            ),
+      );
     }
 
     // Unclipped shadow layer (outside any clip so backdrop-blur can't eat it).
-    if (boxShadow != null && boxShadow!.isNotEmpty) {
+    // The focus `ring` (module 15) expands to zero-blur spread shadows that
+    // compose WITH any drop `shadow` — ring layers paint outermost (after the
+    // drop shadows), following the same `borderRadius` as the box.
+    final ringShadows = ringSpec?.toBoxShadows() ?? const <BoxShadow>[];
+    final shadows = <BoxShadow>[...?boxShadow, ...ringShadows];
+    if (shadows.isNotEmpty) {
       current = DecoratedBox(
-        decoration: BoxDecoration(borderRadius: borderRadius, boxShadow: boxShadow),
+        decoration: BoxDecoration(borderRadius: borderRadius, boxShadow: shadows),
         child: current,
       );
     }
@@ -279,11 +321,11 @@ extension ResolvedStyleBuild on ResolvedStyle {
     return EdgeInsetsDirectional.zero;
   }
 
-  Widget _decorate(Widget child) => DecoratedBox(
+  Widget _decorate(Widget child, BoxBorder? decoBorder) => DecoratedBox(
     decoration: BoxDecoration(
       color: gradient == null ? background : null,
       gradient: gradient,
-      border: border,
+      border: decoBorder,
       borderRadius: borderRadius,
     ),
     child: child,
