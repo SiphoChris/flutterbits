@@ -31,6 +31,25 @@ void main() {
     expect(find.byType(DecoratedBox), findsOneWidget);
   });
 
+  testWidgets('text-completeness fields flow into DefaultTextStyle (module 11)', (t) async {
+    // Only the new text fields are set (no colour/size) — the text wrapper must
+    // still emit, carrying fontFamily/maxLines/overflow/softWrap.
+    await _pump(
+      t,
+      const ResolvedStyle(
+        fontFamily: 'Inter',
+        maxLines: 2,
+        textOverflow: TextOverflow.ellipsis,
+        softWrap: false,
+      ),
+    );
+    final dts = t.widget<DefaultTextStyle>(find.byType(DefaultTextStyle).first);
+    expect(dts.style.fontFamily, 'Inter');
+    expect(dts.maxLines, 2);
+    expect(dts.overflow, TextOverflow.ellipsis);
+    expect(dts.softWrap, isFalse);
+  });
+
   testWidgets('shadow emits an outer DecoratedBox even with a backdrop clip', (t) async {
     await _pump(
       t,

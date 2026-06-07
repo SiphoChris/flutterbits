@@ -9,6 +9,12 @@ import '../tokens/scales.dart';
 /// viewport condition (`md:`) must key off the screen size, a container
 /// condition (`containerMd:`) off the enclosing box's constraint — conflating
 /// them would let one satisfy the other (spec §6.2, §6.3).
+///
+/// Matching only decides *whether* a layer applies; **precedence** among the
+/// matching ones is the cascade in `FwStyle.resolve` — breakpoints ordered by
+/// min-width (container over viewport at the same width), then state conditions
+/// above all breakpoints, with declaration order as the tie-break. It is *not*
+/// raw declaration order.
 @immutable
 sealed class FwCondition {
   /// Const base constructor.

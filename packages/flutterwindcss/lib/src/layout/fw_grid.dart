@@ -4,6 +4,14 @@ import 'package:flutter/widgets.dart';
 import '../tokens/scales.dart';
 import 'fw_responsive.dart';
 
+/// Upper bound on an explicit [FwGridItem] grid line (1-based). This is a
+/// defensive backstop, not a semantic limit on grid size: an explicit
+/// `rowStart`/`columnStart` larger than this is almost certainly a typo, and the
+/// row-flow placer would otherwise grow its implicit-row occupancy grid up to
+/// that line — a single absurd value could allocate unboundedly. Real grids use
+/// a handful of lines; anything past this fails fast in debug instead.
+const int _fwMaxGridLine = 100000;
+
 /// A single column/row track for [FwGrid] (grid engine spec §2.1). Sealed so the
 /// sizing code can `switch` exhaustively — a new track kind is a compile error,
 /// not a silent fallthrough.
@@ -352,15 +360,27 @@ class FwGridItem extends ParentDataWidget<FwGridParentData> {
        assert(
          rowStart == null || rowStart >= 1,
          'flutterwindcss: rowStart is a 1-based line (got $rowStart).',
+       ),
+       assert(
+         columnStart == null || columnStart <= _fwMaxGridLine,
+         'flutterwindcss: columnStart $columnStart exceeds the sane line cap '
+         '($_fwMaxGridLine) — almost certainly a typo.',
+       ),
+       assert(
+         rowStart == null || rowStart <= _fwMaxGridLine,
+         'flutterwindcss: rowStart $rowStart exceeds the sane line cap '
+         '($_fwMaxGridLine) — almost certainly a typo.',
        );
 
-  /// 1-based column line to start at, or `null` to auto-place.
+  /// 1-based column line to start at, or `null` to auto-place. Asserted within a
+  /// sane cap ([_fwMaxGridLine]) so a typo can't grow the grid unboundedly.
   final int? columnStart;
 
   /// Number of columns to span (default 1).
   final int columnSpan;
 
-  /// 1-based row line to start at, or `null` to auto-place.
+  /// 1-based row line to start at, or `null` to auto-place. Asserted within a
+  /// sane cap ([_fwMaxGridLine]) so a typo can't grow the grid unboundedly.
   final int? rowStart;
 
   /// Number of rows to span (default 1).

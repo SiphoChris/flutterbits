@@ -41,6 +41,10 @@ class ResolvedStyle {
     this.lineHeight,
     this.textAlign,
     this.textDecoration,
+    this.fontFamily,
+    this.maxLines,
+    this.textOverflow,
+    this.softWrap,
     this.opacity,
     this.blur,
     this.backdropBlur,
@@ -121,6 +125,18 @@ class ResolvedStyle {
 
   /// Default text decoration.
   final TextDecoration? textDecoration;
+
+  /// Default font family.
+  final String? fontFamily;
+
+  /// Max lines before truncation.
+  final int? maxLines;
+
+  /// Text overflow behavior at [maxLines].
+  final TextOverflow? textOverflow;
+
+  /// Whether text soft-wraps.
+  final bool? softWrap;
 
   /// Group opacity.
   final double? opacity;

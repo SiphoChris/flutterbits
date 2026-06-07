@@ -64,7 +64,7 @@ LTR/RTL/hover golden possible.
 |---|---|---|
 | `FwStyle` | `lib/src/style/fw_style.dart` | Full §6.1 immutable data model: every base field (spacing, sizing, color/decoration, foreground/text, effects, transform, clip) + `List<FwLayer> layers`; `copyWith` (replacement = last-wins); `==`/`hashCode`. Hosts the variant/layer methods (append a layer). |
 | `FwLayer`, `FwCondition` | `lib/src/style/fw_layer.dart` | `FwLayer = (FwCondition, FwStyle)`; `FwCondition` = `state(WidgetState)` \| `viewport(FwBreakpoint)` \| `container(FwBreakpoint)`. Layers nest (a layer's style may itself carry layers). |
-| `ResolvedStyle`, `FwStyle.resolve` | `lib/src/style/resolve.dart` | Full §6.3: disabled-suppression-first; base → matching layers in declared order; recurse into nested styles (joint `md:hover:`); field-by-field last-wins merge. Produces the flattened, non-nullable-defaulted `ResolvedStyle`. |
+| `ResolvedStyle`, `FwStyle.resolve` | `lib/src/style/resolve.dart` | Full §6.3: disabled-suppression-first; base → matching layers overlaid in **cascade order** (breakpoints by min-width, then states; declaration order tie-breaks — corrected — audit, was raw declaration order); recurse into nested styles (joint `md:hover:`); field-by-field last-wins merge. Produces the flattened, non-nullable-defaulted `ResolvedStyle`. |
 | `ResolvedStyle.build` | `lib/src/style/resolved_style.dart` | The complete §6.4 chain, outer→inner, each wrapper emitted only when its input is set; `_ShadowBox`/`_Surface` split + backdrop-blur layering; sizing reconciliation (§6.4 Finding #6); opacity folding (Finding #11); clip geometry (Finding #3). |
 | `_ShadowBox`, `_Surface` | (private, in `resolved_style.dart`) | Internal primitives for the unclipped-shadow / backdrop-clip split. Not exported. |
 | `FwStyled`, `.tw` | `lib/src/style/fw_styled.dart` | §6.2 `StatelessWidget`: conditional `MediaQuery`/`LayoutBuilder`/interaction-sourcing (`MouseRegion`+non-traversable-`Focus`+`Listener`, corrected — module 3, *not* `FocusableActionDetector`) insertion (computed over the *flattened* layer set); semantics-transparent; focus-traversal hygiene (visual-only states non-focusable, Finding #9); optional `states` injection param. The `.tw` entry extension. Hosts the representative base setters + the full variant/responsive/container methods. |
@@ -87,12 +87,16 @@ From §6.3 — pinned here as the acceptance contract:
    the press recognizer so it cannot re-add `pressed`. Disabled wins regardless of
    declaration order.
 2. Start from **base** fields.
-3. Walk `layers` in declaration order; a layer **matches** when its condition holds
-   (`state` ∈ working set; `viewport`/`container` breakpoint min-width ≤ available
-   width). For each match, **recurse** (resolve the nested `FwStyle` against the same
-   `states`/width) and merge field-by-field, last-wins. Last-declared matching layer
-   wins among equals; nested recursion gives joint `md:hover:` for free.
-4. Apply non-nullable defaults to produce `ResolvedStyle`.
+3. Find the **matching** layers (`state` ∈ working set; `viewport`/`container`
+   breakpoint min-width ≤ available width), resolving each nested `FwStyle` first so
+   joint `md:hover:` comes for free.
+4. Overlay them onto the base in **cascade order** (corrected — audit, was raw
+   declaration order): breakpoint layers by min-width ascending (container over
+   viewport at the same breakpoint), then state layers (above breakpoints, like a CSS
+   pseudo-class), with declaration order only as the within-tier tie-break. Breakpoint
+   precedence is therefore order-independent (`.md(...).sm(...)` ≡ `.sm(...).md(...)`),
+   matching the layout widgets' `fwActivePatches`. Merge field-by-field, last-wins.
+5. Apply non-nullable defaults to produce `ResolvedStyle`.
 
 **Width sources (R2/R5/R6):** viewport conditions read `MediaQuery.maybeOf(context)?.size`
 (absent ⇒ smallest breakpoint, base only — never throws). Container conditions read the
@@ -110,8 +114,10 @@ the flattened layer set actually contains that condition kind.
   `fwSpace(2)` = 8 px (the `.px(4)` is discarded, not summed).
 - **Chain flattens to one `ResolvedStyle`:** a multi-utility chain resolves to a single
   value set.
-- **Layer precedence:** base < matching layers in declared order; last-declared wins
-  among equals.
+- **Layer precedence (cascade):** base < breakpoints (by min-width; container > viewport
+  at the same breakpoint) < state layers; declaration order only breaks within-tier ties.
+  Breakpoint precedence is order-independent (`.md(...).sm(...)` ≡ `.sm(...).md(...)`); a
+  `hover:` beats a `sm:` at ≥ sm.
 - **Nested joint resolution:** `.md((s) => s.hover((s2) => s2.bg(X)))` applies `X` only
   when viewport ≥ 768 **and** hovered.
 - **Disabled suppression:** disabled removes hover/focus/pressed effects regardless of

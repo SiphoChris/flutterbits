@@ -37,7 +37,11 @@ extension ResolvedStyleBuild on ResolvedStyle {
         letterSpacing != null ||
         lineHeight != null ||
         textAlign != null ||
-        textDecoration != null) {
+        textDecoration != null ||
+        fontFamily != null ||
+        maxLines != null ||
+        textOverflow != null ||
+        softWrap != null) {
       current = DefaultTextStyle.merge(
         style: TextStyle(
           color: foreground,
@@ -46,8 +50,12 @@ extension ResolvedStyleBuild on ResolvedStyle {
           letterSpacing: letterSpacing,
           height: lineHeight,
           decoration: textDecoration,
+          fontFamily: fontFamily,
         ),
         textAlign: textAlign,
+        maxLines: maxLines,
+        overflow: textOverflow,
+        softWrap: softWrap,
         child: IconTheme.merge(
           data: IconThemeData(color: foreground, size: fontSize),
           child: current,
