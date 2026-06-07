@@ -67,6 +67,8 @@ extension FwStyleResolve on FwStyle {
       scale: merged.scaleFactor,
       rotation: merged.rotation,
       translate: merged.translation,
+      colorMatrix: merged.colorMatrix,
+      fit: merged.boxFit,
       clipBehavior: merged.clipBehavior,
     );
   }
@@ -179,5 +181,7 @@ FwStyle _overlay(FwStyle base, FwStyle top) => base.copyWith(
   scaleFactor: top.scaleFactor,
   rotation: top.rotation,
   translation: top.translation,
+  colorMatrix: top.colorMatrix,
+  boxFit: top.boxFit,
   clipBehavior: top.clipBehavior,
 );

@@ -110,7 +110,75 @@ class EffectsSection extends StatelessWidget {
             ),
           ],
         ),
+        ShowcaseSection(
+          title: 'Color filters (module 12)',
+          description: 'CSS filter functions on a colourful gradient; they compose within a chain.',
+          children: <Widget>[
+            FwWrap(
+              gap: 4,
+              runGap: 4,
+              children: <Widget>[
+                _filter(context, 'none', (b) => b),
+                _filter(context, 'grayscale', (b) => b.grayscale()),
+                _filter(context, 'brightness 1.4', (b) => b.brightness(1.4)),
+                _filter(context, 'contrast 1.6', (b) => b.contrast(1.6)),
+                _filter(context, 'saturate 2', (b) => b.saturate(2)),
+                _filter(context, 'invert', (b) => b.invert()),
+                _filter(context, 'sepia', (b) => b.sepia()),
+                _filter(context, 'hueRotate 90°', (b) => b.hueRotate(90)),
+                _filter(context, 'grayscale→bright', (b) => b.grayscale().brightness(1.5)),
+              ],
+            ),
+          ],
+        ),
+        ShowcaseSection(
+          title: 'Object-fit (module 12)',
+          description:
+              'fit(BoxFit.*) scales the content to its box — contain fits inside, cover fills.',
+          children: <Widget>[
+            FwRow(
+              gap: 6,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                _fitDemo(context, 'contain', BoxFit.contain),
+                _fitDemo(context, 'cover', BoxFit.cover),
+                _fitDemo(context, 'fill', BoxFit.fill),
+              ],
+            ),
+          ],
+        ),
       ],
+    );
+  }
+
+  Widget _filter(BuildContext context, String label, FwStyled Function(FwStyled) filter) {
+    final t = context.fw;
+    final box = const SizedBox(width: 64, height: 40).tw
+        .rounded(t.radii.md)
+        .bgGradient(
+          LinearGradient(
+            colors: <Color>[
+              FwPalette.red.shade500,
+              FwPalette.blue.shade500,
+              FwPalette.green.shade500,
+            ],
+          ),
+        );
+    return DemoTile(label: label, child: filter(box));
+  }
+
+  Widget _fitDemo(BuildContext context, String label, BoxFit fit) {
+    final t = context.fw;
+    return DemoTile(
+      label: label,
+      // A wide label scaled to a fixed box via object-fit.
+      child: SizedBox(
+        width: 80,
+        height: 40,
+        child: Text(
+          'FIT',
+        ).tw.fit(fit).bg(t.colors.muted).text(t.colors.mutedForeground).weight(FwFontWeight.black),
+      ),
     );
   }
 

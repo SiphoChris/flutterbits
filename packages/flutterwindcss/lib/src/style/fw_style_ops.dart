@@ -30,7 +30,9 @@ import 'fw_style.dart';
 /// `translate`/`translateX`/`translateY`, paint-only). Module 10 (animated
 /// theming) is a dedicated widget, not a `.tw` setter. Module 11 added **text
 /// completeness** (`font`/`fontSans`/`fontSerif`/`fontMono`, `maxLines`,
-/// `lineClamp`, `truncate`, `overflow`, `nowrap`/`wrap`).
+/// `lineClamp`, `truncate`, `overflow`, `nowrap`/`wrap`). Module 12 added
+/// **filters + object-fit** (`grayscale`/`brightness`/`contrast`/`saturate`/
+/// `invert`/`sepia`/`hueRotate` — composed CSS color filters — and `fit`).
 mixin FwStyleOps<T> {
   /// The current accumulated style.
   FwStyle get fwStyle;
@@ -486,6 +488,68 @@ mixin FwStyleOps<T> {
     return fwRebuild(fwStyle.copyWith(backdropBlurSigma: sigma));
   }
 
+  // ---- Filters (CSS filter color functions) + object-fit (module 12) ----
+  //
+  // Color filters resolve to one `ColorFilter.matrix`. They **compose** within a
+  // chain (CSS `filter: a() b()` applies a then b) by matrix multiply, so
+  // `.grayscale().brightness(1.2)` is grayscale *then* brighten. (Content `blur`
+  // is the one CSS filter kept separate — it's a spatial `ImageFilter`, not a
+  // color matrix.)
+
+  /// Composes [matrix] after any existing color filter (new applies last).
+  T _applyColorFilter(List<double> matrix) {
+    final existing = fwStyle.colorMatrix;
+    return fwRebuild(
+      fwStyle.copyWith(
+        colorMatrix: existing == null ? matrix : _composeColorMatrix(matrix, existing),
+      ),
+    );
+  }
+
+  /// Saturation (Tailwind `saturate-*`): `1` = unchanged, `0` = grayscale, `>1`
+  /// more saturated. Must be `>= 0`.
+  T saturate(double amount) {
+    assert(amount >= 0, 'flutterwindcss: saturate must be >= 0 (got $amount).');
+    return _applyColorFilter(_saturateMatrix(amount));
+  }
+
+  /// Grayscale (Tailwind `grayscale`): [amount] `0..1` (`1` = fully gray).
+  T grayscale([double amount = 1]) {
+    assert(amount >= 0 && amount <= 1, 'flutterwindcss: grayscale must be 0..1 (got $amount).');
+    return _applyColorFilter(_saturateMatrix(1 - amount));
+  }
+
+  /// Brightness (Tailwind `brightness-*`): `1` = unchanged, scales RGB. `>= 0`.
+  T brightness(double amount) {
+    assert(amount >= 0, 'flutterwindcss: brightness must be >= 0 (got $amount).');
+    return _applyColorFilter(_scaleColorMatrix(amount));
+  }
+
+  /// Contrast (Tailwind `contrast-*`): `1` = unchanged. `>= 0`.
+  T contrast(double amount) {
+    assert(amount >= 0, 'flutterwindcss: contrast must be >= 0 (got $amount).');
+    return _applyColorFilter(_contrastMatrix(amount));
+  }
+
+  /// Invert (Tailwind `invert`): [amount] `0..1` (`1` = fully inverted).
+  T invert([double amount = 1]) {
+    assert(amount >= 0 && amount <= 1, 'flutterwindcss: invert must be 0..1 (got $amount).');
+    return _applyColorFilter(_invertMatrix(amount));
+  }
+
+  /// Sepia (Tailwind `sepia`): [amount] `0..1`.
+  T sepia([double amount = 1]) {
+    assert(amount >= 0 && amount <= 1, 'flutterwindcss: sepia must be 0..1 (got $amount).');
+    return _applyColorFilter(_sepiaMatrix(amount));
+  }
+
+  /// Hue rotation in **degrees** (Tailwind `hue-rotate-*`).
+  T hueRotate(double degrees) => _applyColorFilter(_hueRotateMatrix(degrees));
+
+  /// Object-fit for the child content (Tailwind `object-*`): wraps it in a
+  /// `FittedBox`. Mainly for images/replaced content.
+  T fit(BoxFit fit) => fwRebuild(fwStyle.copyWith(boxFit: fit));
+
   // ---- Transform (paint-only; does NOT change the box's layout footprint) ----
   //
   // Like CSS `transform`, these change painting + hit-testing but not layout — a
@@ -601,4 +665,146 @@ mixin FwStyleOps<T> {
   /// Applies the built style at container width ≥ `2xl` (1536).
   T container2xl(FwStyle Function(FwStyle) build) =>
       _layer(const FwContainerCondition(FwBreakpoint.xl2), build);
+}
+
+// ---------------------------------------------------------------------------
+// CSS color-filter matrices (4×5, 20 values, row-major [R G B A bias] per output
+// channel; bias is in the 0..255 channel scale, matching `ColorFilter.matrix`).
+// The luma weights (0.213/0.715/0.072) are the same set CSS/SVG use.
+// ---------------------------------------------------------------------------
+
+/// SVG/CSS `saturate(s)` matrix (`s == 1` ⇒ identity, `0` ⇒ grayscale).
+List<double> _saturateMatrix(double s) => <double>[
+  0.213 + 0.787 * s,
+  0.715 - 0.715 * s,
+  0.072 - 0.072 * s,
+  0,
+  0,
+  0.213 - 0.213 * s,
+  0.715 + 0.285 * s,
+  0.072 - 0.072 * s,
+  0,
+  0,
+  0.213 - 0.213 * s,
+  0.715 - 0.715 * s,
+  0.072 + 0.928 * s,
+  0,
+  0,
+  0,
+  0,
+  0,
+  1,
+  0,
+];
+
+/// `brightness(b)` — scales RGB by [b].
+List<double> _scaleColorMatrix(double b) => <double>[
+  b,
+  0,
+  0,
+  0,
+  0,
+  0,
+  b,
+  0,
+  0,
+  0,
+  0,
+  0,
+  b,
+  0,
+  0,
+  0,
+  0,
+  0,
+  1,
+  0,
+];
+
+/// `contrast(c)` — `out = c·in + 127.5·(1 − c)`.
+List<double> _contrastMatrix(double c) {
+  final t = 127.5 * (1 - c);
+  return <double>[c, 0, 0, 0, t, 0, c, 0, 0, t, 0, 0, c, 0, t, 0, 0, 0, 1, 0];
+}
+
+/// `invert(a)` — `out = (1 − 2a)·in + 255a`.
+List<double> _invertMatrix(double a) {
+  final d = 1 - 2 * a;
+  final t = 255 * a;
+  return <double>[d, 0, 0, 0, t, 0, d, 0, 0, t, 0, 0, d, 0, t, 0, 0, 0, 1, 0];
+}
+
+/// `sepia(a)` — linear blend of identity and full sepia by [a].
+List<double> _sepiaMatrix(double a) {
+  const full = <double>[
+    0.393,
+    0.769,
+    0.189,
+    0,
+    0,
+    0.349,
+    0.686,
+    0.168,
+    0,
+    0,
+    0.272,
+    0.534,
+    0.131,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+  ];
+  const identity = <double>[1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
+  return <double>[for (var i = 0; i < 20; i++) identity[i] * (1 - a) + full[i] * a];
+}
+
+/// SVG/CSS `hue-rotate(deg)` matrix.
+List<double> _hueRotateMatrix(double degrees) {
+  final r = degrees * math.pi / 180.0;
+  final c = math.cos(r);
+  final s = math.sin(r);
+  return <double>[
+    0.213 + c * 0.787 - s * 0.213,
+    0.715 - c * 0.715 - s * 0.715,
+    0.072 - c * 0.072 + s * 0.928,
+    0,
+    0,
+    0.213 - c * 0.213 + s * 0.143,
+    0.715 + c * 0.285 + s * 0.140,
+    0.072 - c * 0.072 - s * 0.283,
+    0,
+    0,
+    0.213 - c * 0.213 - s * 0.787,
+    0.715 - c * 0.715 + s * 0.715,
+    0.072 + c * 0.928 + s * 0.072,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+  ];
+}
+
+/// Composes two 4×5 color matrices: applies [inner] first, then [outer]
+/// (`outer ∘ inner`). Each is extended to 5×5 with a `[0,0,0,0,1]` row.
+List<double> _composeColorMatrix(List<double> outer, List<double> inner) {
+  double at(List<double> m, int row, int col) =>
+      row < 4 ? m[row * 5 + col] : (col == 4 ? 1.0 : 0.0);
+  final out = List<double>.filled(20, 0);
+  for (var i = 0; i < 4; i++) {
+    for (var j = 0; j < 5; j++) {
+      var sum = 0.0;
+      for (var k = 0; k < 5; k++) {
+        sum += at(outer, i, k) * at(inner, k, j);
+      }
+      out[i * 5 + j] = sum;
+    }
+  }
+  return out;
 }
