@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import 'fw_border_spec.dart';
 import 'fw_ring.dart';
 
 /// The flattened, concrete style the render chain consumes (spec §6.3/§6.4).
@@ -34,6 +35,7 @@ class ResolvedStyle {
     this.background,
     this.gradient,
     this.border,
+    this.borderStyle,
     this.borderRadius,
     this.boxShadow,
     this.ringSpec,
@@ -112,6 +114,9 @@ class ResolvedStyle {
 
   /// Border.
   final BoxBorder? border;
+
+  /// Border line style; non-solid ⇒ painted by `FwDashedBorderPainter` (M15).
+  final FwBorderStyle? borderStyle;
 
   /// Corner radii (directional).
   final BorderRadiusDirectional? borderRadius;

@@ -1,6 +1,21 @@
 import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter/painting.dart';
 
+/// The line style of a box border (Tailwind `border-solid/dashed/dotted`,
+/// module 15). [solid] is the default and renders via the decoration's stroke;
+/// [dashed]/[dotted] are painted by `FwDashedBorderPainter` (Flutter's
+/// `BorderSide` has no dashed style) and require a **uniform** border.
+enum FwBorderStyle {
+  /// Continuous stroke (the default).
+  solid,
+
+  /// Evenly-spaced dashes.
+  dashed,
+
+  /// Evenly-spaced round dots.
+  dotted,
+}
+
 /// An accumulating, directional border description (spec §6.1). Each edge is an
 /// optional [BorderSide]; `null` means "no border declared on that edge". The
 /// `.tw` border setters merge per-edge (last-wins per edge), mirroring how

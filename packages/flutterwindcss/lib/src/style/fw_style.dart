@@ -37,6 +37,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     this.background,
     this.gradient,
     this.borderSpec,
+    this.borderStyle,
     this.borderRadius,
     this.radiusStep,
     this.boxShadow,
@@ -124,6 +125,10 @@ class FwStyle with FwStyleOps<FwStyle> {
   /// placeholder (spec §6.1; the field now holds an [FwBorderSpec], not a
   /// `BoxBorder`).
   final FwBorderSpec? borderSpec;
+
+  /// Border line style (set by `borderDashed`/`borderDotted`/`borderSolid`); a
+  /// non-solid style paints the border via `FwDashedBorderPainter` (module 15).
+  final FwBorderStyle? borderStyle;
 
   /// Corner radii (directional).
   final BorderRadiusDirectional? borderRadius;
@@ -289,6 +294,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     Color? background,
     Gradient? gradient,
     FwBorderSpec? borderSpec,
+    FwBorderStyle? borderStyle,
     BorderRadiusDirectional? borderRadius,
     FwRadiusStep? radiusStep,
     List<BoxShadow>? boxShadow,
@@ -341,6 +347,7 @@ class FwStyle with FwStyleOps<FwStyle> {
       background: background ?? this.background,
       gradient: gradient ?? this.gradient,
       borderSpec: borderSpec ?? this.borderSpec,
+      borderStyle: borderStyle ?? this.borderStyle,
       borderRadius: borderRadius ?? this.borderRadius,
       radiusStep: radiusStep ?? this.radiusStep,
       boxShadow: boxShadow ?? this.boxShadow,
@@ -401,6 +408,7 @@ class FwStyle with FwStyleOps<FwStyle> {
       background == other.background &&
       gradient == other.gradient &&
       borderSpec == other.borderSpec &&
+      borderStyle == other.borderStyle &&
       borderRadius == other.borderRadius &&
       radiusStep == other.radiusStep &&
       listEquals(boxShadow, other.boxShadow) &&
@@ -454,6 +462,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     background,
     gradient,
     borderSpec,
+    borderStyle,
     borderRadius,
     radiusStep,
     boxShadow == null ? null : Object.hashAll(boxShadow!),

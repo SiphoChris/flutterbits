@@ -130,6 +130,7 @@ void main() {
       background: baseColor,
       gradient: const LinearGradient(colors: [baseColor, baseColor]),
       borderSpec: const FwBorderSpec(top: BorderSide(width: 1)),
+      borderStyle: FwBorderStyle.solid,
       borderRadius: const BorderRadiusDirectional.all(Radius.circular(2)),
       boxShadow: const [BoxShadow(blurRadius: 1)],
       ringSpec: const FwRing(width: 1, color: baseColor),
@@ -164,6 +165,7 @@ void main() {
       background: overColor,
       gradient: const LinearGradient(colors: [overColor, overColor]),
       borderSpec: const FwBorderSpec(top: BorderSide(width: 3)),
+      borderStyle: FwBorderStyle.dashed,
       borderRadius: const BorderRadiusDirectional.all(Radius.circular(4)),
       boxShadow: const [BoxShadow(blurRadius: 9)],
       ringSpec: const FwRing(width: 3, color: overColor),
@@ -201,6 +203,7 @@ void main() {
     expect(r.background, overColor);
     expect(r.gradient, const LinearGradient(colors: [overColor, overColor]));
     expect(r.border, const FwBorderSpec(top: BorderSide(width: 3)).resolve());
+    expect(r.borderStyle, FwBorderStyle.dashed);
     expect(r.borderRadius, const BorderRadiusDirectional.all(Radius.circular(4)));
     expect(r.boxShadow, const [BoxShadow(blurRadius: 9)]);
     expect(r.ringSpec, const FwRing(width: 3, color: overColor));

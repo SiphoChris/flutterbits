@@ -368,6 +368,23 @@ mixin FwStyleOps<T> {
     ),
   );
 
+  // ---- Border line style (Tailwind `border-solid/dashed/dotted`) ----
+  //
+  // A non-solid style paints the border via `FwDashedBorderPainter` (Flutter's
+  // `BorderSide` has no dashed style). Requires a **uniform** border (set the
+  // width/color with `border(w, {color})`); combining with a per-side border
+  // asserts at build (the render chain).
+
+  /// Dashed border (Tailwind `border-dashed`) — the drop-zone staple.
+  T get borderDashed => fwRebuild(fwStyle.copyWith(borderStyle: FwBorderStyle.dashed));
+
+  /// Dotted border (Tailwind `border-dotted`).
+  T get borderDotted => fwRebuild(fwStyle.copyWith(borderStyle: FwBorderStyle.dotted));
+
+  /// Solid border (Tailwind `border-solid`; the default) — resets a dashed/dotted
+  /// style, e.g. in a state or responsive layer.
+  T get borderSolid => fwRebuild(fwStyle.copyWith(borderStyle: FwBorderStyle.solid));
+
   // ---- Radius (per-corner merge; directional) ----
   //
   // Radius args are in **logical px** (token values like `t.radii.md`,
