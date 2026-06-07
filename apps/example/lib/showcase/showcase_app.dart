@@ -7,6 +7,7 @@ import 'package:flutterwindcss/flutterwindcss.dart';
 import 'common.dart';
 import 'sections/color_border_radius.dart';
 import 'sections/effects.dart';
+import 'sections/interactivity.dart';
 import 'sections/layout.dart';
 import 'sections/palette_scales.dart';
 import 'sections/responsive.dart';
@@ -111,6 +112,7 @@ class _Shell extends StatelessWidget {
     ShowcaseCategory.effects => const EffectsSection(),
     ShowcaseCategory.transforms => const TransformsSection(),
     ShowcaseCategory.states => const StatesSection(),
+    ShowcaseCategory.interactivity => const InteractivitySection(),
     ShowcaseCategory.responsive => const ResponsiveSection(),
     ShowcaseCategory.layout => const LayoutSection(),
   };

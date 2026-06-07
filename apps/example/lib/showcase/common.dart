@@ -15,6 +15,7 @@ enum ShowcaseCategory {
   effects('Effects'),
   transforms('Transforms'),
   states('States'),
+  interactivity('Interactivity'),
   responsive('Responsive'),
   layout('Layout & grid');
 

@@ -33,6 +33,9 @@ import 'fw_style.dart';
 /// `lineClamp`, `truncate`, `overflow`, `nowrap`/`wrap`). Module 12 added
 /// **filters + object-fit** (`grayscale`/`brightness`/`contrast`/`saturate`/
 /// `invert`/`sepia`/`hueRotate` — composed CSS color filters — and `fit`).
+/// Module 13 added **transform extras** (`scaleX`/`scaleY`/`skewX`/`skewY`/
+/// `transformOrigin`), **interactivity** (`cursor`/`pointerEventsNone`/
+/// `invisible`/`visible`), `italic`/`notItalic`, and the `size` sugar.
 mixin FwStyleOps<T> {
   /// The current accumulated style.
   FwStyle get fwStyle;
@@ -126,6 +129,10 @@ mixin FwStyleOps<T> {
 
   /// Fixed height, [units] × 4 logical px (tight constraint, wins its axis).
   T h(double units) => fwRebuild(fwStyle.copyWith(height: fwSpace(units)));
+
+  /// Fixed width AND height, [units] × 4 logical px (Tailwind `size-*`).
+  T size(double units) =>
+      fwRebuild(fwStyle.copyWith(width: fwSpace(units), height: fwSpace(units)));
 
   /// Minimum width, [units] × 4 logical px.
   T minW(double units) => fwRebuild(fwStyle.copyWith(minWidth: fwSpace(units)));
@@ -426,6 +433,12 @@ mixin FwStyleOps<T> {
   /// Monospace family (Tailwind `font-mono`).
   T get fontMono => font(FwFontFamily.mono);
 
+  /// Italic text (Tailwind `italic`).
+  T get italic => fwRebuild(fwStyle.copyWith(fontStyle: FontStyle.italic));
+
+  /// Upright text (Tailwind `not-italic`); undoes [italic] in a layer.
+  T get notItalic => fwRebuild(fwStyle.copyWith(fontStyle: FontStyle.normal));
+
   /// Caps descendant text at [lines] lines, *without* forcing an overflow style.
   /// Must be `> 0`. For Tailwind `line-clamp-*` (which ellipsizes) use [lineClamp].
   T maxLines(int lines) {
@@ -553,6 +566,21 @@ mixin FwStyleOps<T> {
   /// (the child renders at its natural size) rather than throwing.
   T fit(BoxFit fit) => fwRebuild(fwStyle.copyWith(boxFit: fit));
 
+  // ---- Interactivity + visibility (module 13) ----
+
+  /// Mouse cursor shown over the box (Tailwind `cursor-*`); pass a
+  /// `SystemMouseCursors.*`. Wraps in a `MouseRegion`.
+  T cursor(MouseCursor cursor) => fwRebuild(fwStyle.copyWith(mouseCursor: cursor));
+
+  /// Drops hit-testing for the whole box (Tailwind `pointer-events-none`).
+  T get pointerEventsNone => fwRebuild(fwStyle.copyWith(ignorePointer: true));
+
+  /// Hides the box but keeps its layout space (Tailwind `invisible`).
+  T get invisible => fwRebuild(fwStyle.copyWith(isVisible: false));
+
+  /// Shows the box (Tailwind `visible`); undoes [invisible] in a layer.
+  T get visible => fwRebuild(fwStyle.copyWith(isVisible: true));
+
   // ---- Transform (paint-only; does NOT change the box's layout footprint) ----
   //
   // Like CSS `transform`, these change painting + hit-testing but not layout — a
@@ -563,9 +591,26 @@ mixin FwStyleOps<T> {
   // render chain (T·R·S — scale, then rotate, then translate).
 
   /// Uniform scale factor (Tailwind `scale-*`; `1.0` = identity, `<1` shrinks,
-  /// negatives flip). Paint-only — does not reflow siblings. Per-axis `scale-x`/
-  /// `scale-y` are not in v1 (the engine's scale field is uniform).
+  /// negatives flip). Paint-only — does not reflow siblings. Composes
+  /// multiplicatively with [scaleX]/[scaleY] (like CSS `scale()` + `scaleX()`).
   T scale(double factor) => fwRebuild(fwStyle.copyWith(scaleFactor: factor));
+
+  /// Per-axis horizontal scale (Tailwind `scale-x-*`). Composes with [scale].
+  T scaleX(double factor) => fwRebuild(fwStyle.copyWith(scaleXFactor: factor));
+
+  /// Per-axis vertical scale (Tailwind `scale-y-*`). Composes with [scale].
+  T scaleY(double factor) => fwRebuild(fwStyle.copyWith(scaleYFactor: factor));
+
+  /// Horizontal skew in **degrees** (Tailwind `skew-x-*`). Paint-only.
+  T skewX(double degrees) => fwRebuild(fwStyle.copyWith(skewXAngle: degrees * math.pi / 180.0));
+
+  /// Vertical skew in **degrees** (Tailwind `skew-y-*`). Paint-only.
+  T skewY(double degrees) => fwRebuild(fwStyle.copyWith(skewYAngle: degrees * math.pi / 180.0));
+
+  /// Transform origin / anchor for `scale`/`rotate`/`skew` (CSS `transform-origin`;
+  /// directional alignments are RTL-aware). Defaults to the box center.
+  T transformOrigin(AlignmentGeometry alignment) =>
+      fwRebuild(fwStyle.copyWith(transformAlignment: alignment));
 
   /// Rotation in **degrees**, clockwise (Tailwind `rotate-*`; stored internally
   /// as radians). Paint-only.

@@ -12,10 +12,10 @@ extension ResolvedStyleBuild on ResolvedStyle {
   /// unwrapped. The order is asserted by tests because later modules depend on
   /// it; do not reorder without updating `render_chain_test.dart`.
   ///
-  /// Outer→inner: `margin → constraints → aspect → fractional → transform →
-  /// color-filter → content-blur → opacity → shadow(unclipped) →
-  /// surface(backdrop?+decoration) → content-clip → padding → object-fit →
-  /// text/icon defaults → child`.
+  /// Outer→inner: `margin → cursor → ignore-pointer → visibility → constraints →
+  /// aspect → fractional → transform → color-filter → content-blur → opacity →
+  /// shadow(unclipped) → surface(backdrop?+decoration) → content-clip → padding →
+  /// object-fit → text/icon defaults → child`.
   Widget build(Widget child) {
     // Flutter paints a rounded border only when every edge shares one color and
     // width (a uniform `Border`); a per-side `BorderDirectional` + `borderRadius`
@@ -40,6 +40,7 @@ extension ResolvedStyleBuild on ResolvedStyle {
         textAlign != null ||
         textDecoration != null ||
         fontFamily != null ||
+        fontStyle != null ||
         maxLines != null ||
         textOverflow != null ||
         softWrap != null) {
@@ -52,6 +53,7 @@ extension ResolvedStyleBuild on ResolvedStyle {
           height: lineHeight,
           decoration: textDecoration,
           fontFamily: fontFamily,
+          fontStyle: fontStyle,
         ),
         textAlign: textAlign,
         maxLines: maxLines,
@@ -133,12 +135,17 @@ extension ResolvedStyleBuild on ResolvedStyle {
     }
 
     // Transform (paint-only; transforms the already-rendered result incl. the
-    // shadow, matching CSS `transform`).
-    if (scale != null || rotation != null || translate != null) {
-      // Composed via stable constructors (not the deprecated instance
-      // `scale`/`translate`, which also keeps us compatible with the pinned
-      // floor toolchain). Right-multiplying T·R·S applies scale first, then
-      // rotation, then translation — matching CSS `transform` semantics.
+    // shadow, matching CSS `transform`). Uniform `scale` composes (multiplies)
+    // with per-axis `scaleX`/`scaleY`, like CSS `scale()` + `scaleX()`.
+    final sx = (scale ?? 1) * (scaleX ?? 1);
+    final sy = (scale ?? 1) * (scaleY ?? 1);
+    final hasScale = scale != null || scaleX != null || scaleY != null;
+    final hasSkew = skewX != null || skewY != null;
+    if (translate != null || rotation != null || hasScale || hasSkew) {
+      // Composed via stable constructors. Right-multiplying T·R·Skew·S applies
+      // scale first, then skew, then rotation, then translation — matching CSS
+      // `transform` semantics. `transformAlignment` is the origin (default
+      // center).
       var m = Matrix4.identity();
       if (translate != null) {
         m = m.multiplied(Matrix4.translationValues(translate!.dx, translate!.dy, 0));
@@ -146,10 +153,17 @@ extension ResolvedStyleBuild on ResolvedStyle {
       if (rotation != null) {
         m = m.multiplied(Matrix4.rotationZ(rotation!));
       }
-      if (scale != null) {
-        m = m.multiplied(Matrix4.diagonal3Values(scale!, scale!, 1));
+      if (hasSkew) {
+        m = m.multiplied(Matrix4.skew(skewX ?? 0, skewY ?? 0));
       }
-      current = Transform(transform: m, alignment: Alignment.center, child: current);
+      if (hasScale) {
+        m = m.multiplied(Matrix4.diagonal3Values(sx, sy, 1));
+      }
+      current = Transform(
+        transform: m,
+        alignment: transformAlignment ?? Alignment.center,
+        child: current,
+      );
     }
 
     // Fractional sizing.
@@ -194,6 +208,27 @@ extension ResolvedStyleBuild on ResolvedStyle {
         ),
         child: current,
       );
+    }
+
+    // Visibility: hide but keep the layout footprint (CSS `visibility: hidden`).
+    if (isVisible == false) {
+      current = Visibility(
+        visible: false,
+        maintainSize: true,
+        maintainAnimation: true,
+        maintainState: true,
+        child: current,
+      );
+    }
+
+    // Pointer-events: drop hit-testing for the whole box (CSS `pointer-events:none`).
+    if (ignorePointer == true) {
+      current = IgnorePointer(child: current);
+    }
+
+    // Cursor: the mouse cursor shown over the box (CSS `cursor`).
+    if (mouseCursor != null) {
+      current = MouseRegion(cursor: mouseCursor!, child: current);
     }
 
     // Outermost: margin.

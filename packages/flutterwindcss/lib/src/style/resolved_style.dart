@@ -42,6 +42,7 @@ class ResolvedStyle {
     this.textAlign,
     this.textDecoration,
     this.fontFamily,
+    this.fontStyle,
     this.maxLines,
     this.textOverflow,
     this.softWrap,
@@ -49,10 +50,18 @@ class ResolvedStyle {
     this.blur,
     this.backdropBlur,
     this.scale,
+    this.scaleX,
+    this.scaleY,
+    this.skewX,
+    this.skewY,
+    this.transformAlignment,
     this.rotation,
     this.translate,
     this.colorMatrix,
     this.fit,
+    this.mouseCursor,
+    this.ignorePointer,
+    this.isVisible,
     this.clipBehavior,
   });
 
@@ -131,6 +140,9 @@ class ResolvedStyle {
   /// Default font family.
   final String? fontFamily;
 
+  /// Default font style (italic/normal).
+  final FontStyle? fontStyle;
+
   /// Max lines before truncation.
   final int? maxLines;
 
@@ -149,8 +161,23 @@ class ResolvedStyle {
   /// Backdrop blur sigma.
   final double? backdropBlur;
 
-  /// Scale factor.
+  /// Uniform scale factor.
   final double? scale;
+
+  /// Per-axis horizontal scale (composes with [scale]).
+  final double? scaleX;
+
+  /// Per-axis vertical scale (composes with [scale]).
+  final double? scaleY;
+
+  /// Horizontal skew angle (radians).
+  final double? skewX;
+
+  /// Vertical skew angle (radians).
+  final double? skewY;
+
+  /// Transform origin / anchor (defaults to center).
+  final AlignmentGeometry? transformAlignment;
 
   /// Rotation radians.
   final double? rotation;
@@ -163,6 +190,15 @@ class ResolvedStyle {
 
   /// Object-fit for the content (→ `FittedBox`).
   final BoxFit? fit;
+
+  /// Mouse cursor over the box (→ `MouseRegion`).
+  final MouseCursor? mouseCursor;
+
+  /// Whether the box ignores pointer events (→ `IgnorePointer`).
+  final bool? ignorePointer;
+
+  /// Visibility — `false` hides but keeps layout space (→ `Visibility`).
+  final bool? isVisible;
 
   /// Clip behavior.
   final Clip? clipBehavior;

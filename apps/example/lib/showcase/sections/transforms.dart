@@ -72,6 +72,22 @@ class TransformsSection extends StatelessWidget {
           ],
         ),
         ShowcaseSection(
+          title: 'Per-axis scale & skew (module 13)',
+          children: <Widget>[
+            FwWrap(
+              gap: 10,
+              runGap: 10,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: <Widget>[
+                demoChip('scaleX 1.6', (b) => fill(b).scaleX(1.6)),
+                demoChip('scaleY 1.6', (b) => fill(b).scaleY(1.6)),
+                demoChip('skewX 20°', (b) => fill(b).skewX(20)),
+                demoChip('skewY 12°', (b) => fill(b).skewY(12)),
+              ],
+            ),
+          ],
+        ),
+        ShowcaseSection(
           title: 'Composed (T·R·S)',
           children: <Widget>[
             FwWrap(
@@ -80,6 +96,11 @@ class TransformsSection extends StatelessWidget {
               children: <Widget>[
                 demoChip('rotate+scale', (b) => fill(b).rotate(-12).scale(1.15)),
                 demoChip('all three', (b) => fill(b).translateY(-2).rotate(8).scale(1.1)),
+                // transformOrigin: rotate about the top-start corner, not center.
+                demoChip(
+                  'rotate @ origin',
+                  (b) => fill(b).rotate(20).transformOrigin(AlignmentDirectional.topStart),
+                ),
               ],
             ),
           ],
