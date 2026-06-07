@@ -51,6 +51,8 @@ class ResolvedStyle {
     this.scale,
     this.rotation,
     this.translate,
+    this.colorMatrix,
+    this.fit,
     this.clipBehavior,
   });
 
@@ -155,6 +157,12 @@ class ResolvedStyle {
 
   /// Translate offset.
   final Offset? translate;
+
+  /// Composed CSS-filter colour matrix (4×5, 20 values) → `ColorFilter.matrix`.
+  final List<double>? colorMatrix;
+
+  /// Object-fit for the content (→ `FittedBox`).
+  final BoxFit? fit;
 
   /// Clip behavior.
   final Clip? clipBehavior;

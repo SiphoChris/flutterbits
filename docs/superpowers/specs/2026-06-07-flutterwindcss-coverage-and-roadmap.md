@@ -65,15 +65,16 @@ matrices · **L** ≈ a new widget / sliver / render object or cross-cutting wor
 ### Tier 1 — Build next (matter a lot, not a hard add)
 
 These are core vocabulary, small, and fit the existing single-box `.tw` model.
-**Module 11 (text completeness) is shipped**; **module 12 (filters & fit)** is next.
+**Modules 11 (text completeness) and 12 (filters & fit) are shipped.** Tier 1 is
+complete; the next work is Tier 2 (by demand).
 
 | Utility | Tailwind | Flutter mechanism | Home | Size | Status |
 |---|---|---|---|---|---|
 | **Line-clamp / truncate / text-overflow** | `line-clamp-N`, `truncate`, `text-ellipsis`, `text-clip` | `DefaultTextStyle.merge` carries `maxLines`/`overflow`/`softWrap` — fields + setters `maxLines`/`lineClamp`/`truncate`/`overflow` | `.tw` typography | **S** | ✅ module 11 |
 | **Font family** | `font-sans/serif/mono`, `font-[...]` | `TextStyle.fontFamily` via the same `DefaultTextStyle.merge` — setters `font`/`fontSans`/`fontSerif`/`fontMono` | `.tw` typography | **S** | ✅ module 11 |
 | **Whitespace / wrapping** | `whitespace-nowrap`, `whitespace-normal` | `softWrap` via `DefaultTextStyle.merge` — setters `nowrap`/`wrap` | `.tw` typography | **S** | ✅ module 11 |
-| **Color filters** | `brightness/contrast/saturate/grayscale/invert/sepia/hue-rotate` | `ColorFiltered` + `ColorFilter.matrix` (same render-chain slot as the existing blur `ImageFiltered`) | `.tw` effects | **M** | ⬜ module 12 |
-| **Object-fit** | `object-cover/contain/fill/...` | wrap child in `FittedBox(fit: BoxFit.*)` | `.tw` (`fit()`) | **S–M** | ⬜ module 12 |
+| **Color filters** | `brightness/contrast/saturate/grayscale/invert/sepia/hue-rotate` | `ColorFiltered` + `ColorFilter.matrix`, composed within a chain (same render-chain slot as the existing blur `ImageFiltered`) | `.tw` effects | **M** | ✅ module 12 |
+| **Object-fit** | `object-cover/contain/fill/...` | wrap child in `FittedBox(fit: BoxFit.*)` — setter `fit` | `.tw` (`fit()`) | **S–M** | ✅ module 12 |
 
 Notes: line-clamp is the most glaring single omission — it is core text vocabulary and a few
 hours. Color matrices must be transcribed correctly (guard ranges; test against known
@@ -117,7 +118,8 @@ list-building site (you know each child's index), so they need no engine feature
 
 1. **Module 11 — Text completeness:** ✅ **shipped** — `font`/`fontSans/Serif/Mono`,
    `maxLines`, `lineClamp`, `truncate`, `overflow`, `nowrap`/`wrap`.
-2. **Module 12 — Filters & fit:** color filters (`ColorFilter.matrix`) + object-fit. (Tier 1.)
+2. **Module 12 — Filters & fit:** ✅ **shipped** — `grayscale`/`brightness`/`contrast`/
+   `saturate`/`invert`/`sepia`/`hueRotate` (composed color matrices) + `fit`.
 3. **Then, by demand:** `group`/`peer`, transform extras, `divide`, overflow/scroll, blend,
    sticky (Tier 2), prioritized by what real flutterbits components need.
 4. **Never (in the engine):** an element-animation subsystem (→ `flutter_animate`); `prose`

@@ -31,6 +31,26 @@ void main() {
     expect(find.byType(DecoratedBox), findsOneWidget);
   });
 
+  testWidgets('color filter emits a ColorFiltered (module 12)', (t) async {
+    await _pump(t, const ResolvedStyle());
+    expect(find.byType(ColorFiltered), findsNothing);
+    await _pump(
+      t,
+      const ResolvedStyle(
+        colorMatrix: <double>[1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0],
+      ),
+    );
+    expect(find.byType(ColorFiltered), findsOneWidget);
+  });
+
+  testWidgets('object-fit emits a FittedBox (module 12)', (t) async {
+    await _pump(t, const ResolvedStyle());
+    expect(find.byType(FittedBox), findsNothing);
+    await _pump(t, const ResolvedStyle(fit: BoxFit.cover));
+    final box = t.widget<FittedBox>(find.byType(FittedBox));
+    expect(box.fit, BoxFit.cover);
+  });
+
   testWidgets('text-completeness fields flow into DefaultTextStyle (module 11)', (t) async {
     // Only the new text fields are set (no colour/size) — the text wrapper must
     // still emit, carrying fontFamily/maxLines/overflow/softWrap.

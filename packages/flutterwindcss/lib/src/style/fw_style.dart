@@ -53,6 +53,8 @@ class FwStyle with FwStyleOps<FwStyle> {
     this.scaleFactor,
     this.rotation,
     this.translation,
+    this.colorMatrix,
+    this.boxFit,
     this.clipBehavior,
     this.layers = const <FwLayer>[],
   });
@@ -178,6 +180,16 @@ class FwStyle with FwStyleOps<FwStyle> {
   /// Translation offset in logical px (set by `translate`/`translateX/Y`).
   final Offset? translation;
 
+  /// Composed CSS-filter colour matrix (4×5, 20 values), set by the filter
+  /// setters (`grayscale`/`brightness`/`contrast`/`saturate`/`invert`/`sepia`/
+  /// `hueRotate`). Filters **compose** within a chain (matrices multiply); across
+  /// layers it last-wins like every other field.
+  final List<double>? colorMatrix;
+
+  /// Object-fit for the child content (set by the `fit` setter; named `boxFit`
+  /// so the Tailwind-natural `fit` setter doesn't collide with the field).
+  final BoxFit? boxFit;
+
   // Overflow.
   /// Content clip behavior.
   final Clip? clipBehavior;
@@ -236,6 +248,8 @@ class FwStyle with FwStyleOps<FwStyle> {
     double? scaleFactor,
     double? rotation,
     Offset? translation,
+    List<double>? colorMatrix,
+    BoxFit? boxFit,
     Clip? clipBehavior,
     List<FwLayer>? layers,
   }) {
@@ -274,6 +288,8 @@ class FwStyle with FwStyleOps<FwStyle> {
       scaleFactor: scaleFactor ?? this.scaleFactor,
       rotation: rotation ?? this.rotation,
       translation: translation ?? this.translation,
+      colorMatrix: colorMatrix ?? this.colorMatrix,
+      boxFit: boxFit ?? this.boxFit,
       clipBehavior: clipBehavior ?? this.clipBehavior,
       layers: layers ?? this.layers,
     );
@@ -320,6 +336,8 @@ class FwStyle with FwStyleOps<FwStyle> {
       scaleFactor == other.scaleFactor &&
       rotation == other.rotation &&
       translation == other.translation &&
+      listEquals(colorMatrix, other.colorMatrix) &&
+      boxFit == other.boxFit &&
       clipBehavior == other.clipBehavior &&
       listEquals(layers, other.layers);
 
@@ -359,6 +377,8 @@ class FwStyle with FwStyleOps<FwStyle> {
     scaleFactor,
     rotation,
     translation,
+    colorMatrix == null ? null : Object.hashAll(colorMatrix!),
+    boxFit,
     clipBehavior,
     Object.hashAll(layers),
   ]);

@@ -13,8 +13,9 @@ extension ResolvedStyleBuild on ResolvedStyle {
   /// it; do not reorder without updating `render_chain_test.dart`.
   ///
   /// Outer→inner: `margin → constraints → aspect → fractional → transform →
-  /// content-blur → opacity → shadow(unclipped) → surface(backdrop?+decoration)
-  /// → content-clip → padding → text/icon defaults → child`.
+  /// color-filter → content-blur → opacity → shadow(unclipped) →
+  /// surface(backdrop?+decoration) → content-clip → padding → object-fit →
+  /// text/icon defaults → child`.
   Widget build(Widget child) {
     // Flutter paints a rounded border only when every edge shares one color and
     // width (a uniform `Border`); a per-side `BorderDirectional` + `borderRadius`
@@ -61,6 +62,11 @@ extension ResolvedStyleBuild on ResolvedStyle {
           child: current,
         ),
       );
+    }
+
+    // Object-fit: scale the content to fit its content box (inside padding).
+    if (fit != null) {
+      current = FittedBox(fit: fit!, child: current);
     }
 
     // Inner padding.
@@ -117,6 +123,13 @@ extension ResolvedStyleBuild on ResolvedStyle {
         imageFilter: ui.ImageFilter.blur(sigmaX: blur!, sigmaY: blur!),
         child: current,
       );
+    }
+
+    // Colour filter (CSS filter color functions: brightness/contrast/grayscale/
+    // saturate/invert/sepia/hue-rotate), composed into one matrix. Outside the
+    // content blur, like CSS `filter` applied to the rendered element.
+    if (colorMatrix != null) {
+      current = ColorFiltered(colorFilter: ColorFilter.matrix(colorMatrix!), child: current);
     }
 
     // Transform (paint-only; transforms the already-rendered result incl. the
