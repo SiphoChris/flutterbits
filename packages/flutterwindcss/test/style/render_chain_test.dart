@@ -1,5 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutterwindcss/src/style/fw_border_spec.dart';
+import 'package:flutterwindcss/src/style/fw_dashed_border.dart';
+import 'package:flutterwindcss/src/style/fw_ring.dart';
 import 'package:flutterwindcss/src/style/resolved_style.dart';
 import 'package:flutterwindcss/src/style/resolved_style_build.dart';
 
@@ -277,5 +280,46 @@ void main() {
     );
     final clip = find.byType(ClipRRect).first;
     expect(find.descendant(of: clip, matching: find.byType(Padding)), findsOneWidget);
+  });
+
+  // --- Module 15 chain nodes (the build() doc-comment claims they're pinned). ---
+
+  testWidgets('dashed border paints via a CustomPaint INSIDE the shadow box, OUTSIDE the surface', (
+    t,
+  ) async {
+    await _pump(
+      t,
+      ResolvedStyle(
+        border: Border.all(width: 2),
+        borderStyle: FwBorderStyle.dashed,
+        background: const Color(0xFF112233),
+        boxShadow: const <BoxShadow>[BoxShadow(blurRadius: 3)],
+      ),
+    );
+    final painter = find.byWidgetPredicate(
+      (w) => w is CustomPaint && w.foregroundPainter is FwDashedBorderPainter,
+    );
+    expect(painter, findsOneWidget);
+    // Shadow DecoratedBox is outermost decoration; the dashed painter sits within it.
+    final shadowBox = find.byType(DecoratedBox).first;
+    expect(find.descendant(of: shadowBox, matching: painter), findsOneWidget);
+    // The painter wraps the surface decoration (the dashed border draws over the fill).
+    expect(find.descendant(of: painter, matching: find.byType(DecoratedBox)), findsOneWidget);
+  });
+
+  testWidgets('ring composes into the shadow layer alongside the drop shadow', (t) async {
+    await _pump(
+      t,
+      const ResolvedStyle(
+        boxShadow: <BoxShadow>[BoxShadow(blurRadius: 3, color: Color(0xFF000000))],
+        ringSpec: FwRing(width: 2, color: Color(0xFF3B82F6)),
+      ),
+    );
+    final box = t.widget<DecoratedBox>(find.byType(DecoratedBox).first);
+    final shadows = (box.decoration as BoxDecoration).boxShadow!;
+    // Drop shadow first, ring last (paints outermost).
+    expect(shadows.length, 2);
+    expect(shadows.last.color, const Color(0xFF3B82F6));
+    expect(shadows.last.spreadRadius, 2);
   });
 }

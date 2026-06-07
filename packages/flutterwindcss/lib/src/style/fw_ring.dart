@@ -30,11 +30,16 @@ class FwRing {
   final Color offsetColor;
 
   /// Expands to the box-shadow layers, outer-last. The offset gap (if any) is the
-  /// inner shadow; the ring is the outer one (its spread includes the offset).
-  List<BoxShadow> toBoxShadows() => <BoxShadow>[
-    if (offset > 0) BoxShadow(color: offsetColor, spreadRadius: offset),
-    BoxShadow(color: color, spreadRadius: offset + width),
-  ];
+  /// inner shadow; the ring is the outer one (its spread includes the offset). A
+  /// zero (or negative) [width] is a true no-op — no shadows, no dead wrapper, and
+  /// no lone offset band (an offset with no ring is meaningless).
+  List<BoxShadow> toBoxShadows() {
+    if (width <= 0) return const <BoxShadow>[];
+    return <BoxShadow>[
+      if (offset > 0) BoxShadow(color: offsetColor, spreadRadius: offset),
+      BoxShadow(color: color, spreadRadius: offset + width),
+    ];
+  }
 
   @override
   bool operator ==(Object other) =>

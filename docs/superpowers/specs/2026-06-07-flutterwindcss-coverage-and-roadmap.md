@@ -25,32 +25,41 @@ Tailwind utility — we build "the things that matter and aren't a hard add."
 
 Verified against the code by an adversarial review pass. Headline:
 
-- **~85–90% of high-traffic, daily-use Tailwind utilities are built**, and **~70–75% of
-  Tailwind's *portable* utility surface** overall. The remaining distance is **breadth in
-  the long tail**, not depth in the core.
+- **~92–94% of high-traffic, daily-use Tailwind utilities are built** (up from ~85–90% before
+  module 15, which closed the most-noticed daily gaps — scroll, focus rings, named
+  shadow/radius sugar, gradient directions), and **~78–82% of Tailwind's *portable* utility
+  surface** overall. The remaining distance is **breadth in the long tail**, not depth.
 - **Everything developers reach for daily is done:** spacing, sizing, color, typography
-  (incl. line-clamp/truncate/family), borders + radius, shadows, opacity, blur, gradients,
-  the full color-filter set + object-fit, transforms, the complete flex/grid/stack layout
-  vocabulary, responsive + container variants, and hover/focus/pressed/disabled states.
+  (incl. line-clamp/truncate/family/tracking), borders + radius (+ dashed/dotted + named
+  sugar), shadows (+ named sugar), `ring`, opacity, blur, gradients (+ direction sugar),
+  the full color-filter set + object-fit, transforms, the complete flex/grid/stack/scroll
+  layout vocabulary, responsive + container variants, and hover/focus/pressed/disabled +
+  group/peer states.
 - **Two multipliers** make effective coverage higher than a raw class count: arbitrary
   values are native, and `bgGradient`/`shadow` are pass-through (radial/conic gradients and
   arbitrary shadows already work).
+- **The two remaining daily-driver misses** are `divide-*` (lists/menus) and `text-transform`
+  (`uppercase` labels) — both feasible and small; build by demand while building components.
 - **Legitimately out (not counted against the engine):** animation → `flutter_animate`
-  (§11b); forms/prose/tables/SVG/`sr-only` → the flutterbits component layer.
+  (§11b); forms/prose/tables/SVG/`sr-only`/`accent-color`/`caret-color`/`resize`/
+  `appearance-none` → the flutterbits component layer.
 - **Genuinely impossible / no analog (tiny):** true CSS cascade, pseudo-elements/`content`,
-  `float`/`clear`, `text-transform` as a render-time style, `will-change`.
+  `float`/`clear`, `will-change`, `touch-action`. **`text-transform`** is impossible *as a
+  render-time style* (Flutter's `TextStyle` has no transform hook) but **feasible as content
+  mutation** at the `Text`-building site / a helper — so it is "not yet built (S)", not
+  impossible.
 
-**Built since this summary (modules 13–14):** transform extras (`scaleX`/`scaleY`/`skewX`/
-`skewY`/`transformOrigin`), `cursor`, `pointerEventsNone`, `invisible`/`visible`, `italic`/
-`notItalic`, `size` (module 13); **`group-*` / `peer-*`** state propagation (module 14 —
-`FwGroup`/`FwPeer`, the `FwGroupCondition` resolver member, and the `groupHover`/`peerHover`/…
-setters, with named groups/peers). So the remaining **highest-value NOT-BUILT items**
-(excluding out/delegated), by value × ease:
+**Built since the early summary (modules 13–15):** transform extras + interactivity + `size`
+(module 13); **`group-*` / `peer-*`** state propagation (module 14); and the **ergonomics +
+completeness** layer (module 15 — gradient direction sugar, `ring`, named-scale `shadow*`/
+`rounded*` sugar, `FwScroll` (`overflow-auto/scroll`), and dashed/dotted borders). So the
+remaining **highest-value NOT-BUILT items** (excluding out/delegated), by value × ease:
 
-1. **Overflow / scroll** (`overflow-auto/scroll`) (M) — a scroll widget (`overflow-hidden`
-   already = `.clip()`).
-2. **`divide-*`** (S–M) — a separator flag on `FwRow`/`FwColumn`.
-3. **`mix-blend-mode`** (M) and **named-scale sugar** (`shadow-md`/`bg-gradient-to-r`, S).
+1. **`divide-*`** (S–M) — a separator flag on `FwRow`/`FwColumn`. Most-used remaining miss.
+2. **`text-transform`** (`uppercase`/`lowercase`/`capitalize`) (S) — content mutation at the
+   `Text`-building site / a helper (not a render-time style; see headline).
+3. **`bg-image`** (S–M), **`mix-blend-mode`** (M), **3D transforms** (M), **negative margins**
+   (M, asserts cleanly today).
 
 By-demand / larger: sticky (L, slivers), scroll-snap (L), backdrop color filters (M),
 dashed borders (M, custom painter), `bg-image` (S–M).

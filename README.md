@@ -67,8 +67,8 @@ Flutter has no structure/style split and no CSS cascade — the widget tree *is*
 
 **🚧 Next on the roadmap:**
 
-1. **`flutterbits` components**, the **registry + CLI** (`flutterbits add` / `diff`), and the **tweakcn → `theme.dart` generator**.
-2. **Engine utility gaps** — text completeness (module 11), filters + object-fit (module 12), group/peer (module 14), and the ergonomics/completeness layer (module 15 — gradient sugar, `ring`, named-scale `shadow*`/`rounded*`, `FwScroll`, dashed borders) all shipped; the remaining feasible long tail (`divide`, `bg-image`, `mix-blend-mode`, 3D transforms, sticky, scroll-snap, negative margins) is prioritized in the [coverage & roadmap](docs/superpowers/specs/2026-06-07-flutterwindcss-coverage-and-roadmap.md), which maps Tailwind's surface to what's built / worth building / delegated (animation → [`flutter_animate`](https://pub.dev/packages/flutter_animate)) / impossible.
+1. **`flutterbits` components**, the **registry + CLI** (`flutterbits add` / `diff`), and the **tweakcn → `theme.dart` generator**. *(The engine is complete enough to start this — ~92–94% of daily-driver Tailwind is covered; an adversarial audit found no engine blocker.)*
+2. **Remaining engine long-tail (by demand)** — `divide-*` and `text-transform` are the two most likely to surface while building components (S each); then `bg-image`, `mix-blend-mode`, 3D transforms, sticky, scroll-snap, negative margins. All are feasible with a stated Flutter mechanism and prioritized in the [coverage & roadmap](docs/superpowers/specs/2026-06-07-flutterwindcss-coverage-and-roadmap.md), which maps Tailwind's surface to what's built / worth building / delegated (animation → [`flutter_animate`](https://pub.dev/packages/flutter_animate)) / impossible.
 
 See [`docs/superpowers/specs`](docs/superpowers/specs) for the full engine design and [`docs/superpowers/plans`](docs/superpowers/plans) for the implementation plans.
 

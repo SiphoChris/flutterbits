@@ -26,9 +26,16 @@ export 'src/style/fw_border_spec.dart';
 // ResolvedStyle (module 14 audit).
 export 'src/style/fw_group.dart' hide fwReadRelationStates, FwRelationStates;
 export 'src/style/fw_layer.dart';
+// FwRing + the named-scale step enums (FwRadiusStep/FwShadowStep) are the types of
+// public FwStyle fields (ringSpec/radiusStep/shadowStep), so they are part of the
+// supported surface — like FwBorderSpec (module 15). The FwDashedBorderPainter
+// CustomPainter is pure impl (no public field references it), so it stays
+// unexported. (Sorted alphabetically by path for directives_ordering.)
+export 'src/style/fw_ring.dart';
 export 'src/style/fw_style.dart';
 export 'src/style/fw_style_ops.dart';
 export 'src/style/fw_styled.dart';
+export 'src/style/fw_token_steps.dart';
 
 // Theme access (Module 2) + animated theming (Module 10).
 export 'src/theme/context_fw.dart';

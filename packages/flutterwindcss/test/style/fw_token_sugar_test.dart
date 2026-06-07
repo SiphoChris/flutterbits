@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutterwindcss/flutterwindcss.dart';
-import 'package:flutterwindcss/src/style/fw_token_steps.dart';
 
 // Module 15 — named-scale sugar for theme-derived tokens (radius + shadow). The
 // setters store a *step* enum; FwStyled resolves it against context.fw at build
