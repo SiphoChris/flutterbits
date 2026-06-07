@@ -37,7 +37,13 @@ import 'fw_token_steps.dart';
 /// `invert`/`sepia`/`hueRotate` — composed CSS color filters — and `fit`).
 /// Module 13 added **transform extras** (`scaleX`/`scaleY`/`skewX`/`skewY`/
 /// `transformOrigin`), **interactivity** (`cursor`/`pointerEventsNone`/
-/// `invisible`/`visible`), `italic`/`notItalic`, and the `size` sugar.
+/// `invisible`/`visible`), `italic`/`notItalic`, and the `size` sugar. Module 14
+/// added the **group/peer** setters (`groupHover`/`groupFocus`/`groupPressed`/
+/// `groupDisabled`/`groupState` + the `peer*` mirror, each with optional `name`),
+/// driven by the `FwGroup`/`FwPeer` widgets. Module 15 added **ergonomics**:
+/// gradient direction sugar (`bgGradientTo*`/`bgLinear`), `ring`, named-scale
+/// `shadow*`/`rounded*` (theme-resolved by `FwStyled` at build), and
+/// `borderDashed`/`borderDotted`.
 mixin FwStyleOps<T> {
   /// The current accumulated style.
   FwStyle get fwStyle;
@@ -649,20 +655,28 @@ mixin FwStyleOps<T> {
 
   /// Focus-ring of [width] logical px in [color] (Tailwind `ring-*`) — a
   /// zero-blur spread shadow. Pass a token (`context.fw.colors.ring`). With
-  /// [offset] > 0 a gap in [offsetColor] (default white) sits between the box and
-  /// the ring (`ring-offset-*`). Composes with `shadow` (both render). Last-wins.
-  /// The ring follows the box's `rounded*` shape. [width]/[offset] must be `>= 0`.
-  T ring(
-    double width, {
-    required Color color,
-    double offset = 0,
-    Color offsetColor = const Color(0xFFFFFFFF),
-  }) {
+  /// [offset] > 0 a gap in [offsetColor] sits between the box and the ring
+  /// (`ring-offset-*`); [offsetColor] is then **required** (it must be the surface
+  /// colour behind the box, e.g. `context.fw.colors.background` — there is no safe
+  /// default, since white would be wrong on a dark surface). Composes with
+  /// `shadow` (both render). Last-wins. The ring follows the box's `rounded*`
+  /// shape. [width]/[offset] must be `>= 0`; `ring(0, …)` is a no-op.
+  T ring(double width, {required Color color, double offset = 0, Color? offsetColor}) {
     assert(width >= 0, 'flutterwindcss: ring width must be >= 0 (got $width).');
     assert(offset >= 0, 'flutterwindcss: ring offset must be >= 0 (got $offset).');
+    assert(
+      offset == 0 || offsetColor != null,
+      'flutterwindcss: ring offset > 0 requires an offsetColor (the surface colour '
+      'behind the box, e.g. context.fw.colors.background) — there is no safe default.',
+    );
     return fwRebuild(
       fwStyle.copyWith(
-        ringSpec: FwRing(width: width, color: color, offset: offset, offsetColor: offsetColor),
+        ringSpec: FwRing(
+          width: width,
+          color: color,
+          offset: offset,
+          offsetColor: offsetColor ?? const Color(0xFFFFFFFF),
+        ),
       ),
     );
   }

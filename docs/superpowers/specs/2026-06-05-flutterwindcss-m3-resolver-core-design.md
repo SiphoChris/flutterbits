@@ -13,6 +13,15 @@ complete*: the full data model exists, the full render chain renders, the full
 variant/responsive/container layering works, and `.tw` is usable. Modules 4–9 then
 only add typed base-setter sugar + per-slice goldens; they never re-touch the core.
 
+> **Corrected — module 15:** "the *full* data model exists / never re-touch the
+> core" held for modules 4–13, but later completeness modules did extend the core,
+> by design (capability ratchet, not shortcut): module 14 added the
+> `FwGroupCondition` sealed member; module 15 added `FwStyle` fields
+> (`ringSpec`/`borderStyle`/`radiusStep`/`shadowStep`) **and** a gated theme
+> pre-pass in `FwStyled` (`resolveTokenSteps(context.fw)` runs before `resolve()`,
+> which itself stays context-free). The M3 model was complete *for M3's scope*; the
+> resolver/render-chain architecture it established absorbed these additively.
+
 **Depends on:** Module 1 (tokens — `FwTokens`, `FwShadows`, scales, `FwState`,
 `FwBreakpoint`) and Module 2 (`context.fw`). All merged on `main`.
 

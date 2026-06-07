@@ -87,6 +87,11 @@ void main() {
     expect(t.takeException(), isAssertionError);
   });
 
+  testWidgets('borderDashed with no border width asserts (would silently draw nothing)', (t) async {
+    await t.pumpWidget(_wrap(const SizedBox(width: 80, height: 60).tw.bg(_bg).borderDashed));
+    expect(t.takeException(), isAssertionError);
+  });
+
   testWidgets('a dashed border follows the rounded shape (radius passed to painter)', (t) async {
     await t.pumpWidget(
       _wrap(

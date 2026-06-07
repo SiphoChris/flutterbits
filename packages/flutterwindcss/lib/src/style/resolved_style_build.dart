@@ -31,6 +31,14 @@ extension ResolvedStyleBuild on ResolvedStyle {
       'one color and width. Use a uniform border when rounding, or drop the radius.',
     );
 
+    // A non-solid border style with no width would silently paint nothing — guard
+    // it (module 15). `border == null` here means no edge has width > 0.
+    assert(
+      !(borderStyle != null && borderStyle != FwBorderStyle.solid && border == null),
+      'flutterwindcss: borderDashed/borderDotted needs a border width — set it with '
+      'border(w, {color}). A non-solid style with no width paints nothing.',
+    );
+
     Widget current = child;
 
     // Inner: default text/icon styling for descendants.

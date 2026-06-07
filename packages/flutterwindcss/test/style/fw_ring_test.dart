@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutterwindcss/flutterwindcss.dart';
-import 'package:flutterwindcss/src/style/fw_ring.dart';
 
 // Module 15 — `ring`: a Tailwind focus-ring as a zero-blur, spread box-shadow in
 // the ring color (the dev passes the color, normally context.fw.colors.ring), so
@@ -30,6 +29,25 @@ void main() {
 
   test('ring requires width >= 0', () {
     expect(() => const FwStyle().ring(-1, color: _ring), throwsA(isA<AssertionError>()));
+  });
+
+  test('ring with an offset requires an offsetColor (no silent white on dark)', () {
+    expect(() => const FwStyle().ring(2, color: _ring, offset: 2), throwsA(isA<AssertionError>()));
+    // With an explicit offsetColor it is fine.
+    expect(const FwStyle().ring(2, color: _ring, offset: 2, offsetColor: _bg).ringSpec, isNotNull);
+  });
+
+  test('ring(0, ...) is a true no-op — emits no box shadows', () {
+    expect(const FwRing(width: 0, color: _ring).toBoxShadows(), isEmpty);
+    // even with an offset: an offset with no ring is meaningless.
+    expect(const FwRing(width: 0, color: _ring, offset: 4).toBoxShadows(), isEmpty);
+  });
+
+  testWidgets('ring(0) renders no shadow layer', (t) async {
+    await t.pumpWidget(
+      _wrap(const SizedBox(width: 40, height: 40).tw.bg(_bg).ring(0, color: _ring)),
+    );
+    expect(_shadows(t).any((s) => s.color == _ring), isFalse);
   });
 
   testWidgets('ring renders a zero-blur spread shadow in the ring color', (t) async {
