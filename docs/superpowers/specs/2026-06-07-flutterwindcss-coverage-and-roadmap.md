@@ -40,22 +40,21 @@ Verified against the code by an adversarial review pass. Headline:
 - **Genuinely impossible / no analog (tiny):** true CSS cascade, pseudo-elements/`content`,
   `float`/`clear`, `text-transform` as a render-time style, `will-change`.
 
-**Highest-value NOT-BUILT items** (excluding the out/delegated set), by value × ease:
+**Built since this summary (module 13):** transform extras (`scaleX`/`scaleY`/`skewX`/`skewY`/
+`transformOrigin`), `cursor`, `pointerEventsNone`, `invisible`/`visible`, `italic`/`notItalic`,
+`size`. So the remaining **highest-value NOT-BUILT items** (excluding out/delegated), by
+value × ease:
 
 1. **`group-*` / `peer-*`** (M–L) — parent/sibling state propagation; the most-used missing
    interactivity feature. `FwGroup` ancestor broadcasting via `InheritedWidget` + a new
    resolver condition.
 2. **Overflow / scroll** (`overflow-auto/scroll`) (M) — a scroll widget (`overflow-hidden`
    already = `.clip()`).
-3. **`cursor-*` + `pointer-events-none`** (S each) — `MouseRegion(cursor:)` / `IgnorePointer`;
-   cheap, high everyday value on web/desktop.
-4. **Transform extras** — `skew`, `scale-x/y`, `transform-origin` (M) — extend the composed
-   `Matrix4` (field already present, currently uniform).
-5. **`divide-*`** (S–M) — a separator flag on `FwRow`/`FwColumn`.
-6. **`mix-blend-mode`** (M) and **named-scale sugar** (`shadow-md`/`bg-gradient-to-r`, S).
+3. **`divide-*`** (S–M) — a separator flag on `FwRow`/`FwColumn`.
+4. **`mix-blend-mode`** (M) and **named-scale sugar** (`shadow-md`/`bg-gradient-to-r`, S).
 
 By-demand / larger: sticky (L, slivers), scroll-snap (L), backdrop color filters (M),
-dashed borders (M, custom painter), `bg-image` (S–M), `font-style: italic` (S).
+dashed borders (M, custom painter), `bg-image` (S–M).
 
 **Engine audit status:** an adversarial review of the full engine (resolver cascade, render
 chain, grid render object, tokens/lerp, modules 11–12) found **no correctness bugs**; one
@@ -85,7 +84,8 @@ smoke tests (every section, light/dark, LTR/RTL) and is covered by CI.
 | Typography: size, weight, leading, tracking, align, underline/strike | ✅ |
 | Typography: family, line-clamp/truncate, text-overflow, whitespace | ✅ (module 11) |
 | Shadow, opacity, blur, backdrop-blur | ✅ |
-| Transforms: scale, rotate, translate | ✅ (skew / per-axis / 3D ⬜) |
+| Transforms: scale, rotate, translate, scaleX/Y, skewX/Y, transform-origin | ✅ (module 13; 3D rotate ⬜) |
+| Interactivity: cursor, pointer-events-none, visibility, italic | ✅ (module 13) |
 | Flexbox (`FwRow`/`FwColumn`/`FwWrap`) | ✅ |
 | Grid (`fr`/`px`/`auto`/`minmax`, span, placement, dense, align, distribute) | ✅ (`subgrid` de-scoped, §11b) |
 | Position / inset / z (`FwStack`/`FwPositioned`) | ✅ |
@@ -131,7 +131,7 @@ Feasible, larger, or lower-frequency. Each is a real idiom, none is a wall.
 | Utility | Flutter mechanism | Home | Size |
 |---|---|---|---|
 | **`group-*` / `peer-*`** (parent/sibling state propagation) | an `FwGroup` ancestor broadcasts hover/focus via `InheritedWidget`/`ValueNotifier`; add an `FwGroupStateCondition` the resolver matches | resolver + new widget | **M–L** |
-| **Transform extras** (`skew`, `scale-x/y`, `rotate-x/y`, `perspective`, `transform-origin`) | extend the composed `Matrix4` in the transform field; origin via `Transform(alignment:)` | `.tw` transform | **M** |
+| ~~Transform extras (`skew`, `scale-x/y`, `transform-origin`)~~ | ✅ shipped (module 13). 3D `rotate-x/y`/`perspective` remain ⬜ (by-demand) | `.tw` transform | — |
 | **`divide-*`** (borders between flex children) | a flag on `FwRow`/`FwColumn` that inserts directional separators | layout widgets | **S–M** |
 | **`mix-blend-mode`** | `BlendMode` via a `saveLayer`/`ShaderMask` wrapper | `.tw` effects | **M** |
 | **Overflow / scroll** (`overflow-auto/scroll`) | `SingleChildScrollView`/`Scrollbar` — needs a *scroll widget*, not a single-box layer (`overflow-hidden` already = `.clip()`) | new widget | **M** |

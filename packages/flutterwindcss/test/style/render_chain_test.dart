@@ -51,6 +51,43 @@ void main() {
     expect(box.fit, BoxFit.cover);
   });
 
+  testWidgets('module 13 wrappers emit only when set', (t) async {
+    await _pump(t, const ResolvedStyle());
+    expect(find.byType(MouseRegion), findsNothing);
+    expect(find.byType(IgnorePointer), findsNothing);
+    expect(find.byType(Visibility), findsNothing);
+
+    await _pump(t, const ResolvedStyle(mouseCursor: SystemMouseCursors.click));
+    expect(t.widget<MouseRegion>(find.byType(MouseRegion)).cursor, SystemMouseCursors.click);
+
+    await _pump(t, const ResolvedStyle(ignorePointer: true));
+    expect(find.byType(IgnorePointer), findsOneWidget);
+
+    await _pump(t, const ResolvedStyle(isVisible: false));
+    final vis = t.widget<Visibility>(find.byType(Visibility));
+    expect(vis.visible, isFalse);
+    expect(vis.maintainSize, isTrue); // keeps layout space
+  });
+
+  testWidgets('transform extras build a Transform (scaleX / skew / origin)', (t) async {
+    await _pump(
+      t,
+      const ResolvedStyle(scaleX: 2, skewX: 0.3, transformAlignment: Alignment.topLeft),
+    );
+    final xf = t.widget<Transform>(find.byType(Transform));
+    expect(xf.alignment, Alignment.topLeft);
+    // scaleX=2 ⇒ matrix [0][0] == 2.
+    expect(xf.transform.entry(0, 0), moreOrLessEquals(2, epsilon: 1e-9));
+  });
+
+  testWidgets('fontStyle flows into DefaultTextStyle (module 13)', (t) async {
+    await _pump(t, const ResolvedStyle(fontStyle: FontStyle.italic));
+    expect(
+      t.widget<DefaultTextStyle>(find.byType(DefaultTextStyle).first).style.fontStyle,
+      FontStyle.italic,
+    );
+  });
+
   testWidgets('text-completeness fields flow into DefaultTextStyle (module 11)', (t) async {
     // Only the new text fields are set (no colour/size) — the text wrapper must
     // still emit, carrying fontFamily/maxLines/overflow/softWrap.

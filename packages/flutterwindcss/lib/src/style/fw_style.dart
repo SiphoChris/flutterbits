@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
+import 'package:flutter/services.dart' show MouseCursor;
 
 import 'fw_border_spec.dart';
 import 'fw_layer.dart';
@@ -44,6 +45,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     this.textAlign,
     this.textDecoration,
     this.fontFamily,
+    this.fontStyle,
     this.maxLineCount,
     this.textOverflow,
     this.softWrap,
@@ -51,10 +53,18 @@ class FwStyle with FwStyleOps<FwStyle> {
     this.contentBlur,
     this.backdropBlurSigma,
     this.scaleFactor,
+    this.scaleXFactor,
+    this.scaleYFactor,
+    this.skewXAngle,
+    this.skewYAngle,
+    this.transformAlignment,
     this.rotation,
     this.translation,
     this.colorMatrix,
     this.boxFit,
+    this.mouseCursor,
+    this.ignorePointer,
+    this.isVisible,
     this.clipBehavior,
     this.layers = const <FwLayer>[],
   });
@@ -141,6 +151,9 @@ class FwStyle with FwStyleOps<FwStyle> {
   /// Default font family (set by `font`/`fontSans`/`fontSerif`/`fontMono`).
   final String? fontFamily;
 
+  /// Default font style (italic/normal; set by `italic`/`notItalic`).
+  final FontStyle? fontStyle;
+
   /// Maximum lines before truncation (set by `maxLines`/`lineClamp`/`truncate`).
   /// Named `maxLineCount`, not `maxLines`, so the Tailwind-natural `maxLines`
   /// setter in [FwStyleOps] doesn't collide with this field (same rationale as
@@ -174,6 +187,21 @@ class FwStyle with FwStyleOps<FwStyle> {
   /// Uniform scale factor (set by the `scale` setter).
   final double? scaleFactor;
 
+  /// Per-axis horizontal scale (set by `scaleX`); composes with [scaleFactor].
+  final double? scaleXFactor;
+
+  /// Per-axis vertical scale (set by `scaleY`); composes with [scaleFactor].
+  final double? scaleYFactor;
+
+  /// Horizontal skew angle in radians (set by `skewX`, which takes degrees).
+  final double? skewXAngle;
+
+  /// Vertical skew angle in radians (set by `skewY`, which takes degrees).
+  final double? skewYAngle;
+
+  /// Transform origin / anchor (set by `transformOrigin`; defaults to center).
+  final AlignmentGeometry? transformAlignment;
+
   /// Rotation in radians (set by the `rotate` setter, which takes degrees).
   final double? rotation;
 
@@ -189,6 +217,19 @@ class FwStyle with FwStyleOps<FwStyle> {
   /// Object-fit for the child content (set by the `fit` setter; named `boxFit`
   /// so the Tailwind-natural `fit` setter doesn't collide with the field).
   final BoxFit? boxFit;
+
+  /// Mouse cursor over the box (set by `cursor`; Tailwind `cursor-*`). Named
+  /// `mouseCursor` so the `cursor` setter doesn't collide with the field.
+  final MouseCursor? mouseCursor;
+
+  /// Whether the box ignores pointer events (set by `pointerEventsNone`;
+  /// Tailwind `pointer-events-none`).
+  final bool? ignorePointer;
+
+  /// Visibility (set by `invisible`/`visible`; Tailwind `invisible`/`visible`).
+  /// `false` hides the box but keeps its layout space. Named `isVisible` so the
+  /// `visible` setter doesn't collide with the field.
+  final bool? isVisible;
 
   // Overflow.
   /// Content clip behavior.
@@ -239,6 +280,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     TextAlign? textAlign,
     TextDecoration? textDecoration,
     String? fontFamily,
+    FontStyle? fontStyle,
     int? maxLineCount,
     TextOverflow? textOverflow,
     bool? softWrap,
@@ -246,10 +288,18 @@ class FwStyle with FwStyleOps<FwStyle> {
     double? contentBlur,
     double? backdropBlurSigma,
     double? scaleFactor,
+    double? scaleXFactor,
+    double? scaleYFactor,
+    double? skewXAngle,
+    double? skewYAngle,
+    AlignmentGeometry? transformAlignment,
     double? rotation,
     Offset? translation,
     List<double>? colorMatrix,
     BoxFit? boxFit,
+    MouseCursor? mouseCursor,
+    bool? ignorePointer,
+    bool? isVisible,
     Clip? clipBehavior,
     List<FwLayer>? layers,
   }) {
@@ -279,6 +329,7 @@ class FwStyle with FwStyleOps<FwStyle> {
       textAlign: textAlign ?? this.textAlign,
       textDecoration: textDecoration ?? this.textDecoration,
       fontFamily: fontFamily ?? this.fontFamily,
+      fontStyle: fontStyle ?? this.fontStyle,
       maxLineCount: maxLineCount ?? this.maxLineCount,
       textOverflow: textOverflow ?? this.textOverflow,
       softWrap: softWrap ?? this.softWrap,
@@ -286,10 +337,18 @@ class FwStyle with FwStyleOps<FwStyle> {
       contentBlur: contentBlur ?? this.contentBlur,
       backdropBlurSigma: backdropBlurSigma ?? this.backdropBlurSigma,
       scaleFactor: scaleFactor ?? this.scaleFactor,
+      scaleXFactor: scaleXFactor ?? this.scaleXFactor,
+      scaleYFactor: scaleYFactor ?? this.scaleYFactor,
+      skewXAngle: skewXAngle ?? this.skewXAngle,
+      skewYAngle: skewYAngle ?? this.skewYAngle,
+      transformAlignment: transformAlignment ?? this.transformAlignment,
       rotation: rotation ?? this.rotation,
       translation: translation ?? this.translation,
       colorMatrix: colorMatrix ?? this.colorMatrix,
       boxFit: boxFit ?? this.boxFit,
+      mouseCursor: mouseCursor ?? this.mouseCursor,
+      ignorePointer: ignorePointer ?? this.ignorePointer,
+      isVisible: isVisible ?? this.isVisible,
       clipBehavior: clipBehavior ?? this.clipBehavior,
       layers: layers ?? this.layers,
     );
@@ -327,6 +386,7 @@ class FwStyle with FwStyleOps<FwStyle> {
       textAlign == other.textAlign &&
       textDecoration == other.textDecoration &&
       fontFamily == other.fontFamily &&
+      fontStyle == other.fontStyle &&
       maxLineCount == other.maxLineCount &&
       textOverflow == other.textOverflow &&
       softWrap == other.softWrap &&
@@ -334,10 +394,18 @@ class FwStyle with FwStyleOps<FwStyle> {
       contentBlur == other.contentBlur &&
       backdropBlurSigma == other.backdropBlurSigma &&
       scaleFactor == other.scaleFactor &&
+      scaleXFactor == other.scaleXFactor &&
+      scaleYFactor == other.scaleYFactor &&
+      skewXAngle == other.skewXAngle &&
+      skewYAngle == other.skewYAngle &&
+      transformAlignment == other.transformAlignment &&
       rotation == other.rotation &&
       translation == other.translation &&
       listEquals(colorMatrix, other.colorMatrix) &&
       boxFit == other.boxFit &&
+      mouseCursor == other.mouseCursor &&
+      ignorePointer == other.ignorePointer &&
+      isVisible == other.isVisible &&
       clipBehavior == other.clipBehavior &&
       listEquals(layers, other.layers);
 
@@ -368,6 +436,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     textAlign,
     textDecoration,
     fontFamily,
+    fontStyle,
     maxLineCount,
     textOverflow,
     softWrap,
@@ -375,10 +444,18 @@ class FwStyle with FwStyleOps<FwStyle> {
     contentBlur,
     backdropBlurSigma,
     scaleFactor,
+    scaleXFactor,
+    scaleYFactor,
+    skewXAngle,
+    skewYAngle,
+    transformAlignment,
     rotation,
     translation,
     colorMatrix == null ? null : Object.hashAll(colorMatrix!),
     boxFit,
+    mouseCursor,
+    ignorePointer,
+    isVisible,
     clipBehavior,
     Object.hashAll(layers),
   ]);

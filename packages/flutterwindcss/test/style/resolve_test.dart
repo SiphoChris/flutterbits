@@ -216,6 +216,51 @@ void main() {
     expect(r.clipBehavior, Clip.hardEdge);
   });
 
+  test('module 11/12/13 fields all carry through _overlay + projection', () {
+    // Guards against a field added in a later module being dropped from _overlay
+    // or the resolve() projection (the classic "works but one field silently
+    // missing" bug). Sets each on a hover layer and asserts it projects.
+    final style = const FwStyle().addLayer(
+      const FwStateCondition(WidgetState.hovered),
+      const FwStyle().copyWith(
+        // module 11
+        fontFamily: 'Inter',
+        maxLineCount: 2,
+        textOverflow: TextOverflow.ellipsis,
+        softWrap: false,
+        // module 12
+        colorMatrix: <double>[1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0],
+        boxFit: BoxFit.cover,
+        // module 13
+        fontStyle: FontStyle.italic,
+        scaleXFactor: 2,
+        scaleYFactor: 3,
+        skewXAngle: 0.1,
+        skewYAngle: 0.2,
+        transformAlignment: AlignmentDirectional.topStart,
+        mouseCursor: SystemMouseCursors.click,
+        ignorePointer: true,
+        isVisible: false,
+      ),
+    );
+    final r = style.resolve(<WidgetState>{WidgetState.hovered});
+    expect(r.fontFamily, 'Inter');
+    expect(r.maxLines, 2);
+    expect(r.textOverflow, TextOverflow.ellipsis);
+    expect(r.softWrap, isFalse);
+    expect(r.colorMatrix, isNotNull);
+    expect(r.fit, BoxFit.cover);
+    expect(r.fontStyle, FontStyle.italic);
+    expect(r.scaleX, 2);
+    expect(r.scaleY, 3);
+    expect(r.skewX, 0.1);
+    expect(r.skewY, 0.2);
+    expect(r.transformAlignment, AlignmentDirectional.topStart);
+    expect(r.mouseCursor, SystemMouseCursors.click);
+    expect(r.ignorePointer, isTrue);
+    expect(r.isVisible, isFalse);
+  });
+
   test('a partial layer overrides only its fields and preserves the base rest', () {
     // hover sets background only; the base padding + fontSize must survive (the
     // copyWith null-means-keep contract that the accumulator model relies on).
