@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import 'fw_ring.dart';
+
 /// The flattened, concrete style the render chain consumes (spec §6.3/§6.4).
 ///
 /// Optional wrappers read nullable fields ("emit iff set"); [factorAlignment]
@@ -34,6 +36,7 @@ class ResolvedStyle {
     this.border,
     this.borderRadius,
     this.boxShadow,
+    this.ringSpec,
     this.foreground,
     this.fontSize,
     this.fontWeight,
@@ -115,6 +118,9 @@ class ResolvedStyle {
 
   /// Drop shadows.
   final List<BoxShadow>? boxShadow;
+
+  /// Focus-ring spec, rendered as composed box-shadows with [boxShadow] (M15).
+  final FwRing? ringSpec;
 
   /// Default text/icon color.
   final Color? foreground;

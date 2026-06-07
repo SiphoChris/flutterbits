@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutterwindcss/src/style/fw_border_spec.dart';
 import 'package:flutterwindcss/src/style/fw_layer.dart';
+import 'package:flutterwindcss/src/style/fw_ring.dart';
 import 'package:flutterwindcss/src/style/fw_style.dart';
 import 'package:flutterwindcss/src/style/resolve.dart';
 
@@ -131,6 +132,7 @@ void main() {
       borderSpec: const FwBorderSpec(top: BorderSide(width: 1)),
       borderRadius: const BorderRadiusDirectional.all(Radius.circular(2)),
       boxShadow: const [BoxShadow(blurRadius: 1)],
+      ringSpec: const FwRing(width: 1, color: baseColor),
       foreground: baseColor,
       fontSize: 10,
       fontWeight: FontWeight.w400,
@@ -164,6 +166,7 @@ void main() {
       borderSpec: const FwBorderSpec(top: BorderSide(width: 3)),
       borderRadius: const BorderRadiusDirectional.all(Radius.circular(4)),
       boxShadow: const [BoxShadow(blurRadius: 9)],
+      ringSpec: const FwRing(width: 3, color: overColor),
       foreground: overColor,
       fontSize: 20,
       fontWeight: FontWeight.w700,
@@ -200,6 +203,7 @@ void main() {
     expect(r.border, const FwBorderSpec(top: BorderSide(width: 3)).resolve());
     expect(r.borderRadius, const BorderRadiusDirectional.all(Radius.circular(4)));
     expect(r.boxShadow, const [BoxShadow(blurRadius: 9)]);
+    expect(r.ringSpec, const FwRing(width: 3, color: overColor));
     expect(r.foreground, overColor);
     expect(r.fontSize, 20);
     expect(r.fontWeight, FontWeight.w700);

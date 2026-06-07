@@ -105,9 +105,14 @@ extension ResolvedStyleBuild on ResolvedStyle {
     }
 
     // Unclipped shadow layer (outside any clip so backdrop-blur can't eat it).
-    if (boxShadow != null && boxShadow!.isNotEmpty) {
+    // The focus `ring` (module 15) expands to zero-blur spread shadows that
+    // compose WITH any drop `shadow` — ring layers paint outermost (after the
+    // drop shadows), following the same `borderRadius` as the box.
+    final ringShadows = ringSpec?.toBoxShadows() ?? const <BoxShadow>[];
+    final shadows = <BoxShadow>[...?boxShadow, ...ringShadows];
+    if (shadows.isNotEmpty) {
       current = DecoratedBox(
-        decoration: BoxDecoration(borderRadius: borderRadius, boxShadow: boxShadow),
+        decoration: BoxDecoration(borderRadius: borderRadius, boxShadow: shadows),
         child: current,
       );
     }
