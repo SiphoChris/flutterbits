@@ -1,0 +1,34 @@
+name: flutterbits_example
+description: >-
+  flutterwindcss engine showcase — a Material-free Flutter app (pure path)
+  demonstrating the .tw utilities, layout widgets, tokens, and animated theming.
+publish_to: none
+version: 1.0.0+1
+
+# Joins the repo's pub workspace (root pubspec.yaml `workspace:`), so it shares
+# the single lockfile and resolves `flutterwindcss` from source.
+resolution: workspace
+
+environment:
+  # Match the engine's toolchain floor (AGENTS.md §2): Flutter 3.29 / Dart 3.7.
+  sdk: '>=3.7.0 <4.0.0'
+  flutter: '>=3.29.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # The styling engine under test. Path dependency to the sibling workspace
+  # member; this is the only thing the showcase styles widgets with.
+  flutterwindcss:
+    path: ../../packages/flutterwindcss
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  # Pinned to match the engine package (workspace shares one lockfile).
+  flutter_lints: ^5.0.0
+
+flutter:
+  # No Material: the showcase runs entirely on the pure path (WidgetsApp +
+  # FwTheme), so the Material icon font is not bundled.
+  uses-material-design: false
