@@ -40,18 +40,17 @@ Verified against the code by an adversarial review pass. Headline:
 - **Genuinely impossible / no analog (tiny):** true CSS cascade, pseudo-elements/`content`,
   `float`/`clear`, `text-transform` as a render-time style, `will-change`.
 
-**Built since this summary (module 13):** transform extras (`scaleX`/`scaleY`/`skewX`/`skewY`/
-`transformOrigin`), `cursor`, `pointerEventsNone`, `invisible`/`visible`, `italic`/`notItalic`,
-`size`. So the remaining **highest-value NOT-BUILT items** (excluding out/delegated), by
-value × ease:
+**Built since this summary (modules 13–14):** transform extras (`scaleX`/`scaleY`/`skewX`/
+`skewY`/`transformOrigin`), `cursor`, `pointerEventsNone`, `invisible`/`visible`, `italic`/
+`notItalic`, `size` (module 13); **`group-*` / `peer-*`** state propagation (module 14 —
+`FwGroup`/`FwPeer`, the `FwGroupCondition` resolver member, and the `groupHover`/`peerHover`/…
+setters, with named groups/peers). So the remaining **highest-value NOT-BUILT items**
+(excluding out/delegated), by value × ease:
 
-1. **`group-*` / `peer-*`** (M–L) — parent/sibling state propagation; the most-used missing
-   interactivity feature. `FwGroup` ancestor broadcasting via `InheritedWidget` + a new
-   resolver condition.
-2. **Overflow / scroll** (`overflow-auto/scroll`) (M) — a scroll widget (`overflow-hidden`
+1. **Overflow / scroll** (`overflow-auto/scroll`) (M) — a scroll widget (`overflow-hidden`
    already = `.clip()`).
-3. **`divide-*`** (S–M) — a separator flag on `FwRow`/`FwColumn`.
-4. **`mix-blend-mode`** (M) and **named-scale sugar** (`shadow-md`/`bg-gradient-to-r`, S).
+2. **`divide-*`** (S–M) — a separator flag on `FwRow`/`FwColumn`.
+3. **`mix-blend-mode`** (M) and **named-scale sugar** (`shadow-md`/`bg-gradient-to-r`, S).
 
 By-demand / larger: sticky (L, slivers), scroll-snap (L), backdrop color filters (M),
 dashed borders (M, custom painter), `bg-image` (S–M).
@@ -71,11 +70,11 @@ smoke tests (every section, light/dark, LTR/RTL) and is covered by CI.
    today** — only the *named-scale sugar* (`bg-gradient-to-r`, `shadow-md` aliases) is
    unbuilt, and `shadow-md` etc. already exist via `context.fw.shadows`.
 
-## Coverage snapshot (shipped, modules 0–10)
+## Coverage snapshot (shipped, current — modules 0–14)
 
 | Tailwind category | Status |
 |---|---|
-| Spacing (padding/margin, directional) | ✅ |
+| Spacing (padding/margin, directional) | ✅ (negative margins `-m-*` ⬜ — not yet built, §"By-demand") |
 | Sizing (w/h/min/max, fractional, aspect, square) | ✅ |
 | Color: background, text color | ✅ |
 | Gradients | ✅ via pass-through (`bgGradient`); named sugar ⬜ |
@@ -86,6 +85,7 @@ smoke tests (every section, light/dark, LTR/RTL) and is covered by CI.
 | Shadow, opacity, blur, backdrop-blur | ✅ |
 | Transforms: scale, rotate, translate, scaleX/Y, skewX/Y, transform-origin | ✅ (module 13; 3D rotate ⬜) |
 | Interactivity: cursor, pointer-events-none, visibility, italic | ✅ (module 13) |
+| Interactivity: `group-*` / `peer-*` state propagation (named) | ✅ (module 14) |
 | Flexbox (`FwRow`/`FwColumn`/`FwWrap`) | ✅ |
 | Grid (`fr`/`px`/`auto`/`minmax`, span, placement, dense, align, distribute) | ✅ (`subgrid` de-scoped, §11b) |
 | Position / inset / z (`FwStack`/`FwPositioned`) | ✅ |
@@ -130,13 +130,23 @@ Feasible, larger, or lower-frequency. Each is a real idiom, none is a wall.
 
 | Utility | Flutter mechanism | Home | Size |
 |---|---|---|---|
-| **`group-*` / `peer-*`** (parent/sibling state propagation) | an `FwGroup` ancestor broadcasts hover/focus via `InheritedWidget`/`ValueNotifier`; add an `FwGroupStateCondition` the resolver matches | resolver + new widget | **M–L** |
+| ~~**`group-*` / `peer-*`** (parent/sibling state propagation)~~ | ✅ shipped (module 14). `FwGroup` broadcasts its state to descendants and hosts the peer channel `FwPeer`s publish into (one scope, two channels — Flutter has no sibling selectors); `FwGroupCondition` (relation + state + name) the resolver matches; `groupHover`/`peerHover`/… setters. Named groups/peers supported. | resolver + new widgets | — |
 | ~~Transform extras (`skew`, `scale-x/y`, `transform-origin`)~~ | ✅ shipped (module 13). 3D `rotate-x/y`/`perspective` remain ⬜ (by-demand) | `.tw` transform | — |
-| **`divide-*`** (borders between flex children) | a flag on `FwRow`/`FwColumn` that inserts directional separators | layout widgets | **S–M** |
-| **`mix-blend-mode`** | `BlendMode` via a `saveLayer`/`ShaderMask` wrapper | `.tw` effects | **M** |
 | **Overflow / scroll** (`overflow-auto/scroll`) | `SingleChildScrollView`/`Scrollbar` — needs a *scroll widget*, not a single-box layer (`overflow-hidden` already = `.clip()`) | new widget | **M** |
+| **Named-scale sugar** (`shadow-md`, `rounded-lg`, `bg-gradient-to-r`) | thin `.tw` aliases over the existing tokens (`context.fw.shadows.md`/`radii.lg`) + `LinearGradient` helpers. The *values* already exist; only the chainable aliases don't. | `.tw` | **S** |
+| **`ring` utility** | outer box-shadow/border helper reading `context.fw.colors.ring` (shadcn focus rings) | `.tw` effects | **S–M** |
+| **`divide-*`** (borders between flex children) | a flag on `FwRow`/`FwColumn` that inserts directional separators | layout widgets | **S–M** |
+| **Negative margins** (`-m-*`) | split positive/negative per edge — positive via `Padding`, negative via `Transform.translate` (paint-only) or a custom parent-data offset. *Currently asserts with a clear "not yet supported" message* (margin renders via `Padding`, non-negative only). | `.tw` spacing | **M** |
+| **`bg-image`** (background-image) | `DecorationImage` on the surface decoration | `.tw` decoration | **S–M** |
+| **`mix-blend-mode`** | `BlendMode` via a `saveLayer`/`ShaderMask` wrapper | `.tw` effects | **M** |
+| **Dashed/dotted borders** | custom painter — Flutter's `BorderSide` has no dashed style | `.tw` border | **M** |
+| **3D transforms** (`rotate-x/y`, `perspective`) | `Matrix4.setEntry` perspective + `rotateX/Y` | `.tw` transform | **M** |
+| **`space-x/space-y`** | sibling-spacing inserter on flex (largely subsumed by `gap` — document `gap` as the idiom) | layout widgets | **S** |
+| **Backdrop color filters** (`backdrop-brightness`…) | harder — `BackdropFilter` takes an `ImageFilter`, not a `ColorFilter` | `.tw` effects | **M** |
 | **Sticky** (`position: sticky`) | `SliverPersistentHeader` (sliver context) | new widget | **L** |
 | **Scroll-snap / scroll-margin** | `ScrollPhysics`/`PageView`-style | new widget | **L** |
+
+None of these is impossible — each names its Flutter mechanism and is scheduled, not refused (AGENTS.md §11/§12). They are deliberately **not** built yet because the shipped surface already covers ~85–90% of daily-driver Tailwind; these are long-tail breadth.
 
 ### Tier 3 — Delegate (don't build into the engine)
 
@@ -162,10 +172,28 @@ list-building site (you know each child's index), so they need no engine feature
    `maxLines`, `lineClamp`, `truncate`, `overflow`, `nowrap`/`wrap`.
 2. **Module 12 — Filters & fit:** ✅ **shipped** — `grayscale`/`brightness`/`contrast`/
    `saturate`/`invert`/`sepia`/`hueRotate` (composed color matrices) + `fit`.
-3. **Then, by demand:** `group`/`peer`, transform extras, `divide`, overflow/scroll, blend,
-   sticky (Tier 2), prioritized by what real flutterbits components need.
-4. **Never (in the engine):** an element-animation subsystem (→ `flutter_animate`); `prose`
+3. **Module 14 — Group/peer:** ✅ **shipped** — `FwGroup`/`FwPeer`, `group-*`/`peer-*`
+   variants (named), the `FwGroupCondition` resolver member. See
+   `2026-06-07-flutterwindcss-m14-group-peer-design.md`.
+4. **Then, by demand:** the Tier 2 list, prioritized by what real flutterbits components need.
+5. **Never (in the engine):** an element-animation subsystem (→ `flutter_animate`); `prose`
    and forms (→ flutterbits); the §11a impossible set.
+
+## Pre-docs completeness recommendation (audit 2026-06-07)
+
+The engine is genuinely complete-feeling for the core; the roadmap above is verified accurate
+against the code. Before the docs launch, the cheapest first-impression wins (optional, owner's
+call — none blocks docs):
+
+- **Named-scale sugar (S)** — `shadowMd`/`shadowLg`, `roundedLg`, `bgGradientToR/B/...`. Pure
+  ergonomics over existing tokens; makes the surface read like Tailwind muscle-memory.
+- **A scroll widget (M)** — `overflow-auto/scroll`. The one missing primitive a dev is likely to
+  reach for in the first ten minutes (`overflow-hidden` already = `.clip()`).
+- **`ring` helper (S–M)** — pairs naturally with the first flutterbits component (shadcn focus
+  rings); could land with that component instead.
+
+Everything else in Tier 2 ships as documented by-demand. The point of recording them here is that
+**nothing is silently dropped** — each has a mechanism and a size.
 
 ## Non-goals reaffirmed
 

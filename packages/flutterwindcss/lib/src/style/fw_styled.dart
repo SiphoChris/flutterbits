@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import 'fw_group.dart';
 import 'fw_layer.dart';
 import 'fw_style.dart';
 import 'fw_style_ops.dart';
@@ -75,6 +76,12 @@ class FwStyled extends StatelessWidget with FwStyleOps<FwStyled> {
   bool get _needsLiveStateSourcing =>
       _anyCondition((c) => c is FwStateCondition && _liveStates.contains(c.state));
 
+  /// Whether any layer (at any depth) is a group/peer condition — the only thing
+  /// that requires reading the nearest `FwGroup` scope (module 14). Group/peer
+  /// state is sourced by the ancestor `FwGroup`/`FwPeer`, never by this box, so it
+  /// does NOT trigger this box's own live sourcing.
+  bool get _needsRelationStates => _anyCondition((c) => c.isRelation);
+
   @override
   Widget build(BuildContext context) {
     // Container layers need the enclosing constraint width via a LayoutBuilder.
@@ -92,6 +99,14 @@ class FwStyled extends StatelessWidget with FwStyleOps<FwStyled> {
     final viewportWidth =
         _anyCondition((c) => c.isViewport) ? MediaQuery.maybeOf(context)?.size.width : null;
 
+    // Read the nearest FwGroup scope only when a group/peer layer is present
+    // (otherwise no dependency is created). Sourcing is the FwGroup/FwPeer's job;
+    // this box is a pure reader that rebuilds via its scope dependency.
+    final relation =
+        _needsRelationStates
+            ? fwReadRelationStates(context)
+            : const (groupStates: null, peerStates: null);
+
     // Interactive path only when a layer is keyed on a live-sourced state.
     // Component-managed states arrive via [states] and resolve statelessly.
     if (_needsLiveStateSourcing) {
@@ -100,6 +115,8 @@ class FwStyled extends StatelessWidget with FwStyleOps<FwStyled> {
         injected: states ?? const <WidgetState>{},
         viewportWidth: viewportWidth,
         containerWidth: containerWidth,
+        groupStates: relation.groupStates,
+        peerStates: relation.peerStates,
         child: child,
       );
     }
@@ -108,6 +125,8 @@ class FwStyled extends StatelessWidget with FwStyleOps<FwStyled> {
       states ?? const <WidgetState>{},
       viewportWidth: viewportWidth,
       containerWidth: containerWidth,
+      groupStates: relation.groupStates,
+      peerStates: relation.peerStates,
     );
     return resolved.build(child);
   }
@@ -122,6 +141,8 @@ class _FwStyledInteractive extends StatefulWidget {
     required this.injected,
     required this.viewportWidth,
     required this.containerWidth,
+    required this.groupStates,
+    required this.peerStates,
     required this.child,
   });
 
@@ -129,6 +150,8 @@ class _FwStyledInteractive extends StatefulWidget {
   final Set<WidgetState> injected;
   final double? viewportWidth;
   final double? containerWidth;
+  final Map<String?, Set<WidgetState>>? groupStates;
+  final Map<String?, Set<WidgetState>>? peerStates;
   final Widget child;
 
   @override
@@ -193,6 +216,8 @@ class _FwStyledInteractiveState extends State<_FwStyledInteractive> {
       _activeStates,
       viewportWidth: widget.viewportWidth,
       containerWidth: widget.containerWidth,
+      groupStates: widget.groupStates,
+      peerStates: widget.peerStates,
     );
 
     // MouseRegion sources hover; the non-traversable Focus reflects focus

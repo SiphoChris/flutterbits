@@ -43,6 +43,29 @@ mixin FwStyleOps<T> {
   /// Wraps [style] into the implementer's type (new `FwStyle` or new `FwStyled`).
   T fwRebuild(FwStyle style);
 
+  // Spacing/sizing values are in utility units (× 4 px) and are never meaningfully
+  // negative; guard with a clear flutterwindcss message rather than leaving it to
+  // the terser framework asserts deep in ConstrainedBox/Padding (consistent with
+  // the negative width/radius guards on borders + radii).
+  static double _space(double units) {
+    assert(units >= 0, 'flutterwindcss: spacing/size units must be >= 0 (got $units).');
+    return fwSpace(units);
+  }
+
+  // Negative margins (Tailwind `-m-*`) are a real feature we do NOT yet support:
+  // margin renders via `Padding`, whose insets must be non-negative. Fail with a
+  // clear, actionable message instead of a cryptic `Padding` assert — documented
+  // as a known by-demand gap (coverage roadmap), not silently dropped.
+  static double _marginSpace(double units) {
+    assert(
+      units >= 0,
+      'flutterwindcss: negative margins are not yet supported — margin renders via '
+      'Padding (non-negative insets only). Tracked as by-demand; use FwStack/'
+      'translate for overlap. (got $units)',
+    );
+    return fwSpace(units);
+  }
+
   // ---- Padding (per-edge merge; last-wins per edge) ----
 
   EdgeInsetsDirectional _mergePad({double? start, double? end, double? top, double? bottom}) {
@@ -57,27 +80,27 @@ mixin FwStyleOps<T> {
 
   /// Padding on all sides, [units] × 4 logical px.
   T p(double units) =>
-      fwRebuild(fwStyle.copyWith(padding: EdgeInsetsDirectional.all(fwSpace(units))));
+      fwRebuild(fwStyle.copyWith(padding: EdgeInsetsDirectional.all(_space(units))));
 
   /// Horizontal padding (start + end).
   T px(double units) =>
-      fwRebuild(fwStyle.copyWith(padding: _mergePad(start: fwSpace(units), end: fwSpace(units))));
+      fwRebuild(fwStyle.copyWith(padding: _mergePad(start: _space(units), end: _space(units))));
 
   /// Vertical padding (top + bottom).
   T py(double units) =>
-      fwRebuild(fwStyle.copyWith(padding: _mergePad(top: fwSpace(units), bottom: fwSpace(units))));
+      fwRebuild(fwStyle.copyWith(padding: _mergePad(top: _space(units), bottom: _space(units))));
 
   /// Padding at the start edge (RTL-aware).
-  T ps(double units) => fwRebuild(fwStyle.copyWith(padding: _mergePad(start: fwSpace(units))));
+  T ps(double units) => fwRebuild(fwStyle.copyWith(padding: _mergePad(start: _space(units))));
 
   /// Padding at the end edge (RTL-aware).
-  T pe(double units) => fwRebuild(fwStyle.copyWith(padding: _mergePad(end: fwSpace(units))));
+  T pe(double units) => fwRebuild(fwStyle.copyWith(padding: _mergePad(end: _space(units))));
 
   /// Padding at the top edge.
-  T pt(double units) => fwRebuild(fwStyle.copyWith(padding: _mergePad(top: fwSpace(units))));
+  T pt(double units) => fwRebuild(fwStyle.copyWith(padding: _mergePad(top: _space(units))));
 
   /// Padding at the bottom edge.
-  T pb(double units) => fwRebuild(fwStyle.copyWith(padding: _mergePad(bottom: fwSpace(units))));
+  T pb(double units) => fwRebuild(fwStyle.copyWith(padding: _mergePad(bottom: _space(units))));
 
   // ---- Margin (per-edge merge; last-wins per edge — mirrors padding) ----
 
@@ -93,28 +116,31 @@ mixin FwStyleOps<T> {
 
   /// Margin on all sides, [units] × 4 logical px.
   T m(double units) =>
-      fwRebuild(fwStyle.copyWith(margin: EdgeInsetsDirectional.all(fwSpace(units))));
+      fwRebuild(fwStyle.copyWith(margin: EdgeInsetsDirectional.all(_marginSpace(units))));
 
   /// Horizontal margin (start + end).
-  T mx(double units) =>
-      fwRebuild(fwStyle.copyWith(margin: _mergeMargin(start: fwSpace(units), end: fwSpace(units))));
+  T mx(double units) => fwRebuild(
+    fwStyle.copyWith(margin: _mergeMargin(start: _marginSpace(units), end: _marginSpace(units))),
+  );
 
   /// Vertical margin (top + bottom).
   T my(double units) => fwRebuild(
-    fwStyle.copyWith(margin: _mergeMargin(top: fwSpace(units), bottom: fwSpace(units))),
+    fwStyle.copyWith(margin: _mergeMargin(top: _marginSpace(units), bottom: _marginSpace(units))),
   );
 
   /// Margin at the start edge (RTL-aware).
-  T ms(double units) => fwRebuild(fwStyle.copyWith(margin: _mergeMargin(start: fwSpace(units))));
+  T ms(double units) =>
+      fwRebuild(fwStyle.copyWith(margin: _mergeMargin(start: _marginSpace(units))));
 
   /// Margin at the end edge (RTL-aware).
-  T me(double units) => fwRebuild(fwStyle.copyWith(margin: _mergeMargin(end: fwSpace(units))));
+  T me(double units) => fwRebuild(fwStyle.copyWith(margin: _mergeMargin(end: _marginSpace(units))));
 
   /// Margin at the top edge.
-  T mt(double units) => fwRebuild(fwStyle.copyWith(margin: _mergeMargin(top: fwSpace(units))));
+  T mt(double units) => fwRebuild(fwStyle.copyWith(margin: _mergeMargin(top: _marginSpace(units))));
 
   /// Margin at the bottom edge.
-  T mb(double units) => fwRebuild(fwStyle.copyWith(margin: _mergeMargin(bottom: fwSpace(units))));
+  T mb(double units) =>
+      fwRebuild(fwStyle.copyWith(margin: _mergeMargin(bottom: _marginSpace(units))));
 
   // ---- Sizing (fixed / min / max; utility units → logical px) ----
   //
@@ -125,26 +151,25 @@ mixin FwStyleOps<T> {
   // combine (and asserts against a fixed dim + min/max on the same axis).
 
   /// Fixed width, [units] × 4 logical px (tight constraint, wins its axis).
-  T w(double units) => fwRebuild(fwStyle.copyWith(width: fwSpace(units)));
+  T w(double units) => fwRebuild(fwStyle.copyWith(width: _space(units)));
 
   /// Fixed height, [units] × 4 logical px (tight constraint, wins its axis).
-  T h(double units) => fwRebuild(fwStyle.copyWith(height: fwSpace(units)));
+  T h(double units) => fwRebuild(fwStyle.copyWith(height: _space(units)));
 
   /// Fixed width AND height, [units] × 4 logical px (Tailwind `size-*`).
-  T size(double units) =>
-      fwRebuild(fwStyle.copyWith(width: fwSpace(units), height: fwSpace(units)));
+  T size(double units) => fwRebuild(fwStyle.copyWith(width: _space(units), height: _space(units)));
 
   /// Minimum width, [units] × 4 logical px.
-  T minW(double units) => fwRebuild(fwStyle.copyWith(minWidth: fwSpace(units)));
+  T minW(double units) => fwRebuild(fwStyle.copyWith(minWidth: _space(units)));
 
   /// Minimum height, [units] × 4 logical px.
-  T minH(double units) => fwRebuild(fwStyle.copyWith(minHeight: fwSpace(units)));
+  T minH(double units) => fwRebuild(fwStyle.copyWith(minHeight: _space(units)));
 
   /// Maximum width, [units] × 4 logical px.
-  T maxW(double units) => fwRebuild(fwStyle.copyWith(maxWidth: fwSpace(units)));
+  T maxW(double units) => fwRebuild(fwStyle.copyWith(maxWidth: _space(units)));
 
   /// Maximum height, [units] × 4 logical px.
-  T maxH(double units) => fwRebuild(fwStyle.copyWith(maxHeight: fwSpace(units)));
+  T maxH(double units) => fwRebuild(fwStyle.copyWith(maxHeight: _space(units)));
 
   // ---- Fractional sizing (FractionallySizedBox factors) ----
 
@@ -155,12 +180,16 @@ mixin FwStyleOps<T> {
   /// [align] only **sets** the alignment; omitting it keeps any previously-set
   /// value (it cannot clear back to the default — `copyWith` treats `null` as
   /// "keep"). To change it, pass an explicit [align].
-  T wFraction(double factor, {AlignmentDirectional? align}) =>
-      fwRebuild(fwStyle.copyWith(widthFactor: factor, factorAlignment: align));
+  T wFraction(double factor, {AlignmentDirectional? align}) {
+    assert(factor >= 0, 'flutterwindcss: width factor must be >= 0 (got $factor).');
+    return fwRebuild(fwStyle.copyWith(widthFactor: factor, factorAlignment: align));
+  }
 
   /// Fractional height, [factor] of the parent. See [wFraction] re [align].
-  T hFraction(double factor, {AlignmentDirectional? align}) =>
-      fwRebuild(fwStyle.copyWith(heightFactor: factor, factorAlignment: align));
+  T hFraction(double factor, {AlignmentDirectional? align}) {
+    assert(factor >= 0, 'flutterwindcss: height factor must be >= 0 (got $factor).');
+    return fwRebuild(fwStyle.copyWith(heightFactor: factor, factorAlignment: align));
+  }
 
   /// Fills the parent's width (Tailwind `w-full`); sugar for `wFraction(1)`.
   T get wFull => wFraction(1);
@@ -170,8 +199,13 @@ mixin FwStyleOps<T> {
 
   // ---- Aspect ratio ----
 
-  /// Constrains the box to [ratio] (width / height).
-  T aspect(double ratio) => fwRebuild(fwStyle.copyWith(aspectRatio: ratio));
+  /// Constrains the box to [ratio] (width / height). Must be `> 0` (a zero or
+  /// negative ratio is meaningless and `AspectRatio` would assert with a terser
+  /// message).
+  T aspect(double ratio) {
+    assert(ratio > 0, 'flutterwindcss: aspect ratio must be > 0 (got $ratio).');
+    return fwRebuild(fwStyle.copyWith(aspectRatio: ratio));
+  }
 
   /// Square aspect ratio; sugar for `aspect(1)`. Writes the `aspectRatio` field
   /// (so it last-wins against [aspect]); it does **not** set `width == height`.
@@ -673,6 +707,77 @@ mixin FwStyleOps<T> {
   /// component-managed states (e.g. selected); inert unless injected (§6.5).
   T whenState(WidgetState state, FwStyle Function(FwStyle) build) =>
       _layer(FwStateCondition(state), build);
+
+  // ---- Group / peer state propagation (module 14) ----
+  //
+  // `group-*` reacts to an ancestor `FwGroup`'s state; `peer-*` reacts to a
+  // sibling `FwPeer`'s state (shared through the enclosing `FwGroup` scope —
+  // Flutter has no implicit sibling relationship, so the scope is explicit). All
+  // of these are **inert unless** the reacting widget sits under an `FwGroup`
+  // that sources the matching state. `name` targets a named group/peer
+  // (Tailwind `group-hover/sidebar:`, `peer-checked/email:`); `null` = the
+  // default channel — for `group-*` that binds to the *nearest* `FwGroup`.
+
+  T _relationLayer(
+    FwRelation relation,
+    WidgetState state,
+    String? name,
+    FwStyle Function(FwStyle) build,
+  ) => _layer(FwGroupCondition(relation, state, name: name), build);
+
+  /// Applies the built style while an ancestor [FwGroup] is hovered (Tailwind
+  /// `group-hover:`). [name] targets a named group (`group-hover/name:`).
+  T groupHover(FwStyle Function(FwStyle) build, {String? name}) =>
+      _relationLayer(FwRelation.group, WidgetState.hovered, name, build);
+
+  /// Applies the built style while an ancestor [FwGroup] is focused (Tailwind
+  /// `group-focus:`). Group focus is visual-only (engine spec §6.2): it lights
+  /// only when something inside the group takes focus, or focus is injected via
+  /// `FwGroup.states`.
+  T groupFocus(FwStyle Function(FwStyle) build, {String? name}) =>
+      _relationLayer(FwRelation.group, WidgetState.focused, name, build);
+
+  /// Applies the built style while an ancestor [FwGroup] is pressed (Tailwind
+  /// `group-active:` — named `groupPressed` to match the engine's `pressed`).
+  T groupPressed(FwStyle Function(FwStyle) build, {String? name}) =>
+      _relationLayer(FwRelation.group, WidgetState.pressed, name, build);
+
+  /// Applies the built style while an ancestor [FwGroup] is disabled (Tailwind
+  /// `group-disabled:`); supply the group's `disabled` via `FwGroup.states`.
+  T groupDisabled(FwStyle Function(FwStyle) build, {String? name}) =>
+      _relationLayer(FwRelation.group, WidgetState.disabled, name, build);
+
+  /// Applies the built style while an ancestor [FwGroup] carries [state]. Escape
+  /// hatch for component-managed group states (e.g. `group-selected:`); supply
+  /// the state via `FwGroup.states`.
+  T groupState(WidgetState state, FwStyle Function(FwStyle) build, {String? name}) =>
+      _relationLayer(FwRelation.group, state, name, build);
+
+  /// Applies the built style while a sibling [FwPeer] is hovered (Tailwind
+  /// `peer-hover:`). [name] targets a named peer (`peer-hover/name:`).
+  T peerHover(FwStyle Function(FwStyle) build, {String? name}) =>
+      _relationLayer(FwRelation.peer, WidgetState.hovered, name, build);
+
+  /// Applies the built style while a sibling [FwPeer] is focused (Tailwind
+  /// `peer-focus:`).
+  T peerFocus(FwStyle Function(FwStyle) build, {String? name}) =>
+      _relationLayer(FwRelation.peer, WidgetState.focused, name, build);
+
+  /// Applies the built style while a sibling [FwPeer] is pressed (Tailwind
+  /// `peer-active:` — named `peerPressed` to match the engine's `pressed`).
+  T peerPressed(FwStyle Function(FwStyle) build, {String? name}) =>
+      _relationLayer(FwRelation.peer, WidgetState.pressed, name, build);
+
+  /// Applies the built style while a sibling [FwPeer] is disabled (Tailwind
+  /// `peer-disabled:`); supply the peer's `disabled` via `FwPeer.states`.
+  T peerDisabled(FwStyle Function(FwStyle) build, {String? name}) =>
+      _relationLayer(FwRelation.peer, WidgetState.disabled, name, build);
+
+  /// Applies the built style while a sibling [FwPeer] carries [state]. Escape
+  /// hatch for component-managed peer states (e.g. `peer-checked:`); supply the
+  /// state via `FwPeer.states`.
+  T peerState(WidgetState state, FwStyle Function(FwStyle) build, {String? name}) =>
+      _relationLayer(FwRelation.peer, state, name, build);
 
   /// Applies the built style at viewport width ≥ `sm` (640).
   T sm(FwStyle Function(FwStyle) build) =>

@@ -39,4 +39,93 @@ void main() {
     expect(const FwContainerCondition(FwBreakpoint.sm).isContainer, isTrue);
     expect(const FwContainerCondition(FwBreakpoint.sm).isState, isFalse);
   });
+
+  group('FwGroupCondition', () {
+    test('group relation matches against the group channel only', () {
+      const c = FwGroupCondition(FwRelation.group, WidgetState.hovered);
+      expect(
+        c.matches(
+          noStates,
+          null,
+          null,
+          groupStates: <String?, Set<WidgetState>>{
+            null: <WidgetState>{WidgetState.hovered},
+          },
+        ),
+        isTrue,
+      );
+      // Same state on the *peer* channel must not satisfy a group condition.
+      expect(
+        c.matches(
+          noStates,
+          null,
+          null,
+          peerStates: <String?, Set<WidgetState>>{
+            null: <WidgetState>{WidgetState.hovered},
+          },
+        ),
+        isFalse,
+      );
+      // No maps at all → no match (and no throw).
+      expect(c.matches(noStates, null, null), isFalse);
+    });
+
+    test('peer relation matches against the peer channel only', () {
+      const c = FwGroupCondition(FwRelation.peer, WidgetState.focused);
+      expect(
+        c.matches(
+          noStates,
+          null,
+          null,
+          peerStates: <String?, Set<WidgetState>>{
+            null: <WidgetState>{WidgetState.focused},
+          },
+        ),
+        isTrue,
+      );
+      expect(
+        c.matches(
+          noStates,
+          null,
+          null,
+          groupStates: <String?, Set<WidgetState>>{
+            null: <WidgetState>{WidgetState.focused},
+          },
+        ),
+        isFalse,
+      );
+    });
+
+    test('named condition reads its own channel key, not the default', () {
+      const named = FwGroupCondition(FwRelation.group, WidgetState.hovered, name: 'sidebar');
+      final states = <String?, Set<WidgetState>>{
+        null: <WidgetState>{WidgetState.hovered},
+        'sidebar': <WidgetState>{},
+      };
+      // 'sidebar' is hovered? no — only the default channel is.
+      expect(named.matches(noStates, null, null, groupStates: states), isFalse);
+      states['sidebar'] = <WidgetState>{WidgetState.hovered};
+      expect(named.matches(noStates, null, null, groupStates: states), isTrue);
+    });
+
+    test('is not a state/viewport/container condition for the ancestor scan', () {
+      const c = FwGroupCondition(FwRelation.group, WidgetState.hovered);
+      expect(c.isState, isFalse);
+      expect(c.isViewport, isFalse);
+      expect(c.isContainer, isFalse);
+    });
+
+    test('== and hashCode key on (relation, state, name)', () {
+      const a = FwGroupCondition(FwRelation.group, WidgetState.hovered, name: 'x');
+      const b = FwGroupCondition(FwRelation.group, WidgetState.hovered, name: 'x');
+      const diffName = FwGroupCondition(FwRelation.group, WidgetState.hovered, name: 'y');
+      const diffRel = FwGroupCondition(FwRelation.peer, WidgetState.hovered, name: 'x');
+      const diffState = FwGroupCondition(FwRelation.group, WidgetState.focused, name: 'x');
+      expect(a, equals(b));
+      expect(a.hashCode, equals(b.hashCode));
+      expect(a, isNot(equals(diffName)));
+      expect(a, isNot(equals(diffRel)));
+      expect(a, isNot(equals(diffState)));
+    });
+  });
 }

@@ -98,4 +98,72 @@ void main() {
     final s = const FwStyle().whenState(WidgetState.selected, (x) => x.bg(const Color(0xFF030303)));
     expect(s.layers.first.$1, const FwStateCondition(WidgetState.selected));
   });
+
+  // ---- Module 14: group/peer variant setters ----
+
+  test('groupHover/Focus/Pressed/Disabled append group conditions', () {
+    expect(
+      const FwStyle().groupHover((s) => s).layers.first.$1,
+      const FwGroupCondition(FwRelation.group, WidgetState.hovered),
+    );
+    expect(
+      const FwStyle().groupFocus((s) => s).layers.first.$1,
+      const FwGroupCondition(FwRelation.group, WidgetState.focused),
+    );
+    expect(
+      const FwStyle().groupPressed((s) => s).layers.first.$1,
+      const FwGroupCondition(FwRelation.group, WidgetState.pressed),
+    );
+    expect(
+      const FwStyle().groupDisabled((s) => s).layers.first.$1,
+      const FwGroupCondition(FwRelation.group, WidgetState.disabled),
+    );
+  });
+
+  test('peerHover/Focus/Pressed/Disabled append peer conditions', () {
+    expect(
+      const FwStyle().peerHover((s) => s).layers.first.$1,
+      const FwGroupCondition(FwRelation.peer, WidgetState.hovered),
+    );
+    expect(
+      const FwStyle().peerFocus((s) => s).layers.first.$1,
+      const FwGroupCondition(FwRelation.peer, WidgetState.focused),
+    );
+    expect(
+      const FwStyle().peerPressed((s) => s).layers.first.$1,
+      const FwGroupCondition(FwRelation.peer, WidgetState.pressed),
+    );
+    expect(
+      const FwStyle().peerDisabled((s) => s).layers.first.$1,
+      const FwGroupCondition(FwRelation.peer, WidgetState.disabled),
+    );
+  });
+
+  test('named group/peer carry their name into the condition', () {
+    expect(
+      const FwStyle().groupHover((s) => s, name: 'sidebar').layers.first.$1,
+      const FwGroupCondition(FwRelation.group, WidgetState.hovered, name: 'sidebar'),
+    );
+    expect(
+      const FwStyle().peerFocus((s) => s, name: 'email').layers.first.$1,
+      const FwGroupCondition(FwRelation.peer, WidgetState.focused, name: 'email'),
+    );
+  });
+
+  test('groupState/peerState accept arbitrary component-managed states', () {
+    expect(
+      const FwStyle().groupState(WidgetState.selected, (s) => s).layers.first.$1,
+      const FwGroupCondition(FwRelation.group, WidgetState.selected),
+    );
+    expect(
+      const FwStyle().peerState(WidgetState.selected, (s) => s, name: 'x').layers.first.$1,
+      const FwGroupCondition(FwRelation.peer, WidgetState.selected, name: 'x'),
+    );
+  });
+
+  test('group/peer build callbacks receive a fresh style and carry it nested', () {
+    const blue = Color(0xFF0000FF);
+    final s = const FwStyle().groupHover((g) => g.bg(blue));
+    expect(s.layers.first.$2.background, blue);
+  });
 }

@@ -4,6 +4,25 @@ import 'fw_layer.dart';
 import 'fw_style.dart';
 import 'resolved_style.dart';
 
+/// Drops hover/focus/pressed from [states] when `disabled` is present (spec §6.3
+/// Finding #7); otherwise returns [states] unchanged.
+Set<WidgetState> _suppressDisabled(Set<WidgetState> states) {
+  if (!states.contains(WidgetState.disabled)) return states;
+  return <WidgetState>{
+    for (final s in states)
+      if (s != WidgetState.hovered && s != WidgetState.focused && s != WidgetState.pressed) s,
+  };
+}
+
+/// Applies [_suppressDisabled] to every channel of a group/peer state map
+/// (module 14). Returns `null` for a `null` input (the no-scope fast path).
+Map<String?, Set<WidgetState>>? _suppressChannels(Map<String?, Set<WidgetState>>? channels) {
+  if (channels == null) return null;
+  return <String?, Set<WidgetState>>{
+    for (final MapEntry(:key, :value) in channels.entries) key: _suppressDisabled(value),
+  };
+}
+
 /// Resolution: flatten base + matching nested layers into a [ResolvedStyle].
 extension FwStyleResolve on FwStyle {
   /// Resolves this style against the active interaction [states], the
@@ -11,21 +30,23 @@ extension FwStyleResolve on FwStyle {
   /// [containerWidth] (enclosing constraint, for `containerSm…container2xl`
   /// layers). The two widths are kept separate so a viewport layer never
   /// matches on container size or vice-versa (spec §6.3).
-  ResolvedStyle resolve(Set<WidgetState> states, {double? viewportWidth, double? containerWidth}) {
+  ResolvedStyle resolve(
+    Set<WidgetState> states, {
+    double? viewportWidth,
+    double? containerWidth,
+    Map<String?, Set<WidgetState>>? groupStates,
+    Map<String?, Set<WidgetState>>? peerStates,
+  }) {
     // 1. Disabled suppression first (Finding #7): disabled removes the other
-    //    three from the working set before any matching, so it always wins.
-    final Set<WidgetState> working;
-    if (states.contains(WidgetState.disabled)) {
-      working = <WidgetState>{
-        for (final s in states)
-          if (s != WidgetState.hovered && s != WidgetState.focused && s != WidgetState.pressed) s,
-      };
-    } else {
-      working = states;
-    }
+    //    three from the working set before any matching, so it always wins. The
+    //    same rule is applied per-channel to the group/peer maps (module 14): a
+    //    disabled group/peer must not also fire hover/focus/pressed.
+    final working = _suppressDisabled(states);
+    final groups = _suppressChannels(groupStates);
+    final peers = _suppressChannels(peerStates);
 
     // 2. Accumulate base + matching layers (recursively) via last-wins copyWith.
-    final merged = _flatten(this, working, viewportWidth, containerWidth);
+    final merged = _flatten(this, working, viewportWidth, containerWidth, groups, peers);
 
     // 3. Project the flattened FwStyle onto a ResolvedStyle (defaults applied).
     return ResolvedStyle(
@@ -108,6 +129,8 @@ FwStyle _flatten(
   Set<WidgetState> states,
   double? viewportWidth,
   double? containerWidth,
+  Map<String?, Set<WidgetState>>? groupStates,
+  Map<String?, Set<WidgetState>>? peerStates,
 ) {
   var acc = style.copyWith(layers: const <FwLayer>[]); // base fields only
 
@@ -118,14 +141,20 @@ FwStyle _flatten(
   final matched = <({int tier, double width, int axis, int index, FwStyle nested})>[];
   var index = 0;
   for (final (condition, nested) in style.layers) {
-    if (condition.matches(states, viewportWidth, containerWidth)) {
+    if (condition.matches(
+      states,
+      viewportWidth,
+      containerWidth,
+      groupStates: groupStates,
+      peerStates: peerStates,
+    )) {
       final (tier, width, axis) = _precedence(condition);
       final entry = (
         tier: tier,
         width: width,
         axis: axis,
         index: index,
-        nested: _flatten(nested, states, viewportWidth, containerWidth),
+        nested: _flatten(nested, states, viewportWidth, containerWidth, groupStates, peerStates),
       );
       matched.add(entry);
     }
@@ -147,10 +176,14 @@ FwStyle _flatten(
 /// the last-overlaid (highest) wins. Breakpoint layers are **tier 0** (ordered by
 /// min-[width]; container [axis] `1` beats viewport [axis] `0` at the same width);
 /// state layers are **tier 1** — above every breakpoint, like a CSS pseudo-class.
+/// Group/peer layers ([FwGroupCondition]) also rank **tier 1**: they are
+/// pseudo-class-like variants above all breakpoints, with declaration order
+/// breaking ties against own-state layers (module 14).
 (int, double, int) _precedence(FwCondition condition) => switch (condition) {
   FwViewportCondition(:final breakpoint) => (0, breakpoint.minWidth, 0),
   FwContainerCondition(:final breakpoint) => (0, breakpoint.minWidth, 1),
   FwStateCondition() => (1, 0, 0),
+  FwGroupCondition() => (1, 0, 0),
 };
 
 /// Field-by-field last-wins overlay: every non-null field of [top] replaces the
