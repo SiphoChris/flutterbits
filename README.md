@@ -75,7 +75,7 @@ packages/
   flutterwindcss/        # pub package: tokens, FwTheme, FwStyle accumulator, .tw utilities
 apps/
   example/               # flutterwindcss engine showcase (pure path, runnable); component golden target (planned)
-  docs/                  # (planned) docs site + tweakcn generator
+  docs/                  # Fumadocs site (scaffold); docs content + tweakcn→theme.dart generator planned
 registry/                # (planned) source-of-truth copy-paste components
 tooling/                 # registry builder + the Tailwind palette baker
 docs/superpowers/        # design specs and implementation plans

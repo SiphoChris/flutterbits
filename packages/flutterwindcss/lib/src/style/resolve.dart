@@ -109,13 +109,14 @@ FwStyle _flatten(
   for (final (condition, nested) in style.layers) {
     if (condition.matches(states, viewportWidth, containerWidth)) {
       final (tier, width, axis) = _precedence(condition);
-      matched.add((
+      final entry = (
         tier: tier,
         width: width,
         axis: axis,
         index: index,
         nested: _flatten(nested, states, viewportWidth, containerWidth),
-      ));
+      );
+      matched.add(entry);
     }
     index++;
   }
