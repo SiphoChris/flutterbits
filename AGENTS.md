@@ -36,7 +36,7 @@ apps/
 tooling/                 # registry builder, melos config, CI scripts
 ```
 
-> **This is the *target* layout.** Today only `packages/flutterwindcss/` and `tooling/bake_palette.dart` exist; `flutterbits_cli/`, `registry/`, `apps/`, and the melos config are planned (the README marks them `(planned)`). Don't go looking for dirs that aren't there yet.
+> **This is the *target* layout.** Today `packages/flutterwindcss/`, `tooling/bake_palette.dart`, and `apps/example/` exist — the last is a runnable, pure-path **engine** showcase (`WidgetsApp` + `FwAnimatedTheme`), not yet the **component** golden target, since no `flutterbits` components exist. `flutterbits_cli/`, `registry/`, `apps/docs/`, and the melos config are still planned (the README marks them `(planned)`). Don't go looking for dirs that aren't there yet.
 
 - **Toolchain floor (hard): Flutter ≥ 3.29 / Dart ≥ 3.7.** The wide-gamut `Color` API (`Color.withValues` per §3.8, and the `Color.a/.r/.g/.b` accessors), the `Row`/`Column`/`Flex` `spacing` parameter, and pub workspaces require 3.27/3.6 — below that, the code will not compile. We floor one minor higher at **Dart 3.7** so `dart format` uses the modern "tall" style (Dart 3.7+) rather than the legacy short style; mixing the two fails the format check. This floor is set in every `pubspec.yaml` `environment:` and **verified by a CI job pinned to it** (separate from the golden job, which pins a newer version for determinism). Keep the floor identical in the pubspecs and the README.
 - Dependency resolution: **pub workspaces** (`resolution: workspace` in each `pubspec.yaml`). Task running / versioning / publishing: **Melos** — the intended cross-package runner, adopted once the workspace holds multiple packages. While `flutterwindcss` is the only package, use plain `flutter`/`dart` per-package (see §10).
@@ -161,6 +161,8 @@ Adjust paths if the layout drifts; keep this section current.
 | Run tests | `cd packages/flutterwindcss && flutter test` |
 | Update goldens (local = non-authoritative; CI is the source of truth) | `cd packages/flutterwindcss && flutter test --update-goldens` |
 | Bake Tailwind palette (regenerate `palette.g.dart`) | `dart run tooling/bake_palette.dart` |
+| Run the engine showcase | `cd apps/example && flutter run` (any device; e.g. `-d chrome`) |
+| Analyze the showcase | `cd apps/example && flutter analyze --fatal-infos --fatal-warnings` |
 
 **Planned commands** (once the corresponding products exist):
 
@@ -168,7 +170,6 @@ Adjust paths if the layout drifts; keep this section current.
 |---|---|
 | Build registry manifests | `dart run tooling/build_registry.dart` |
 | Run docs site / generator | `cd apps/docs && pnpm dev` |
-| Run showcase app | `cd apps/example && flutter run` |
 
 Once the workspace holds multiple packages, **Melos** wraps the per-package commands (`melos bootstrap`, `melos run analyze`, `melos run test`); adopt it then, not before.
 
@@ -190,6 +191,7 @@ The bar is strict: an item belongs here ONLY if Flutter **cannot express it at a
 These **could** be built (the mechanism is known and stated), but a product owner has explicitly signed off on leaving them out because the cost/benefit doesn't justify it. This is the ONLY sanctioned way to not-build something feasible (§12 "No silent scope reduction"): it requires a recorded decision and an honest "feasible, de-scoped" label — never a dishonest "impossible."
 
 - **CSS Grid `subgrid`** — *feasible* via a parent→child track-line-sharing protocol (a subgrid child reads the parent `RenderFwGrid`'s resolved track lines for the axis it subgrids; mechanism in the grid engine spec §2.4). **De-scoped for v1 by explicit decision (2026-06):** real-world `subgrid` usage is negligible, and the bespoke parent/child layout protocol is disproportionate to that demand. Documented as a known limitation on `FwGrid`; revisit only if a concrete need appears. *Everything else in CSS Grid — `fr`/`px`/`auto`/`minmax` tracks, row tracks, cell/row spanning, auto-placement, item alignment — IS built (grid engine spec).*
+- **Element-level animation / `tailwindcss-animate`** (`transition`, `duration`, `ease`, `animate-spin/pulse/bounce`, enter/exit `data-[state]` transitions) — *feasible* via `ImplicitlyAnimatedWidget`/`AnimatedFoo` or the sanctioned `flutter_animate` dep. **Delegated by explicit decision (2026-06):** rather than build (and maintain) an element-animation subsystem, devs use [`flutter_animate`](https://pub.dev/packages/flutter_animate) directly — it already exposes a chaining API (`w.animate().fadeIn()…`), is Material-free, and is a sanctioned dependency. The engine's animation responsibility ends at **theme transitions** (`FwAnimatedTheme`, shipped); shadcn-style enter/exit transitions are composed with `flutter_animate` at the **flutterbits component** level (the component owns the state machine). This is a *delegation*, not a "can't" — see the coverage roadmap (`docs/superpowers/specs/2026-06-07-flutterwindcss-coverage-and-roadmap.md`).
 
 Everything **not** in 11a or 11b is fair game and must not be refused on cost grounds: sticky (slivers), container queries (`LayoutBuilder`), backdrop blur (`BackdropFilter`), hover/focus/keyboard, and the rest of CSS Grid are all Flutter idioms. Prefer a helper widget/`RenderObject` over a docs note. If a capability is real but not yet built, mark it **"not yet built"** with a plan — never "can't be done."
 
