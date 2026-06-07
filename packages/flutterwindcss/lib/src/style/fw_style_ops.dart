@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 
 import '../tokens/scales.dart';
+import '../tokens/typography.dart';
 import 'fw_border_spec.dart';
 import 'fw_layer.dart';
 import 'fw_style.dart';
@@ -27,7 +28,9 @@ import 'fw_style.dart';
 /// and confirmed the container-query family (`containerSm…`) already shipped here
 /// in module 3. Module 9 added the **transform** setters (`scale`/`rotate`/
 /// `translate`/`translateX`/`translateY`, paint-only). Module 10 (animated
-/// theming) is a dedicated widget, not a `.tw` setter.
+/// theming) is a dedicated widget, not a `.tw` setter. Module 11 added **text
+/// completeness** (`font`/`fontSans`/`fontSerif`/`fontMono`, `maxLines`,
+/// `lineClamp`, `truncate`, `overflow`, `nowrap`/`wrap`).
 mixin FwStyleOps<T> {
   /// The current accumulated style.
   FwStyle get fwStyle;
@@ -402,6 +405,55 @@ mixin FwStyleOps<T> {
   /// (Tailwind `line-through`).
   T get lineThrough => _addDecoration(TextDecoration.lineThrough);
 
+  // ---- Text completeness (module 11): family, line-clamp/truncate, wrapping ----
+  //
+  // All ride the existing `DefaultTextStyle.merge` (which carries `fontFamily`,
+  // `maxLines`, `overflow`, `softWrap`), so they inherit into descendant text
+  // exactly like the other typography setters.
+
+  /// Default font family for descendant text (Tailwind `font-[family]`); pass a
+  /// token such as `FwFontFamily.sans`. Last-wins.
+  T font(String family) => fwRebuild(fwStyle.copyWith(fontFamily: family));
+
+  /// Sans-serif family (Tailwind `font-sans`).
+  T get fontSans => font(FwFontFamily.sans);
+
+  /// Serif family (Tailwind `font-serif`).
+  T get fontSerif => font(FwFontFamily.serif);
+
+  /// Monospace family (Tailwind `font-mono`).
+  T get fontMono => font(FwFontFamily.mono);
+
+  /// Caps descendant text at [lines] lines, *without* forcing an overflow style.
+  /// Must be `> 0`. For Tailwind `line-clamp-*` (which ellipsizes) use [lineClamp].
+  T maxLines(int lines) {
+    assert(lines > 0, 'flutterwindcss: maxLines must be > 0 (got $lines).');
+    return fwRebuild(fwStyle.copyWith(maxLineCount: lines));
+  }
+
+  /// Tailwind `line-clamp-N`: cap at [lines] lines and ellipsize the overflow.
+  /// Must be `> 0`.
+  T lineClamp(int lines) {
+    assert(lines > 0, 'flutterwindcss: lineClamp must be > 0 (got $lines).');
+    return fwRebuild(fwStyle.copyWith(maxLineCount: lines, textOverflow: TextOverflow.ellipsis));
+  }
+
+  /// Tailwind `truncate`: a single, non-wrapping line ending in an ellipsis.
+  T get truncate => fwRebuild(
+    fwStyle.copyWith(maxLineCount: 1, textOverflow: TextOverflow.ellipsis, softWrap: false),
+  );
+
+  /// How descendant text overflows once it hits its line cap (Tailwind
+  /// `text-ellipsis` / `text-clip`; also `fade` / `visible`).
+  T overflow(TextOverflow behavior) => fwRebuild(fwStyle.copyWith(textOverflow: behavior));
+
+  /// Prevents soft-wrapping — forces one line (Tailwind `whitespace-nowrap`).
+  T get nowrap => fwRebuild(fwStyle.copyWith(softWrap: false));
+
+  /// (Re-)enables soft-wrapping (Tailwind `whitespace-normal`) — handy to undo a
+  /// `nowrap`/`truncate` inside a responsive or state layer.
+  T get wrap => fwRebuild(fwStyle.copyWith(softWrap: true));
+
   // ---- Effects ----
   //
   // The FwStyle fields are named groupOpacity/contentBlur/backdropBlurSigma so
@@ -468,6 +520,16 @@ mixin FwStyleOps<T> {
       fwRebuild(fwStyle.copyWith(translation: Offset(_translation.dx, fwSpace(y))));
 
   // ---- Variant layering ----
+  //
+  // A variant callback receives a FRESH `FwStyle` (not the base), and at resolve
+  // time a matching layer overlays the base **whole-field, last-wins** — it does
+  // NOT merge per-edge with the base. Per-edge merge (`.px(4).py(2)`) only
+  // happens *within one chain*. So `.p(4).hover((s) => s.pt(8))` resolves, while
+  // hovered, to padding `top: 32` and **0 on the other edges** — not `16` with a
+  // `32` top. To keep the other edges, restate them in the layer
+  // (`.hover((s) => s.p(4).pt(8))`). Precedence across matching layers is the
+  // cascade documented on `FwStyle.resolve` (breakpoints by min-width, then
+  // states; declaration order breaks ties) — not raw chain order.
 
   T _layer(FwCondition condition, FwStyle Function(FwStyle) build) =>
       fwRebuild(fwStyle.addLayer(condition, build(const FwStyle())));

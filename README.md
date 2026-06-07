@@ -58,11 +58,13 @@ Flutter has no structure/style split and no CSS cascade — the widget tree *is*
 - **Layout widgets (module 8)** — the six dedicated multi‑child widgets the single‑box `.tw` chain can't express: `FwRow`/`FwColumn` (flex with typed `gap`), `FwWrap`, `FwStack`/`FwPositioned` (directional `inset` + stable `z`‑order), and `FwGrid`. All directional (RTL‑free), each chainable with `.tw` for box styling; `gap`/spacing use the framework's native `spacing`. **Responsive by breakpoint:** per‑widget `viewport`/`container` patch maps make `gap`/alignment, grid **column count** (`grid-cols-1 md:grid-cols-3`), and positioned **inset** respond to screen *or* container width — reusing the resolver's `FwBreakpoint` semantics, inserting a `MediaQuery`/`LayoutBuilder` only when needed. (The `containerSm…` `.tw` query family already shipped with the module‑3 resolver.) Unit + LTR/RTL × light/dark goldens + a narrow‑vs‑wide responsive golden.
 - **Real CSS Grid (`FwGrid`)** — a custom `RenderObject` (`RenderFwGrid`), not a flex stand‑in: `fr`/`px`/`auto`/`minmax` column **and** row tracks, cell/row **spanning** and explicit placement (`FwGridItem`), sparse + `dense` **auto‑placement**, item/self **alignment**, and track **content‑distribution** (`justify`/`align‑content`: start/end/center/space‑between/around/evenly) — all directional. The only CSS‑Grid feature left out is `subgrid` (a deliberate de‑scope for negligible real‑world usage, *not* a Flutter limitation; documented on `FwGrid`).
 - **Transform setters (module 9)** — `scale` (uniform), `rotate` (degrees), `translate`/`translateX`/`translateY` (utility units) — paint‑only (no reflow, matching CSS `transform`), composed T·R·S. Unit + light/dark goldens.
-- **Animated theming (module 10)** — `FwAnimatedTheme`, a Material‑free `ImplicitlyAnimatedWidget` that tweens between `FwTokens` bundles via `FwTokens.lerp` over a duration/curve whenever the tokens change (colors, radii, shadows, and typography all interpolate). Drop‑in for `FwTheme`; a host's light↔dark switch crossfades every `context.fw`‑styled descendant. Unit + mid‑transition golden. **This completes the `flutterwindcss` engine (modules 0–10).**
+- **Animated theming (module 10)** — `FwAnimatedTheme`, a Material‑free `ImplicitlyAnimatedWidget` that tweens between `FwTokens` bundles via `FwTokens.lerp` over a duration/curve whenever the tokens change (colors, radii, shadows, and typography all interpolate). Drop‑in for `FwTheme`; a host's light↔dark switch crossfades every `context.fw`‑styled descendant. Unit + mid‑transition golden. **This completed the initial `flutterwindcss` engine (modules 0–10).**
+- **Text completeness (module 11)** — `font`/`fontSans`/`fontSerif`/`fontMono` (family), `maxLines`, `lineClamp` (Tailwind `line-clamp-N`), `truncate`, `overflow` (text‑ellipsis/clip/fade), and `nowrap`/`wrap` — all riding the existing `DefaultTextStyle.merge`, so they inherit into descendant text like every other typography setter. Unit + render‑chain wiring tests.
 
 **🚧 Next on the roadmap:**
 
 1. **`flutterbits` components**, the **registry + CLI** (`flutterbits add` / `diff`), and the **tweakcn → `theme.dart` generator**.
+2. **Engine utility gaps** — text completeness shipped (module 11); next are color filters, object-fit, and a feasible long tail. Prioritized in the [coverage & roadmap](docs/superpowers/specs/2026-06-07-flutterwindcss-coverage-and-roadmap.md), which maps Tailwind's surface to what's built / worth building / delegated (animation → [`flutter_animate`](https://pub.dev/packages/flutter_animate)) / impossible.
 
 See [`docs/superpowers/specs`](docs/superpowers/specs) for the full engine design and [`docs/superpowers/plans`](docs/superpowers/plans) for the implementation plans.
 
@@ -71,7 +73,9 @@ See [`docs/superpowers/specs`](docs/superpowers/specs) for the full engine desig
 ```
 packages/
   flutterwindcss/        # pub package: tokens, FwTheme, FwStyle accumulator, .tw utilities
-apps/                    # (planned) docs site + tweakcn generator, example/golden showcase
+apps/
+  example/               # flutterwindcss engine showcase (pure path, runnable); component golden target (planned)
+  docs/                  # (planned) docs site + tweakcn generator
 registry/                # (planned) source-of-truth copy-paste components
 tooling/                 # registry builder + the Tailwind palette baker
 docs/superpowers/        # design specs and implementation plans

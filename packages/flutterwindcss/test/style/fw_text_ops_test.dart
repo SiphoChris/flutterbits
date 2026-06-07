@@ -79,4 +79,45 @@ void main() {
       expect(const FwStyle().underline.underline.textDecoration, TextDecoration.underline);
     });
   });
+
+  group('text completeness (module 11)', () {
+    test('font writes fontFamily; named helpers map to FwFontFamily', () {
+      expect(const FwStyle().font('Inter').fontFamily, 'Inter');
+      expect(const FwStyle().fontSans.fontFamily, FwFontFamily.sans);
+      expect(const FwStyle().fontSerif.fontFamily, FwFontFamily.serif);
+      expect(const FwStyle().fontMono.fontFamily, FwFontFamily.mono);
+      // last-wins
+      expect(const FwStyle().font('A').font('B').fontFamily, 'B');
+    });
+
+    test('maxLines writes the cap (last-wins) and asserts > 0', () {
+      // Setter is `maxLines` (Tailwind-natural); the field is `maxLineCount`
+      // (descriptive, avoids the setter/field name collision — same pattern as
+      // opacity→groupOpacity).
+      expect(const FwStyle().maxLines(3).maxLineCount, 3);
+      expect(const FwStyle().maxLines(3).maxLines(2).maxLineCount, 2);
+      expect(() => const FwStyle().maxLines(0), throwsAssertionError);
+      expect(() => const FwStyle().maxLines(-1), throwsAssertionError);
+    });
+
+    test('lineClamp sets maxLines AND ellipsis overflow', () {
+      final s = const FwStyle().lineClamp(2);
+      expect(s.maxLineCount, 2);
+      expect(s.textOverflow, TextOverflow.ellipsis);
+      expect(() => const FwStyle().lineClamp(0), throwsAssertionError);
+    });
+
+    test('truncate = maxLines 1 + ellipsis + no soft-wrap', () {
+      final s = const FwStyle().truncate;
+      expect(s.maxLineCount, 1);
+      expect(s.textOverflow, TextOverflow.ellipsis);
+      expect(s.softWrap, isFalse);
+    });
+
+    test('overflow setter and nowrap/wrap', () {
+      expect(const FwStyle().overflow(TextOverflow.fade).textOverflow, TextOverflow.fade);
+      expect(const FwStyle().nowrap.softWrap, isFalse);
+      expect(const FwStyle().wrap.softWrap, isTrue);
+    });
+  });
 }

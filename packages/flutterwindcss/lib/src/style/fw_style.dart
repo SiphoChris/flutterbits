@@ -43,6 +43,10 @@ class FwStyle with FwStyleOps<FwStyle> {
     this.lineHeight,
     this.textAlign,
     this.textDecoration,
+    this.fontFamily,
+    this.maxLineCount,
+    this.textOverflow,
+    this.softWrap,
     this.groupOpacity,
     this.contentBlur,
     this.backdropBlurSigma,
@@ -132,6 +136,23 @@ class FwStyle with FwStyleOps<FwStyle> {
   /// Default text decoration.
   final TextDecoration? textDecoration;
 
+  /// Default font family (set by `font`/`fontSans`/`fontSerif`/`fontMono`).
+  final String? fontFamily;
+
+  /// Maximum lines before truncation (set by `maxLines`/`lineClamp`/`truncate`).
+  /// Named `maxLineCount`, not `maxLines`, so the Tailwind-natural `maxLines`
+  /// setter in [FwStyleOps] doesn't collide with this field (same rationale as
+  /// `groupOpacity` vs the `opacity` setter).
+  final int? maxLineCount;
+
+  /// How text overflows once it hits [maxLineCount] (set by `overflow`/
+  /// `lineClamp`/`truncate`).
+  final TextOverflow? textOverflow;
+
+  /// Whether text soft-wraps (set by `nowrap`/`wrap`/`truncate`). `false` ⇒
+  /// single unwrapped line (Tailwind `whitespace-nowrap`).
+  final bool? softWrap;
+
   // Effects. Named descriptively so the Tailwind-natural `.tw` setters
   // (`opacity`/`blur`/`backdropBlur`) don't collide with these fields (the mixin
   // can't redeclare a field name). `ResolvedStyle` keeps the terse render-chain
@@ -205,6 +226,10 @@ class FwStyle with FwStyleOps<FwStyle> {
     double? lineHeight,
     TextAlign? textAlign,
     TextDecoration? textDecoration,
+    String? fontFamily,
+    int? maxLineCount,
+    TextOverflow? textOverflow,
+    bool? softWrap,
     double? groupOpacity,
     double? contentBlur,
     double? backdropBlurSigma,
@@ -239,6 +264,10 @@ class FwStyle with FwStyleOps<FwStyle> {
       lineHeight: lineHeight ?? this.lineHeight,
       textAlign: textAlign ?? this.textAlign,
       textDecoration: textDecoration ?? this.textDecoration,
+      fontFamily: fontFamily ?? this.fontFamily,
+      maxLineCount: maxLineCount ?? this.maxLineCount,
+      textOverflow: textOverflow ?? this.textOverflow,
+      softWrap: softWrap ?? this.softWrap,
       groupOpacity: groupOpacity ?? this.groupOpacity,
       contentBlur: contentBlur ?? this.contentBlur,
       backdropBlurSigma: backdropBlurSigma ?? this.backdropBlurSigma,
@@ -281,6 +310,10 @@ class FwStyle with FwStyleOps<FwStyle> {
       lineHeight == other.lineHeight &&
       textAlign == other.textAlign &&
       textDecoration == other.textDecoration &&
+      fontFamily == other.fontFamily &&
+      maxLineCount == other.maxLineCount &&
+      textOverflow == other.textOverflow &&
+      softWrap == other.softWrap &&
       groupOpacity == other.groupOpacity &&
       contentBlur == other.contentBlur &&
       backdropBlurSigma == other.backdropBlurSigma &&
@@ -316,6 +349,10 @@ class FwStyle with FwStyleOps<FwStyle> {
     lineHeight,
     textAlign,
     textDecoration,
+    fontFamily,
+    maxLineCount,
+    textOverflow,
+    softWrap,
     groupOpacity,
     contentBlur,
     backdropBlurSigma,
