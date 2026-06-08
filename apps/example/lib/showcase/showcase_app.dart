@@ -1,6 +1,7 @@
 // The showcase shell: a Material-free WidgetsApp on the pure path, an animated
-// light/dark + LTR/RTL switch, a category tab bar, and the selected section in a
-// scroll view. Every pixel is styled through `.tw` + `context.fw`.
+// semantic-theme switcher (Default ⇄ Claude) + light/dark + LTR/RTL switch, a
+// category tab bar, and the selected section in a scroll view. Every pixel is
+// styled through `.tw` + `context.fw`, so one theme swap reskins everything.
 import 'package:flutter/widgets.dart';
 import 'package:flutterwindcss/flutterwindcss.dart';
 
@@ -18,6 +19,7 @@ import 'sections/tokens.dart';
 import 'sections/transforms.dart';
 import 'sections/typography.dart';
 import 'sections/utilities.dart';
+import 'themes.dart';
 
 /// Root widget: owns brightness, text direction, and the selected category.
 class ShowcaseApp extends StatefulWidget {
@@ -30,10 +32,12 @@ class ShowcaseApp extends StatefulWidget {
 class _ShowcaseAppState extends State<ShowcaseApp> {
   bool _dark = false;
   bool _rtl = false;
+  int _themeIndex = 0; // index into kDemoThemes; the active semantic theme.
   ShowcaseCategory _category = ShowcaseCategory.tokens;
 
   @override
   Widget build(BuildContext context) {
+    final theme = kDemoThemes[_themeIndex];
     return WidgetsApp(
       title: 'flutterwindcss showcase',
       color: const Color(0xFF000000),
@@ -44,14 +48,19 @@ class _ShowcaseAppState extends State<ShowcaseApp> {
           pageBuilder: (context, _, _) => builder(context),
         );
       },
+      // FwAnimatedTheme tweens between bundles, so switching theme OR brightness
+      // crossfades every context.fw-styled descendant — proof that semantic
+      // tokens reskin the whole app from one swap.
       home: FwAnimatedTheme(
-        tokens: _dark ? FwTokens.dark : FwTokens.light,
+        tokens: theme.resolve(isDark: _dark),
         child: _Shell(
           dark: _dark,
           rtl: _rtl,
+          themeName: theme.name,
           category: _category,
           onToggleDark: () => setState(() => _dark = !_dark),
           onToggleRtl: () => setState(() => _rtl = !_rtl),
+          onCycleTheme: () => setState(() => _themeIndex = (_themeIndex + 1) % kDemoThemes.length),
           onSelect: (c) => setState(() => _category = c),
         ),
       ),
@@ -63,17 +72,21 @@ class _Shell extends StatelessWidget {
   const _Shell({
     required this.dark,
     required this.rtl,
+    required this.themeName,
     required this.category,
     required this.onToggleDark,
     required this.onToggleRtl,
+    required this.onCycleTheme,
     required this.onSelect,
   });
 
   final bool dark;
   final bool rtl;
+  final String themeName;
   final ShowcaseCategory category;
   final VoidCallback onToggleDark;
   final VoidCallback onToggleRtl;
+  final VoidCallback onCycleTheme;
   final ValueChanged<ShowcaseCategory> onSelect;
 
   @override
@@ -90,7 +103,14 @@ class _Shell extends StatelessWidget {
           child: FwColumn(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              _Header(dark: dark, rtl: rtl, onToggleDark: onToggleDark, onToggleRtl: onToggleRtl),
+              _Header(
+                dark: dark,
+                rtl: rtl,
+                themeName: themeName,
+                onToggleDark: onToggleDark,
+                onToggleRtl: onToggleRtl,
+                onCycleTheme: onCycleTheme,
+              ),
               _TabBar(category: category, onSelect: onSelect),
               Expanded(
                 child: Directionality(
@@ -126,14 +146,18 @@ class _Header extends StatelessWidget {
   const _Header({
     required this.dark,
     required this.rtl,
+    required this.themeName,
     required this.onToggleDark,
     required this.onToggleRtl,
+    required this.onCycleTheme,
   });
 
   final bool dark;
   final bool rtl;
+  final String themeName;
   final VoidCallback onToggleDark;
   final VoidCallback onToggleRtl;
+  final VoidCallback onCycleTheme;
 
   @override
   Widget build(BuildContext context) {
@@ -158,8 +182,10 @@ class _Header extends StatelessWidget {
           gap: 2,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
+            // Cycles the semantic theme; the whole app reskins on tap.
+            _PillButton(label: 'Theme: $themeName', onTap: onCycleTheme, filled: true),
             _PillButton(label: rtl ? 'RTL' : 'LTR', onTap: onToggleRtl),
-            _PillButton(label: dark ? 'Dark' : 'Light', onTap: onToggleDark, filled: true),
+            _PillButton(label: dark ? 'Dark' : 'Light', onTap: onToggleDark),
           ],
         ),
       ],
