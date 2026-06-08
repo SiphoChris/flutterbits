@@ -12,14 +12,15 @@ working Flutter `theme.dart` with nothing dropped.
 
 ## 1. What it does
 
-**Input:** a pasted tweakcn/shadcn theme — the **entire** CSS file as exported from tweakcn (see the
-worked fixture `__fixtures__/claude.css`, the real input behind `themes.dart`'s "Claude" theme).
-That file contains far more than the two blocks we read: a `@import "tailwindcss";` line, a
-`@custom-variant dark (…)`, a `:root { … }` block (light), a `.dark { … }` block (dark), a
-`@theme inline { … }` block (Tailwind's var→utility mapping, all `var()`/`calc()` indirection), and
-a `@layer base { … }` block. **We read values only from the `:root` and `.dark` blocks** and ignore
-everything else (§2.2). URL input (paste a tweakcn share link, fetch the CSS) is a recorded possible
-enhancement, not v1.
+**Input:** a pasted tweakcn/shadcn theme — the **entire** CSS file as exported from tweakcn. tweakcn
+exports the **same theme in any of four color formats** (the user picks the export format), so the
+generator must accept all four interchangeably. The repo carries the *identical* Claude theme in all
+four as golden fixtures: `__fixtures__/claude.{hex,rgb,hsl,oklch}.css`. Each file contains far more
+than the two blocks we read: a `@import "tailwindcss";` line, a `@custom-variant dark (…)`, a
+`:root { … }` block (light), a `.dark { … }` block (dark), a `@theme inline { … }` block (Tailwind's
+var→utility mapping, all `var()`/`calc()` indirection), and a `@layer base { … }` block. **We read
+values only from the `:root` and `.dark` blocks** and ignore everything else (§2.2). URL input
+(paste a tweakcn share link, fetch the CSS) is a recorded possible enhancement, not v1.
 
 **Output:** two downloadable files:
 - `theme.json` — the **source of truth**. Its schema mirrors the `FwTokens` shape (32 colors +
@@ -64,7 +65,7 @@ apps/docs/src/lib/generator/
   parse/            # G2 — CSS :root/.dark → RawTheme
   emit/             # G3 — ResolvedTheme → ThemeJson → theme.dart
   types.ts          # RawTheme, ResolvedTheme, ThemeJson, token-name contract
-  __fixtures__/     # claude.css (the golden), oklch vectors, parser edge cases
+  __fixtures__/     # claude.{hex,rgb,hsl,oklch}.css (the goldens), oklch clip vectors, parser edge cases
 apps/docs/src/app/(home)/theme-generator/   # G4 — the route + UI components
 apps/docs/content/docs/theme-generator.mdx  # G5 — docs page
 ```
@@ -89,6 +90,22 @@ Pipeline (§7): `OKLCH → OKLab → LMS → linear sRGB → gamma-encode → sR
 - **Opt-in = perceptual.** Hue-preserving **chroma reduction** (binary-search chroma down until
   in-gamut) instead of clipping, for extreme out-of-gamut colors / a display-P3 target. This is
   where the wider-gamut target lives. Toggle in the UI; default off.
+
+**Why faithful-clip is the default (the "oklch debate," §7 / engine spec §4.1).** The original
+policy was "always gamut-map"; it was corrected to **faithful-clip default, gamut-map opt-in**
+because coherence with the recognizable Tailwind/shadcn hex matters more than matching
+browser-rendered pixels for the realistic color range. The four-format fixtures *prove this is the
+right default*: tweakcn's exported `oklch()` values are **already in-gamut sRGB projections**, not
+the wild out-of-gamut Tailwind *source* values. Concretely — dark `destructive` is `#ef4444`
+(Tailwind red-500) but its oklch export is `oklch(0.6368 0.2078 25.3313)`: chroma **0.2078**, the
+value you get converting `#ef4444` *back* to oklch, **not** Tailwind's out-of-gamut source chroma
+`0.237`. So under faithful-clip the clip barely engages and **all four formats converge** on the
+same sRGB. (Gamut-map would *move* these already-correct colors and is therefore correctly opt-in.)
+
+This makes the four-format fixtures the keystone color oracle: 32 authoritative `oklch → sRGB`
+pairs from the exact tool we are cloning. Expected convergence (§8): **hex/rgb/hsl byte-exact** to
+`themes.dart`; **oklch within ±1 per 8-bit channel** (floating-point vs culori rounding), with any
+±1 channel investigated to confirm it is rounding, not a bug.
 
 **Input formats (all four required, §7):** `oklch()`, `hsl()`, `rgb()`/`rgba()`, hex (`#rgb`,
 `#rrggbb`, `#rrggbbaa`). Each must accept:
@@ -302,16 +319,20 @@ The whole proof rests on **not** validating the generator against artifacts that
 hand-produced without the generator's math. Layers:
 
 - **Color core (G1):**
-  - **Real OKLCH-source → baked-hex vectors (B1, the keystone):** take Tailwind v4's *source*
-    `oklch()` definitions for ~12 swatches and assert the pipeline reproduces the **exact** hex
-    already in `palette.g.dart`. This is the only test that proves "faithful"; the palette JSON
-    alone (hex-only) would just exercise the hex parser (circular).
-  - Per-channel matrix vectors (math internal-consistency), alpha-syntax cases, percent-vs-unit L,
-    all four formats, and a handful of out-of-gamut colors showing clip ≠ gamut-map.
-  - **Stock chart/sidebar agreement (S1):** add the stock shadcn `chart*`/`sidebar*` OKLCH sources
-    to the vector set and assert they reproduce the `tokens.dart` baked hex. If a vivid one (e.g.
-    `chart4`/`chart5` oranges) doesn't match under clip, that's a real finding — surface it, don't
-    quietly retune a literal.
+  - **Four-format convergence (the keystone, B1):** parse all four `claude.{hex,rgb,hsl,oklch}.css`
+    fixtures and assert, per token, that **hex/rgb/hsl are byte-exact** to each other and to
+    `themes.dart`, and **oklch is within ±1 per 8-bit channel** of them. This is 32 authoritative
+    `oklch → sRGB` pairs from tweakcn/culori itself — a stronger faithfulness proof than synthetic
+    vectors, and it directly exercises the full OKLCH→OKLab→linear→gamma→sRGB→clip path (the
+    palette JSON alone is hex-only and would just test the hex parser — circular). Once G1 runs,
+    pin the exact computed oklch ARGBs as a reviewed snapshot (each verified ≤1 from `themes.dart`)
+    so the test is byte-tight going forward.
+  - **Out-of-gamut clip vectors:** a handful of Tailwind v4 *source* `oklch()` values whose chroma
+    is out of sRGB gamut (e.g. red-500 source `oklch(0.637 0.237 25.331)` → published `#ef4444`),
+    asserting faithful-clip reproduces the published hex and that clip ≠ gamut-map there. (The
+    four-format fixtures cover the in-gamut path; these cover the clip path the fixtures don't hit.)
+  - Per-channel matrix vectors (math internal-consistency), alpha-syntax cases (`hsl(… / 0.10)`,
+    `oklch(… / 0.1)`), and percent-vs-unit OKLCH lightness.
 - **Parser (G2):** fixtures for messy whitespace/comments, all four formats, alpha syntax, missing
   tokens (→ recorded), presence of per-axis `--shadow-*` primitives (→ ignored, composed string
   wins), the full at-rule preamble (`@import`/`@custom-variant`/`@theme inline`/`@layer` → ignored),
@@ -320,27 +341,32 @@ hand-produced without the generator's math. Layers:
   (generic skipped), `"Times New Roman", …`→`Times New Roman` (quotes stripped).
 - **Emitter (G3):** `ThemeJson` schema snapshot; `emitDart(themeJson)` totality (every field
   consumed, S3); non-10 radius guard (S4).
-- **End-to-end golden (G3):** the **real pasted Claude CSS** (committed as
-  `__fixtures__/claude.css`) → emit → assert the **full bundle** — 32 colors *and* radii *and*
-  shadows *and* typography — equals `themes.dart`'s `_claudeLight`/`_claudeDark`/`_claudeRadii`/
-  `_claudeShadows`/`_claudeType`. Expected values are transcribed into a TS fixture that **mirrors**
-  `themes.dart` (which is the human-checked source of those values; noted in the fixture header).
-  Shadows are asserted directly: the §4.2 transform reproduces `_claudeShadows` byte-for-byte (a
-  verified no-op, not a regeneration). `tracking` here is `0`, so a **separate emitter unit test**
-  covers a non-zero `--tracking-normal` (e.g. `-0.025em` → `tracking: -0.025`) and its interpolation
-  (G0's `FwTypographyTheme.lerp`); the golden alone wouldn't exercise non-zero tracking.
+- **End-to-end golden (G3):** **each** of the four `__fixtures__/claude.{hex,rgb,hsl,oklch}.css` →
+  emit → assert the **full bundle** — 32 colors *and* radii *and* shadows *and* typography — equals
+  `themes.dart`'s `_claudeLight`/`_claudeDark`/`_claudeRadii`/`_claudeShadows`/`_claudeType` (oklch
+  colors within the ±1 tolerance, the other three byte-exact). Expected values are transcribed into
+  a TS fixture that **mirrors** `themes.dart` (the human-checked source of those values; noted in
+  the fixture header). Shadows are asserted directly: the §4.2 transform reproduces `_claudeShadows`
+  byte-for-byte (a verified no-op, not a regeneration). `tracking` here is `0`, so a **separate
+  emitter unit test** covers a non-zero `--tracking-normal` (e.g. `-0.025em` → `tracking: -0.025`)
+  and its interpolation (G0's `FwTypographyTheme.lerp`); the golden alone wouldn't exercise non-zero
+  tracking.
 
-> **Input obtained:** the exact tweakcn export is committed verbatim as
-> `apps/docs/src/lib/generator/__fixtures__/claude.css` (tweakcn theme `cmdght103000n04lh3e2ae93r`).
-> It is the real input behind `themes.dart`'s Claude theme and is the end-to-end golden's source.
+> **Input obtained:** the exact tweakcn export of theme `cmdght103000n04lh3e2ae93r` is committed
+> verbatim in all four formats as `apps/docs/src/lib/generator/__fixtures__/claude.{hex,rgb,hsl,oklch}.css`.
+> These are the real inputs behind `themes.dart`'s Claude theme and are the end-to-end goldens.
 
 ---
 
 ## 9. Risks & honest calls
 
-- **No OKLCH inputs in-repo** → the faithfulness proof depends on externally-sourced Tailwind v4
-  `oklch()` definitions (public). Mitigated by the B1 vector fixture; flagged so the dependency is
-  explicit, not hidden.
+- **OKLCH faithfulness proof** → resolved: the four-format fixtures give 32 authoritative
+  `oklch → sRGB` pairs from tweakcn itself (in-gamut path), and a small set of Tailwind v4 source
+  `oklch()` values covers the out-of-gamut clip path. No reliance on hand-produced artifacts.
+- **oklch ≠ byte-exact to hex** → expected and bounded: tweakcn's oklch is an in-gamut projection,
+  so it converges to ±1 of the hex export, not necessarily the same bit. Honest call (§12): we
+  assert ±1 for oklch and byte-exact for hex/rgb/hsl, and pin the reviewed oklch ARGBs as a
+  snapshot. A user pasting oklch gets the faithful-clip reproduction (= what tweakcn's hex shows).
 - **`themes.dart` shadows as oracle** → checked against the real CSS: the canonical transform
   reproduces `_claudeShadows` exactly (§4.2), so the oracle is sound and the golden asserts shadows
   directly. No regeneration needed for this theme.
