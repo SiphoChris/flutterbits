@@ -272,6 +272,13 @@ mixin FwStyleOps<T> {
       colors.length >= 2,
       'flutterwindcss: a gradient needs >= 2 colors (got ${colors.length}).',
     );
+    // Flutter asserts this internally at paint time; surface it earlier with a
+    // flutterwindcss-prefixed message so the author sees it at the call site.
+    assert(
+      stops == null || stops.length == colors.length,
+      'flutterwindcss: gradient stops length (${stops.length}) must match '
+      'colors length (${colors.length}).',
+    );
     return bgGradient(LinearGradient(begin: begin, end: end, colors: colors, stops: stops));
   }
 
@@ -557,8 +564,11 @@ mixin FwStyleOps<T> {
 
   /// Default letter-spacing in **absolute logical px** (Flutter's model;
   /// Tailwind/`FwTracking` are em — multiply by the font size to convert). May be
-  /// negative (tighter tracking).
-  T tracking(double logicalPx) => fwRebuild(fwStyle.copyWith(letterSpacing: logicalPx));
+  /// negative (tighter tracking), but must be finite.
+  T tracking(double logicalPx) {
+    assert(logicalPx.isFinite, 'flutterwindcss: tracking must be finite (got $logicalPx).');
+    return fwRebuild(fwStyle.copyWith(letterSpacing: logicalPx));
+  }
 
   /// Default text alignment (Tailwind `text-{align}`); `start`/`end` are RTL-aware.
   T align(TextAlign align) => fwRebuild(fwStyle.copyWith(textAlign: align));
@@ -790,8 +800,12 @@ mixin FwStyleOps<T> {
     return _applyColorFilter(_sepiaMatrix(amount));
   }
 
-  /// Hue rotation in **degrees** (Tailwind `hue-rotate-*`).
-  T hueRotate(double degrees) => _applyColorFilter(_hueRotateMatrix(degrees));
+  /// Hue rotation in **degrees** (Tailwind `hue-rotate-*`). Any angle is valid
+  /// (it wraps), but a non-finite angle would build a garbage colour matrix.
+  T hueRotate(double degrees) {
+    assert(degrees.isFinite, 'flutterwindcss: hueRotate degrees must be finite (got $degrees).');
+    return _applyColorFilter(_hueRotateMatrix(degrees));
+  }
 
   /// Object-fit for the child content (Tailwind `object-*`): wraps it in a
   /// `FittedBox`. Mainly for images/replaced content. Needs a **bounded** box to
@@ -824,22 +838,32 @@ mixin FwStyleOps<T> {
   // `scale` is **uniform** (Tailwind `scale-*`). Composition order is fixed by the
   // render chain (T·R·S — scale, then rotate, then translate).
 
+  // A non-finite transform input (NaN/±Infinity) silently corrupts the composed
+  // Matrix4 — and therefore hit-testing — with no error. Guard every scalar that
+  // feeds the transform matrix with a clear flutterwindcss message.
+  static double _finite(double value, String what) {
+    assert(value.isFinite, 'flutterwindcss: $what must be finite (got $value).');
+    return value;
+  }
+
   /// Uniform scale factor (Tailwind `scale-*`; `1.0` = identity, `<1` shrinks,
   /// negatives flip). Paint-only — does not reflow siblings. Composes
   /// multiplicatively with [scaleX]/[scaleY] (like CSS `scale()` + `scaleX()`).
-  T scale(double factor) => fwRebuild(fwStyle.copyWith(scaleFactor: factor));
+  T scale(double factor) => fwRebuild(fwStyle.copyWith(scaleFactor: _finite(factor, 'scale')));
 
   /// Per-axis horizontal scale (Tailwind `scale-x-*`). Composes with [scale].
-  T scaleX(double factor) => fwRebuild(fwStyle.copyWith(scaleXFactor: factor));
+  T scaleX(double factor) => fwRebuild(fwStyle.copyWith(scaleXFactor: _finite(factor, 'scaleX')));
 
   /// Per-axis vertical scale (Tailwind `scale-y-*`). Composes with [scale].
-  T scaleY(double factor) => fwRebuild(fwStyle.copyWith(scaleYFactor: factor));
+  T scaleY(double factor) => fwRebuild(fwStyle.copyWith(scaleYFactor: _finite(factor, 'scaleY')));
 
   /// Horizontal skew in **degrees** (Tailwind `skew-x-*`). Paint-only.
-  T skewX(double degrees) => fwRebuild(fwStyle.copyWith(skewXAngle: degrees * math.pi / 180.0));
+  T skewX(double degrees) =>
+      fwRebuild(fwStyle.copyWith(skewXAngle: _finite(degrees, 'skewX') * math.pi / 180.0));
 
   /// Vertical skew in **degrees** (Tailwind `skew-y-*`). Paint-only.
-  T skewY(double degrees) => fwRebuild(fwStyle.copyWith(skewYAngle: degrees * math.pi / 180.0));
+  T skewY(double degrees) =>
+      fwRebuild(fwStyle.copyWith(skewYAngle: _finite(degrees, 'skewY') * math.pi / 180.0));
 
   /// Transform origin / anchor for `scale`/`rotate`/`skew` (CSS `transform-origin`;
   /// directional alignments are RTL-aware). Defaults to the box center.
@@ -848,15 +872,18 @@ mixin FwStyleOps<T> {
 
   /// Rotation in **degrees**, clockwise (Tailwind `rotate-*`; stored internally
   /// as radians). Paint-only.
-  T rotate(double degrees) => fwRebuild(fwStyle.copyWith(rotation: degrees * math.pi / 180.0));
+  T rotate(double degrees) =>
+      fwRebuild(fwStyle.copyWith(rotation: _finite(degrees, 'rotate') * math.pi / 180.0));
 
   /// 3D rotation about the X axis in **degrees** (Tailwind `rotate-x-*`). Pair
   /// with [perspective] for depth (otherwise the projection is orthographic).
-  T rotateX(double degrees) => fwRebuild(fwStyle.copyWith(rotateXAngle: degrees * math.pi / 180.0));
+  T rotateX(double degrees) =>
+      fwRebuild(fwStyle.copyWith(rotateXAngle: _finite(degrees, 'rotateX') * math.pi / 180.0));
 
   /// 3D rotation about the Y axis in **degrees** (Tailwind `rotate-y-*`) — the
   /// flip-card axis. Pair with [perspective].
-  T rotateY(double degrees) => fwRebuild(fwStyle.copyWith(rotateYAngle: degrees * math.pi / 180.0));
+  T rotateY(double degrees) =>
+      fwRebuild(fwStyle.copyWith(rotateYAngle: _finite(degrees, 'rotateY') * math.pi / 180.0));
 
   /// Perspective depth in **logical px** (Tailwind `perspective-*`): the distance
   /// from the viewer to the z=0 plane. Smaller = stronger 3D foreshortening.
@@ -870,16 +897,21 @@ mixin FwStyleOps<T> {
 
   /// Translation by ([x], [y]) **utility units** (Tailwind `translate-*`).
   /// Physical axes (not directional — matches CSS `translate`). Paint-only.
-  T translate(double x, double y) =>
-      fwRebuild(fwStyle.copyWith(translation: Offset(fwSpace(x), fwSpace(y))));
+  T translate(double x, double y) => fwRebuild(
+    fwStyle.copyWith(
+      translation: Offset(fwSpace(_finite(x, 'translate x')), fwSpace(_finite(y, 'translate y'))),
+    ),
+  );
 
   /// Horizontal translation (utility units), keeping any vertical translate.
-  T translateX(double x) =>
-      fwRebuild(fwStyle.copyWith(translation: Offset(fwSpace(x), _translation.dy)));
+  T translateX(double x) => fwRebuild(
+    fwStyle.copyWith(translation: Offset(fwSpace(_finite(x, 'translateX')), _translation.dy)),
+  );
 
   /// Vertical translation (utility units), keeping any horizontal translate.
-  T translateY(double y) =>
-      fwRebuild(fwStyle.copyWith(translation: Offset(_translation.dx, fwSpace(y))));
+  T translateY(double y) => fwRebuild(
+    fwStyle.copyWith(translation: Offset(_translation.dx, fwSpace(_finite(y, 'translateY')))),
+  );
 
   // ---- Variant layering ----
   //

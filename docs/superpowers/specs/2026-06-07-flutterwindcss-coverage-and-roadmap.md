@@ -1,6 +1,6 @@
 # flutterwindcss — Tailwind coverage & roadmap (gap analysis)
 
-**Status:** living roadmap · **Date:** 2026-06-07 · **Audience:** engine maintainers planning modules 11+.
+**Status:** living roadmap · **Date:** 2026-06-07 (last updated 2026-06-08) · **Audience:** engine maintainers planning the components/docs phase.
 
 ## Purpose
 
@@ -21,7 +21,7 @@ Tailwind utility — we build "the things that matter and aren't a hard add."
 - **Don't rebuild what already works.** Two properties of the typed API mean some Tailwind
   features need no new code (see below).
 
-## Distance to Tailwind (current — audited 2026-06-07)
+## Distance to Tailwind (current — audited 2026-06-08)
 
 Verified against the code by an adversarial review pass. Headline:
 
@@ -43,7 +43,10 @@ Verified against the code by an adversarial review pass. Headline:
   Tailwind v4 utility section (Layout, Flex/Grid, Spacing, Sizing, Typography, Backgrounds,
   Borders, Effects, Filters, Tables, Transitions, Transforms, Interactivity, SVG, A11y) found
   the remaining unbuilt-*engine* items are the by-demand niche below — everything else is
-  delegated or impossible.
+  delegated or a stated no-analog. A follow-up pass (also 2026-06-08) caught a long tail of
+  lower-frequency utilities that were absent from every bucket; they are now enumerated with
+  verdicts + mechanisms in **"Full long-tail enumeration"** below, so the catalog cross-check
+  is genuinely exhaustive (nothing silently missing).
 - **Legitimately out (not counted against the engine):** animation → `flutter_animate`
   (§11b); forms/prose/tables (border-collapse/spacing/table-layout/caption)/SVG (fill/stroke)/
   `sr-only`/`accent-color`/`caret-color`/`resize`/`appearance-none`/`field-sizing`/list-style →
@@ -56,9 +59,12 @@ Verified against the code by an adversarial review pass. Headline:
   (pass-through already works), text-decoration styling (color/style/thickness), `font-variant-
   numeric`. Each has a Flutter mechanism; none blocks the next phase.
 - **Genuinely impossible / no analog (tiny):** true CSS cascade, pseudo-elements/`content`,
-  `float`/`clear`, `will-change`, `touch-action`, `box-decoration-break`. **`text-transform`**
-  is impossible *as a render-time style* (Flutter's `TextStyle` has no transform hook) but
-  feasible as content mutation — left out by product decision (2026-06-08).
+  `float`/`clear`, `touch-action`, `box-decoration-break`, `text-wrap: balance/pretty`, `auto`
+  hyphenation, `bg-attachment: fixed`. **`text-transform`** is impossible *as a render-time
+  style* (Flutter's `TextStyle` has no transform hook) but feasible as content mutation — left
+  out by product decision (2026-06-08). (`will-change` was previously listed here; it is
+  actually **feasible** via `RepaintBoundary` — corrected to By-demand in the long-tail table
+  below, a capability-raising fix per §12.)
 
 **Built since the early summary (modules 13–17):** transform extras + interactivity + `size`
 (13); **`group-*` / `peer-*`** (14); the **ergonomics** layer (15 — gradient sugar, `ring`,
@@ -68,14 +74,51 @@ named-scale `shadow*`/`rounded*`, `FwScroll`, dashed/dotted borders); **`divide`
 miss** in the engine — the leftover items are the by-demand niche and delegated/impossible sets
 listed in the headline. The engine is ready for the components/docs phase.
 
-By-demand / larger: sticky (L, slivers), scroll-snap (L), backdrop color filters (M),
-dashed borders (M, custom painter), `bg-image` (S–M).
+By-demand / larger (still unbuilt): sticky (L, slivers), backdrop color filters (M), negative
+margins (M). (`scroll-snap`, dashed borders, and `bg-image` from the earlier version of this
+line are now **shipped** — modules 15–17.)
 
 **Engine audit status:** an adversarial review of the full engine (resolver cascade, render
 chain, grid render object, tokens/lerp, modules 11–12) found **no correctness bugs**; one
 hardening gap was fixed (`FwGridItem` span cap, matching the existing line-number cap) and
 the object-fit bounded-constraint behavior was documented. The example app now has widget
 smoke tests (every section, light/dark, LTR/RTL) and is covered by CI.
+
+## Full long-tail enumeration (2026-06-08 — nothing silently dropped)
+
+A second adversarial pass cross-checked **every** Tailwind v4 utility section against the
+code and against the lists above, specifically hunting for utilities that were *absent from
+both the code and every bucket here* (i.e. silently missing). The pass found the items below.
+They were previously unlisted; each now has a verdict and a Flutter mechanism so the §12
+"no silent scope reduction" bar holds. **None is a daily-driver; none blocks the next phase.**
+
+Verdict legend as above, plus **Free/N-A** (Flutter's model makes it a no-op or it is already
+covered) and **No-analog** (genuinely impossible — §11a bar: no faithful Flutter implementation).
+
+| Utility (Tailwind v4) | Verdict | Flutter mechanism / reason | Size |
+|---|---|---|---|
+| `order-*` (flex/grid item order) | **By-demand** | Sort children by an order key at `FwRow`/`FwColumn`/`FwGrid` build, or resolve at the list-building site (you own child order, like `:nth-child`). | S |
+| `isolation` (`isolate`) | **By-demand** | Wrap a subtree in a `RepaintBoundary`/`saveLayer` to form a new compositing group so `mix-blend-mode` blends *within* it. Companion to the shipped `mix-blend-mode`. | S–M |
+| `overscroll-behavior` (`overscroll-*`) | **By-demand** | A knob on `FwScroll` selecting `ScrollPhysics` (clamping/never) + an `OverscrollNotification` boundary. | S |
+| `background-blend-mode` | **By-demand** | `BoxDecoration.backgroundBlendMode` — blends a box's own color/gradient/image *layers* (distinct from element-level `mix-blend-mode`, which is shipped). | S |
+| `bg-clip` / **`bg-clip-text`** | **By-demand** | Gradient text via `ShaderMask` over the `Text`; `bg-clip-padding/border` via `clipBehavior`. The highest-demand item here (gradient headings). | M |
+| `bg-origin` | **By-demand** | `DecorationImage` alignment + a padding-aware origin. | S |
+| `outline-*` (distinct from `ring`) | **By-demand** | Mostly covered by the shipped `ring`; a literal CSS `outline` (outside the border-box, no layout effect) is another zero-inset spread shadow or a painted stroke. | S |
+| `drop-shadow-*` **filter** (alpha-following) | **By-demand** | `ImageFiltered` with a blur+offset compose — follows the alpha channel (non-rectangular), unlike the rectangular box `shadow-*` which is shipped. | M |
+| `text-indent` | **By-demand** | Leading `WidgetSpan` inset or `Text.rich` first-line indent. | S |
+| `vertical-align` | **By-demand** | `PlaceholderAlignment`/`textBaseline` on inline `WidgetSpan` (inline/rich-text only). Block-level alignment is already layout (`FwStack`/align). | S–M |
+| `word-break` / `overflow-wrap` (`break-all`/`break-words`) | **By-demand** | `softWrap` covers normal wrapping; `break-all` needs zero-width-space injection or a custom line-breaker. | M |
+| `scroll-behavior` (`scroll-smooth`) | **By-demand** | Animate via the `FwScroll` `ScrollController` (`animateTo`); programmatic-scroll concern. | S |
+| `will-change` | **By-demand** (was mis-listed Impossible — capability-raising correction, §12) | `RepaintBoundary` is Flutter's faithful layer-promotion hint; `will-change` is an optimization hint, not a visual, so it is feasible, not impossible. | S |
+| `user-select-*` | **Delegate** | `SelectionArea`/`SelectableText` — a content/component concern, → flutterbits. | — |
+| `box-sizing` (`box-border`/`box-content`) | **Free/N-A** | Flutter has no content-box model; our decoration always sizes the border-box (`box-border`). `box-content` has no faithful analog and is not needed. | — |
+| `text-wrap: balance` / `pretty` | **No-analog** | Flutter's line breaker has no balanced/pretty mode; no faithful implementation (§11a bar). | — |
+| `hyphens` (true hyphenation) | **No-analog** | Flutter has no hyphenation dictionary hook; `manual` (soft-hyphen) works via the character itself, but `auto` hyphenation has no analog. | — |
+| `bg-attachment: fixed` | **No-analog** | A viewport-fixed background needs scroll-coupled paint Flutter does not model; `local`/`scroll` are the default behavior. | — |
+| `line-clamp-none` (reset inside a layer) | **Known limitation** | The accumulator can *set* `maxLines` but the whole-field overlay has no "unset" sentinel, so a responsive/state layer cannot clear a clamp — set the unclamped value at the base instead. Documented as a real limitation. | — |
+
+This list plus the headline buckets is now **exhaustive against the v4 catalog**: every Tailwind
+v4 utility is either shipped, here with a verdict + mechanism, delegated, or a stated no-analog.
 
 ## Two things that are already "free"
 
@@ -86,7 +129,7 @@ smoke tests (every section, light/dark, LTR/RTL) and is covered by CI.
    today** — only the *named-scale sugar* (`bg-gradient-to-r`, `shadow-md` aliases) is
    unbuilt, and `shadow-md` etc. already exist via `context.fw.shadows`.
 
-## Coverage snapshot (shipped, current — modules 0–14)
+## Coverage snapshot (shipped, current — modules 0–17)
 
 | Tailwind category | Status |
 |---|---|
@@ -109,7 +152,8 @@ smoke tests (every section, light/dark, LTR/RTL) and is covered by CI.
 | Typography: size, weight, leading, tracking, align, underline/strike | ✅ |
 | Typography: family, line-clamp/truncate, text-overflow, whitespace | ✅ (module 11) |
 | Shadow, opacity, blur, backdrop-blur | ✅ |
-| Transforms: scale, rotate, translate, scaleX/Y, skewX/Y, transform-origin | ✅ (module 13; 3D rotate ⬜) |
+| Transforms: scale, rotate, translate, scaleX/Y, skewX/Y, transform-origin | ✅ (module 13) |
+| 3D transforms: rotate-x/y, perspective | ✅ (module 17) |
 | Interactivity: cursor, pointer-events-none, visibility, italic | ✅ (module 13) |
 | Interactivity: `group-*` / `peer-*` state propagation (named) | ✅ (module 14) |
 | Flexbox (`FwRow`/`FwColumn`/`FwWrap`) | ✅ |
@@ -162,14 +206,15 @@ Feasible, larger, or lower-frequency. Each is a real idiom, none is a wall.
 | ~~**Named-scale sugar** (`shadow-md`, `rounded-lg`, `bg-gradient-to-r`)~~ | ✅ shipped (module 15) — `shadowSm/Md/…`, `roundedSm/Md/Lg/Xl` (theme-resolved via a gated build-time pass), gradient `bgGradientTo*`. | `.tw` | — |
 | ~~**`ring` utility**~~ | ✅ shipped (module 15) — `ring(width, {color, offset, offsetColor})`, a zero-blur spread shadow composed with `shadow`. | `.tw` effects | — |
 | ~~**Dashed/dotted borders**~~ | ✅ shipped (module 15) — `borderDashed`/`borderDotted` via `FwDashedBorderPainter` (uniform). | `.tw` border | — |
-| **`divide-*`** (borders between flex children) | a flag on `FwRow`/`FwColumn` that inserts directional separators | layout widgets | **S–M** |
+| ~~**`divide-*`** (borders between flex children)~~ | ✅ shipped (module 16) — `divideWidth`/`divideColor` on `FwRow`/`FwColumn` insert a directional (RTL-aware) border between non-last children. | layout widgets | — |
+| ~~**`bg-image`** (background-image)~~ | ✅ shipped (module 17) — `bgImage(ImageProvider, {fit, alignment, repeat})` → `DecorationImage` on the surface decoration. | `.tw` decoration | — |
+| ~~**`mix-blend-mode`**~~ | ✅ shipped (module 17) — `blendMode(BlendMode)` via `FwBlendMode` (a `saveLayer` carrying the blend mode; unbounded layer so transformed/overflowing content still blends). | `.tw` effects | — |
+| ~~**3D transforms** (`rotate-x/y`, `perspective`)~~ | ✅ shipped (module 17) — `rotateX`/`rotateY`/`perspective` via `Matrix4.setEntry(3,2,-1/d)` + `rotationX/Y`, origin-anchored by `Transform.alignment`. | `.tw` transform | — |
+| ~~**Scroll-snap** (`snap-*`)~~ | ✅ shipped (module 16) — `FwScroll.snapExtent`/`snapAlign` via a real `ScrollPhysics` (settles on item multiples; not a `PageView`). | layout widget | — |
 | **Negative margins** (`-m-*`) | split positive/negative per edge — positive via `Padding`, negative via `Transform.translate` (paint-only) or a custom parent-data offset. *Currently asserts with a clear "not yet supported" message* (margin renders via `Padding`, non-negative only). | `.tw` spacing | **M** |
-| **`bg-image`** (background-image) | `DecorationImage` on the surface decoration | `.tw` decoration | **S–M** |
-| **`mix-blend-mode`** | `BlendMode` via a `saveLayer`/`ShaderMask` wrapper | `.tw` effects | **M** |
-| **3D transforms** (`rotate-x/y`, `perspective`) | `Matrix4.setEntry` perspective + `rotateX/Y` | `.tw` transform | **M** |
 | **Backdrop color filters** (`backdrop-brightness`…) | harder — `BackdropFilter` takes an `ImageFilter`, not a `ColorFilter` | `.tw` effects | **M** |
 | **Sticky** (`position: sticky`) | `SliverPersistentHeader` (sliver context) | new widget | **L** |
-| **Scroll-snap / scroll-margin** | `ScrollPhysics`/`PageView`-style | new widget | **L** |
+| **`scroll-margin` / `scroll-padding`** | scroll-snap is shipped; the snap-target inset utilities are the remaining piece — a snap-target offset on `FwScroll` | layout widget | **M** |
 
 **`space-x-*` / `space-y-*`: already covered — use `gap`.** Tailwind's `space-*` inserts margin
 *between* siblings; Flutter's `Flex.spacing` (which `FwRow`/`FwColumn`'s `gap` uses) is exactly
@@ -228,10 +273,11 @@ drop-zone need):
 - ✅ **Focus `ring`** — `ring(width, {color, offset, offsetColor})`.
 - ✅ **Dashed/dotted borders** — `borderDashed`/`borderDotted` (drop-to-upload zones).
 
-The engine now covers the daily-driver set **and** the most-noticed long-tail. Remaining Tier 2
-items (divide, bg-image, mix-blend, 3D transforms, sticky, scroll-snap, backdrop color filters,
-negative margins) ship by-demand — each recorded above with a mechanism and size, **nothing
-silently dropped**.
+The engine now covers the daily-driver set **and** the most-noticed long-tail. `divide`,
+`bg-image`, `mix-blend-mode`, 3D transforms, and scroll-snap have since **shipped** (modules
+16–17). The remaining Tier 2 items (sticky, backdrop color filters, negative margins,
+`scroll-margin`/`scroll-padding`) plus the long-tail enumeration ship by-demand — each recorded
+above with a mechanism and size, **nothing silently dropped**.
 
 ## Non-goals reaffirmed
 

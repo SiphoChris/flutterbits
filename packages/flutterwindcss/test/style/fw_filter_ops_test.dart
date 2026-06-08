@@ -36,6 +36,30 @@ void main() {
       expect(m[4], moreOrLessEquals(63.75, epsilon: 1e-6)); // bias on R row
     });
 
+    test('hueRotate(0) is the identity colour matrix', () {
+      final m = const FwStyle().hueRotate(0).colorMatrix!;
+      expect(m.length, 20);
+      // A 0° hue rotation leaves luminance + chrominance untouched: diagonal 1,
+      // off-diagonal 0, no bias.
+      expect(m[0], moreOrLessEquals(1, epsilon: 1e-6)); // R diagonal
+      expect(m[6], moreOrLessEquals(1, epsilon: 1e-6)); // G diagonal
+      expect(m[12], moreOrLessEquals(1, epsilon: 1e-6)); // B diagonal
+      expect(m[1], moreOrLessEquals(0, epsilon: 1e-6)); // off-diagonal
+      expect(m[4], moreOrLessEquals(0, epsilon: 1e-6)); // no R bias
+    });
+
+    test('hueRotate(360) returns to the identity (full turn)', () {
+      final m = const FwStyle().hueRotate(360).colorMatrix!;
+      expect(m[0], moreOrLessEquals(1, epsilon: 1e-6));
+      expect(m[1], moreOrLessEquals(0, epsilon: 1e-6));
+    });
+
+    test('hueRotate composes with another filter (matrix is non-identity)', () {
+      final m = const FwStyle().hueRotate(90).colorMatrix!;
+      // 90° genuinely mixes channels — at least one off-diagonal is non-zero.
+      expect(m[1].abs() + m[2].abs(), greaterThan(0.1));
+    });
+
     test('guards: grayscale/invert/sepia are 0..1; brightness/contrast/saturate >= 0', () {
       expect(() => const FwStyle().grayscale(2), throwsAssertionError);
       expect(() => const FwStyle().invert(-0.1), throwsAssertionError);
@@ -43,6 +67,11 @@ void main() {
       expect(() => const FwStyle().brightness(-1), throwsAssertionError);
       expect(() => const FwStyle().contrast(-1), throwsAssertionError);
       expect(() => const FwStyle().saturate(-1), throwsAssertionError);
+    });
+
+    test('guard: hueRotate degrees must be finite (NaN/Infinity assert)', () {
+      expect(() => const FwStyle().hueRotate(double.nan), throwsAssertionError);
+      expect(() => const FwStyle().hueRotate(double.infinity), throwsAssertionError);
     });
   });
 

@@ -43,7 +43,15 @@ class _RenderBlendMode extends RenderProxyBox {
   void paint(PaintingContext context, Offset offset) {
     final RenderBox? child = this.child;
     if (child == null) return;
-    context.canvas.saveLayer(offset & size, Paint()..blendMode = _blendMode);
+    // Bounds are passed as `null` (not `offset & size`) deliberately: the child
+    // subtree may paint outside this box's layout rect — a `scale(>1)` or
+    // `rotate`, or an unclipped shadow — and CSS `mix-blend-mode` blends the
+    // element's *entire* painted result against the backdrop. A tight
+    // `offset & size` rect would clip those pixels out of the blend. `null` lets
+    // the layer cover the current clip so nothing is dropped. (Perf: this is a
+    // saveLayer either way; blend is a deliberate, occasional effect, so the
+    // wider layer is an acceptable trade for visual correctness.)
+    context.canvas.saveLayer(null, Paint()..blendMode = _blendMode);
     context.paintChild(child, offset);
     context.canvas.restore();
   }
