@@ -43,7 +43,10 @@ import 'fw_token_steps.dart';
 /// driven by the `FwGroup`/`FwPeer` widgets. Module 15 added **ergonomics**:
 /// gradient direction sugar (`bgGradientTo*`/`bgLinear`), `ring`, named-scale
 /// `shadow*`/`rounded*` (theme-resolved by `FwStyled` at build), and
-/// `borderDashed`/`borderDotted`.
+/// `borderDashed`/`borderDotted`. (Module 16 — `divide`/scroll-snap — lives on the
+/// layout widgets, not here.) Module 17 added **visual completeness**: `bgImage`
+/// (background-image), `rotateX`/`rotateY`/`perspective` (3D transforms),
+/// `blendMode` (`mix-blend-*`), and `textShadow`.
 mixin FwStyleOps<T> {
   /// The current accumulated style.
   FwStyle get fwStyle;
