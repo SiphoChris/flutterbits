@@ -320,6 +320,12 @@ class FwGrid extends StatelessWidget {
     FwGridDistribute ac,
   ) {
     assert(cols.isNotEmpty, 'flutterwindcss: FwGrid resolved to zero column tracks.');
+    // Release-safe backstop: an empty resolved column list would make the render
+    // object spin (no column ever fits a span-≥1 item, so placement never
+    // terminates). The assert above catches it in debug; in release, fall back to
+    // the base `columns` (the main constructor guarantees that is non-empty)
+    // rather than hang. Belt-and-suspenders with the FwGridPatch constructor assert.
+    if (cols.isEmpty) cols = columns;
     return _RawFwGrid(
       columns: cols,
       rows: rws,
@@ -951,6 +957,10 @@ class RenderFwGrid extends RenderBox
     bool hasFlex,
   ) {
     final n = sizes.length;
+    // Defense-in-depth: a zero-track axis would divide by `n` (spaceAround) or
+    // make `content` negative. The column/row guards make this unreachable, but
+    // this is a pure function reused by dry-layout — keep it total.
+    if (n == 0) return (origins: const <double>[], extent: 0.0);
     final content = _sum(sizes) + gap * (n - 1);
     var leading = 0.0;
     var between = 0.0;

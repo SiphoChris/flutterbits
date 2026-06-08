@@ -1,11 +1,12 @@
-// Utilities section (module 15): gradient direction sugar, the focus `ring`,
-// named-scale shadow/radius sugar, dashed "drop-zone" borders, and FwScroll.
+// Utilities section (modules 15–17): gradient direction sugar, the focus `ring`,
+// named-scale shadow/radius sugar, dashed "drop-zone" borders, FwScroll + scroll-snap,
+// divide (16), and 3D transforms + mix-blend + text-shadow (17).
 import 'package:flutter/widgets.dart';
 import 'package:flutterwindcss/flutterwindcss.dart';
 
 import '../common.dart';
 
-/// Demonstrates the module 15 ergonomics + utility additions.
+/// Demonstrates the module 15 ergonomics + the module 16/17 completeness additions.
 class UtilitiesSection extends StatelessWidget {
   const UtilitiesSection({super.key});
 
