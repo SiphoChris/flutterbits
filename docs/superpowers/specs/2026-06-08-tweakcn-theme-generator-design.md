@@ -257,8 +257,9 @@ consumes **every** schema field (S3) — so "json is source of truth" is structu
 
 ## 5. G0 — engine prereq: `tracking` on `FwTypographyTheme`
 
-A small, coordinated Dart change so the emit target exists. In
-`packages/flutterwindcss/lib/src/tokens/typography.dart` (and `tokens.dart`):
+A small, coordinated Dart change so the emit target exists. `FwTypographyTheme`
+lives in `packages/flutterwindcss/lib/src/tokens/tokens.dart` (not `typography.dart`,
+which holds only the static type scales); edit it there:
 
 - Add `final double tracking;` to `FwTypographyTheme` (constructor param, default `0`), with a
   `///` doc explaining units are **em**.

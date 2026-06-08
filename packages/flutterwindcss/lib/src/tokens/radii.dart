@@ -5,7 +5,13 @@ import 'package:flutter/foundation.dart' show immutable;
 /// Tailwind v4 named scale is also exposed for utility use.
 @immutable
 class FwRadii {
-  /// Creates a radius set from explicit values. Prefer [FwRadii.fromBase].
+  /// Creates a radius set from explicit per-step values.
+  ///
+  /// Use this when the steps are **not** the stock ×-factor ratios — e.g. a
+  /// generated theme using shadcn's *additive* derivation (`sm = base−4`,
+  /// `md = base−2`, `lg = base`, `xl = base+4`), which coincides with
+  /// [FwRadii.fromBase] only at the 10px default and diverges otherwise. For
+  /// stock ×-factor themes, prefer [FwRadii.fromBase].
   const FwRadii({
     required this.base,
     required this.sm,
