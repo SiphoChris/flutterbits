@@ -113,6 +113,41 @@ void main() {
     expect(() => FwScroll(snapExtent: 0, child: const SizedBox()), throwsA(isA<AssertionError>()));
   });
 
+  testWidgets('snapExtent larger than the viewport degrades to snap-to-start (no '
+      'off-screen negative offset)', (t) async {
+    // itemExtent 150 > viewport 100 → slack is negative; an end/center align
+    // would push the snap target off-screen pre-clamp. The clamp degrades it to
+    // snap-to-start, keeping the offset in-bounds and on a clean boundary.
+    await t.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: MediaQuery(
+          data: const MediaQueryData(size: Size(200, 200)),
+          child: Center(
+            child: SizedBox(
+              width: 100,
+              height: 100,
+              child: FwScroll(
+                snapExtent: 150,
+                snapAlign: FwSnapAlign.end,
+                child: Column(
+                  children: List<Widget>.generate(10, (i) => const SizedBox(height: 150)),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.drag(find.byType(FwScroll), const Offset(0, -260));
+    await t.pumpAndSettle();
+    final sv = t.widget<SingleChildScrollView>(find.byType(SingleChildScrollView));
+    final offset = sv.controller!.offset;
+    expect(offset, greaterThanOrEqualTo(0.0));
+    expect(offset, lessThanOrEqualTo(sv.controller!.position.maxScrollExtent + 0.5));
+    expect(offset % 150, moreOrLessEquals(0, epsilon: 0.5), reason: 'snapped to a 150px boundary');
+  });
+
   testWidgets('a provided controller is used (not overwritten)', (t) async {
     final controller = ScrollController();
     addTearDown(controller.dispose);

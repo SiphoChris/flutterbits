@@ -62,4 +62,15 @@ void main() {
   test('gradient sugar requires >= 2 colors', () {
     expect(() => const FwStyle().bgGradientToEnd(<Color>[_c1]), throwsA(isA<AssertionError>()));
   });
+
+  test('toEnd physically flips under RTL (the whole point of directional gradients)', () {
+    // The structural begin/end above are AlignmentDirectional; this proves they
+    // RESOLVE to opposite physical edges per reading direction — what makes
+    // `toEnd` better than Tailwind's physical `to-r`.
+    final g = _grad(const FwStyle().bgGradientToEnd(<Color>[_c1, _c2]));
+    expect(g.begin.resolve(TextDirection.ltr).x, -1, reason: 'LTR start edge = left');
+    expect(g.begin.resolve(TextDirection.rtl).x, 1, reason: 'RTL start edge = right');
+    expect(g.end.resolve(TextDirection.ltr).x, 1);
+    expect(g.end.resolve(TextDirection.rtl).x, -1);
+  });
 }
