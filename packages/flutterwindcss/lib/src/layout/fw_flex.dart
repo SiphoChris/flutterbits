@@ -49,10 +49,18 @@ class FwRow extends StatelessWidget {
     this.mainAxisAlignment = MainAxisAlignment.start,
     this.crossAxisAlignment = CrossAxisAlignment.center,
     this.mainAxisSize = MainAxisSize.max,
+    this.divideWidth = 0,
+    this.divideColor,
     this.viewport,
     this.container,
     super.key,
-  }) : assert(gap >= 0, 'flutterwindcss: gap must be >= 0 (got $gap).');
+  }) : assert(gap >= 0, 'flutterwindcss: gap must be >= 0 (got $gap).'),
+       assert(divideWidth >= 0, 'flutterwindcss: divideWidth must be >= 0 (got $divideWidth).'),
+       assert(
+         divideWidth == 0 || divideColor != null,
+         'flutterwindcss: divideWidth > 0 requires a divideColor (e.g. '
+         'context.fw.colors.border).',
+       );
 
   /// The row's children, in start→end order.
   final List<Widget> children;
@@ -69,6 +77,16 @@ class FwRow extends StatelessWidget {
   /// Whether the row shrink-wraps its children ([MainAxisSize.min]) or fills the
   /// available main-axis extent ([MainAxisSize.max], the default).
   final MainAxisSize mainAxisSize;
+
+  /// Divider thickness in **logical px** (Tailwind `divide-x`). When `> 0`, an
+  /// **end-edge** border (RTL-aware) is drawn on every child except the last —
+  /// a border *between* children, exactly like Tailwind's
+  /// `& > :not(:last-child) { border-inline-end-width }`. Requires [divideColor].
+  final double divideWidth;
+
+  /// Divider colour (Tailwind `divide-<color>`); pass a token such as
+  /// `context.fw.colors.border`. Required when [divideWidth] `> 0`.
+  final Color? divideColor;
 
   /// Viewport-breakpoint overrides (keyed off the screen width).
   final Map<FwBreakpoint, FwFlexPatch>? viewport;
@@ -92,10 +110,18 @@ class FwColumn extends StatelessWidget {
     this.mainAxisAlignment = MainAxisAlignment.start,
     this.crossAxisAlignment = CrossAxisAlignment.center,
     this.mainAxisSize = MainAxisSize.max,
+    this.divideWidth = 0,
+    this.divideColor,
     this.viewport,
     this.container,
     super.key,
-  }) : assert(gap >= 0, 'flutterwindcss: gap must be >= 0 (got $gap).');
+  }) : assert(gap >= 0, 'flutterwindcss: gap must be >= 0 (got $gap).'),
+       assert(divideWidth >= 0, 'flutterwindcss: divideWidth must be >= 0 (got $divideWidth).'),
+       assert(
+         divideWidth == 0 || divideColor != null,
+         'flutterwindcss: divideWidth > 0 requires a divideColor (e.g. '
+         'context.fw.colors.border).',
+       );
 
   /// The column's children, in top→bottom order.
   final List<Widget> children;
@@ -112,6 +138,15 @@ class FwColumn extends StatelessWidget {
   /// Whether the column shrink-wraps ([MainAxisSize.min]) or fills the main-axis
   /// extent ([MainAxisSize.max], the default).
   final MainAxisSize mainAxisSize;
+
+  /// Divider thickness in **logical px** (Tailwind `divide-y`). When `> 0`, a
+  /// **bottom** border is drawn on every child except the last — a border
+  /// *between* children. Requires [divideColor].
+  final double divideWidth;
+
+  /// Divider colour (Tailwind `divide-<color>`); pass a token such as
+  /// `context.fw.colors.border`. Required when [divideWidth] `> 0`.
+  final Color? divideColor;
 
   /// Viewport-breakpoint overrides (keyed off the screen width).
   final Map<FwBreakpoint, FwFlexPatch>? viewport;
@@ -134,6 +169,8 @@ class _Flexish {
     required this.mainAxisAlignment,
     required this.crossAxisAlignment,
     required this.mainAxisSize,
+    required this.divideWidth,
+    required this.divideColor,
     required this.viewport,
     required this.container,
   });
@@ -144,6 +181,8 @@ class _Flexish {
     mainAxisAlignment: r.mainAxisAlignment,
     crossAxisAlignment: r.crossAxisAlignment,
     mainAxisSize: r.mainAxisSize,
+    divideWidth: r.divideWidth,
+    divideColor: r.divideColor,
     viewport: r.viewport,
     container: r.container,
   );
@@ -154,6 +193,8 @@ class _Flexish {
     mainAxisAlignment: c.mainAxisAlignment,
     crossAxisAlignment: c.crossAxisAlignment,
     mainAxisSize: c.mainAxisSize,
+    divideWidth: c.divideWidth,
+    divideColor: c.divideColor,
     viewport: c.viewport,
     container: c.container,
   );
@@ -163,13 +204,34 @@ class _Flexish {
   final MainAxisAlignment mainAxisAlignment;
   final CrossAxisAlignment crossAxisAlignment;
   final MainAxisSize mainAxisSize;
+  final double divideWidth;
+  final Color? divideColor;
   final Map<FwBreakpoint, FwFlexPatch>? viewport;
   final Map<FwBreakpoint, FwFlexPatch>? container;
+}
+
+/// Wraps each child except the last in a trailing-edge border (Tailwind
+/// `divide`): an **end** border for a row, a **bottom** border for a column —
+/// a separator *between* children. Returns [children] unchanged when no divider.
+List<Widget> _withDividers(List<Widget> children, Axis direction, double width, Color? color) {
+  if (width <= 0 || color == null || children.length < 2) return children;
+  final side = BorderSide(width: width, color: color);
+  final border =
+      direction == Axis.horizontal ? BorderDirectional(end: side) : BorderDirectional(bottom: side);
+  final decoration = BoxDecoration(border: border);
+  return <Widget>[
+    for (var i = 0; i < children.length; i++)
+      if (i == children.length - 1)
+        children[i]
+      else
+        DecoratedBox(decoration: decoration, child: children[i]),
+  ];
 }
 
 /// Builds the [Flex] for a row or column, resolving any responsive patches
 /// against the active widths first.
 Widget _buildFlex(Axis direction, _Flexish f, BuildContext context) {
+  final children = _withDividers(f.children, direction, f.divideWidth, f.divideColor);
   Widget flexWith(double gap, MainAxisAlignment maa, CrossAxisAlignment caa, MainAxisSize mas) =>
       Flex(
         direction: direction,
@@ -177,7 +239,7 @@ Widget _buildFlex(Axis direction, _Flexish f, BuildContext context) {
         crossAxisAlignment: caa,
         mainAxisSize: mas,
         spacing: fwSpace(gap),
-        children: f.children,
+        children: children,
       );
 
   final hasV = fwHasViewport(f.viewport);

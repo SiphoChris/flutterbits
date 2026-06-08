@@ -117,8 +117,10 @@ class UtilitiesSection extends StatelessWidget {
           ],
         ),
         ShowcaseSection(
-          title: 'Scroll (FwScroll)',
-          description: 'overflow-auto/scroll — Material-free SingleChildScrollView + RawScrollbar.',
+          title: 'Scroll (FwScroll) + snap',
+          description:
+              'overflow-auto/scroll, Material-free. The horizontal strip uses snapExtent — '
+              'fling it and it settles on a card (scroll-snap).',
           children: <Widget>[
             SizedBox(
               height: 120,
@@ -138,6 +140,97 @@ class UtilitiesSection extends StatelessWidget {
                 ),
               ),
             ).tw.rounded(t.radii.md).border(1, color: t.colors.border).clip(),
+            DemoTile(
+              label: 'snapExtent: 124 (horizontal carousel)',
+              child: SizedBox(
+                height: 72,
+                child: FwScroll(
+                  axis: Axis.horizontal,
+                  snapExtent: 124,
+                  showScrollbar: false,
+                  child: FwRow(
+                    children: <Widget>[
+                      for (var i = 1; i <= 8; i++)
+                        Center(
+                          child: Text('Card $i').tw.text(t.colors.primaryForeground),
+                        ).tw.w(28).h(16).mx(1).bg(t.colors.primary).rounded(t.radii.lg),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        ShowcaseSection(
+          title: 'Divide (module 16)',
+          description:
+              'divideWidth/divideColor — a border BETWEEN flex children (Tailwind divide).',
+          children: <Widget>[
+            DemoTile(
+              label: 'FwColumn divide (rows)',
+              child: FwColumn(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                divideWidth: 1,
+                divideColor: t.colors.border,
+                children: <Widget>[
+                  for (final s in const <String>['Profile', 'Billing', 'Team', 'Logout'])
+                    Text(s).tw.px(3).py(3).text(t.colors.foreground),
+                ],
+              ),
+            ).tw.bg(t.colors.card).rounded(t.radii.md).border(1, color: t.colors.border).clip(),
+          ],
+        ),
+        ShowcaseSection(
+          title: '3D transforms + mix-blend + text-shadow (module 17)',
+          children: <Widget>[
+            FwWrap(
+              gap: 10,
+              runGap: 10,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: <Widget>[
+                DemoTile(
+                  label: 'perspective + rotateY',
+                  child: Center(child: const Text('3D').tw.text(t.colors.primaryForeground)).tw
+                      .w(20)
+                      .h(16)
+                      .bg(t.colors.primary)
+                      .rounded(t.radii.md)
+                      .perspective(260)
+                      .rotateY(38),
+                ),
+                DemoTile(
+                  label: 'mix-blend multiply',
+                  child: SizedBox(
+                    width: 80,
+                    height: 56,
+                    child: FwStack(
+                      children: <Widget>[
+                        const SizedBox(width: 56, height: 44).tw.bg(FwPalette.cyan.shade400),
+                        FwPositioned(
+                          start: 24,
+                          top: 12,
+                          child: const SizedBox(
+                            width: 56,
+                            height: 44,
+                          ).tw.bg(FwPalette.amber.shade400).blendMode(BlendMode.multiply),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                DemoTile(
+                  label: 'text-shadow',
+                  child: const Text('Glow').tw
+                      .textSize(FwFontSize.xl2.px)
+                      .weight(FwFontWeight.bold)
+                      .text(t.colors.foreground)
+                      .textShadow(<Shadow>[
+                        Shadow(color: t.colors.primary, blurRadius: 8, offset: const Offset(0, 2)),
+                      ]),
+                ),
+              ],
+            ),
           ],
         ),
       ],

@@ -81,6 +81,38 @@ void main() {
     expect(find.byType(SingleChildScrollView), findsOneWidget);
   });
 
+  testWidgets('snapExtent snaps the scroll offset to item boundaries (start align)', (t) async {
+    await t.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: MediaQuery(
+          data: const MediaQueryData(size: Size(200, 200)),
+          child: Center(
+            child: SizedBox(
+              width: 100,
+              height: 100,
+              child: FwScroll(
+                snapExtent: 50,
+                child: Column(
+                  children: List<Widget>.generate(40, (i) => const SizedBox(height: 50)),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.drag(find.byType(FwScroll), const Offset(0, -130));
+    await t.pumpAndSettle();
+    final offset =
+        t.widget<SingleChildScrollView>(find.byType(SingleChildScrollView)).controller!.offset;
+    expect(offset % 50, moreOrLessEquals(0, epsilon: 0.5), reason: 'snapped to a 50px boundary');
+  });
+
+  testWidgets('snapExtent must be > 0', (t) async {
+    expect(() => FwScroll(snapExtent: 0, child: const SizedBox()), throwsA(isA<AssertionError>()));
+  });
+
   testWidgets('a provided controller is used (not overwritten)', (t) async {
     final controller = ScrollController();
     addTearDown(controller.dispose);

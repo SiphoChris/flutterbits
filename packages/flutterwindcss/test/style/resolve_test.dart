@@ -268,6 +268,29 @@ void main() {
     expect(r.isVisible, isFalse);
   });
 
+  test('module 17 fields carry through _overlay + projection', () {
+    const shadows = <Shadow>[Shadow(color: Color(0xFF000000), blurRadius: 2)];
+    const image = AssetImage('y');
+    final style = const FwStyle().addLayer(
+      const FwStateCondition(WidgetState.hovered),
+      const FwStyle().copyWith(
+        backgroundImage: const DecorationImage(image: image),
+        textShadows: shadows,
+        rotateXAngle: 0.5,
+        rotateYAngle: 0.6,
+        perspectiveDepth: 800,
+        mixBlendMode: BlendMode.multiply,
+      ),
+    );
+    final r = style.resolve(<WidgetState>{WidgetState.hovered});
+    expect(r.backgroundImage, const DecorationImage(image: image));
+    expect(r.textShadows, shadows);
+    expect(r.rotateX, 0.5);
+    expect(r.rotateY, 0.6);
+    expect(r.perspective, 800);
+    expect(r.blendMode, BlendMode.multiply);
+  });
+
   test('a partial layer overrides only its fields and preserves the base rest', () {
     // hover sets background only; the base padding + fontSize must survive (the
     // copyWith null-means-keep contract that the accumulator model relies on).

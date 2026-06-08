@@ -25,10 +25,11 @@ Tailwind utility — we build "the things that matter and aren't a hard add."
 
 Verified against the code by an adversarial review pass. Headline:
 
-- **~92–94% of high-traffic, daily-use Tailwind utilities are built** (up from ~85–90% before
-  module 15, which closed the most-noticed daily gaps — scroll, focus rings, named
-  shadow/radius sugar, gradient directions), and **~78–82% of Tailwind's *portable* utility
-  surface** overall. The remaining distance is **breadth in the long tail**, not depth.
+- **~96% of high-traffic, daily-use Tailwind utilities are built** (module 15 added scroll/
+  rings/named sugar/gradients; modules 16–17 added `divide`, scroll-snap, `bg-image`, 3D
+  transforms, `mix-blend-mode`, and `text-shadow`), and **~82–85% of Tailwind's *portable*
+  utility surface** overall. The remaining distance is **breadth in the long tail**, not depth
+  — and most of it is correctly the **flutterbits component layer** or genuinely impossible.
 - **Everything developers reach for daily is done:** spacing, sizing, color, typography
   (incl. line-clamp/truncate/family/tracking), borders + radius (+ dashed/dotted + named
   sugar), shadows (+ named sugar), `ring`, opacity, blur, gradients (+ direction sugar),
@@ -38,28 +39,34 @@ Verified against the code by an adversarial review pass. Headline:
 - **Two multipliers** make effective coverage higher than a raw class count: arbitrary
   values are native, and `bgGradient`/`shadow` are pass-through (radial/conic gradients and
   arbitrary shadows already work).
-- **The two remaining daily-driver misses** are `divide-*` (lists/menus) and `text-transform`
-  (`uppercase` labels) — both feasible and small; build by demand while building components.
+- **Verified against the full v4 catalog (2026-06-08):** an authoritative pass over every
+  Tailwind v4 utility section (Layout, Flex/Grid, Spacing, Sizing, Typography, Backgrounds,
+  Borders, Effects, Filters, Tables, Transitions, Transforms, Interactivity, SVG, A11y) found
+  the remaining unbuilt-*engine* items are the by-demand niche below — everything else is
+  delegated or impossible.
 - **Legitimately out (not counted against the engine):** animation → `flutter_animate`
-  (§11b); forms/prose/tables/SVG/`sr-only`/`accent-color`/`caret-color`/`resize`/
-  `appearance-none` → the flutterbits component layer.
+  (§11b); forms/prose/tables (border-collapse/spacing/table-layout/caption)/SVG (fill/stroke)/
+  `sr-only`/`accent-color`/`caret-color`/`resize`/`appearance-none`/`field-sizing`/list-style →
+  the flutterbits component layer.
+- **By-demand niche (feasible, not yet built):** `inset-shadow`/`inset-ring` (custom painter),
+  `mask-*` (ShaderMask family), backdrop **color** filters (needs a shader; forward color
+  filters are built), `columns` (multi-column RenderObject), negative margins (`-m-*`; no
+  faithful Flutter layout analog — asserts cleanly), `scroll-margin`/`scroll-padding`/
+  `overscroll-behavior`/`scrollbar-width`/gutter, `order`, `bg-radial`/`bg-conic` named sugar
+  (pass-through already works), text-decoration styling (color/style/thickness), `font-variant-
+  numeric`. Each has a Flutter mechanism; none blocks the next phase.
 - **Genuinely impossible / no analog (tiny):** true CSS cascade, pseudo-elements/`content`,
-  `float`/`clear`, `will-change`, `touch-action`. **`text-transform`** is impossible *as a
-  render-time style* (Flutter's `TextStyle` has no transform hook) but **feasible as content
-  mutation** at the `Text`-building site / a helper — so it is "not yet built (S)", not
-  impossible.
+  `float`/`clear`, `will-change`, `touch-action`, `box-decoration-break`. **`text-transform`**
+  is impossible *as a render-time style* (Flutter's `TextStyle` has no transform hook) but
+  feasible as content mutation — left out by product decision (2026-06-08).
 
-**Built since the early summary (modules 13–15):** transform extras + interactivity + `size`
-(module 13); **`group-*` / `peer-*`** state propagation (module 14); and the **ergonomics +
-completeness** layer (module 15 — gradient direction sugar, `ring`, named-scale `shadow*`/
-`rounded*` sugar, `FwScroll` (`overflow-auto/scroll`), and dashed/dotted borders). So the
-remaining **highest-value NOT-BUILT items** (excluding out/delegated), by value × ease:
-
-1. **`divide-*`** (S–M) — a separator flag on `FwRow`/`FwColumn`. Most-used remaining miss.
-2. **`text-transform`** (`uppercase`/`lowercase`/`capitalize`) (S) — content mutation at the
-   `Text`-building site / a helper (not a render-time style; see headline).
-3. **`bg-image`** (S–M), **`mix-blend-mode`** (M), **3D transforms** (M), **negative margins**
-   (M, asserts cleanly today).
+**Built since the early summary (modules 13–17):** transform extras + interactivity + `size`
+(13); **`group-*` / `peer-*`** (14); the **ergonomics** layer (15 — gradient sugar, `ring`,
+named-scale `shadow*`/`rounded*`, `FwScroll`, dashed/dotted borders); **`divide`** +
+**scroll-snap** (16); and **`bg-image`** + **3D transforms** (`rotateX/Y` + `perspective`) +
+**`mix-blend-mode`** + **`text-shadow`** (17). There is **no remaining high-value daily-driver
+miss** in the engine — the leftover items are the by-demand niche and delegated/impossible sets
+listed in the headline. The engine is ready for the components/docs phase.
 
 By-demand / larger: sticky (L, slivers), scroll-snap (L), backdrop color filters (M),
 dashed borders (M, custom painter), `bg-image` (S–M).
@@ -92,6 +99,12 @@ smoke tests (every section, light/dark, LTR/RTL) and is covered by CI.
 | Focus `ring` (+ offset) | ✅ (module 15) |
 | Named-scale sugar: `shadow-md`, `rounded-lg` | ✅ (module 15, theme-resolved) |
 | Overflow / scroll (`overflow-auto/scroll`, `FwScroll`) | ✅ (module 15) |
+| `divide-*` (border between flex children) | ✅ (module 16, `FwRow`/`FwColumn`) |
+| Scroll-snap (`snap-*`) | ✅ (module 16, `FwScroll.snapExtent`) |
+| Background-image (`bg-[url]`, fit/position/repeat) | ✅ (module 17) |
+| 3D transforms (`rotate-x/y`, `perspective`) | ✅ (module 17) |
+| `mix-blend-mode` | ✅ (module 17, `FwBlendMode`) |
+| Text-shadow (`text-shadow-*`) | ✅ (module 17) |
 | Border-radius (per-corner, directional) | ✅ |
 | Typography: size, weight, leading, tracking, align, underline/strike | ✅ |
 | Typography: family, line-clamp/truncate, text-overflow, whitespace | ✅ (module 11) |
@@ -196,9 +209,12 @@ list-building site (you know each child's index), so they need no engine feature
    `2026-06-07-flutterwindcss-m14-group-peer-design.md`.
 4. **Module 15 — Ergonomics + completeness:** ✅ **shipped** — gradient direction sugar,
    `ring`, named-scale `shadow*`/`rounded*` sugar, `FwScroll`, dashed/dotted borders.
-5. **Then, by demand:** the remaining Tier 2 list, prioritized by what real flutterbits
-   components need.
-6. **Never (in the engine):** an element-animation subsystem (→ `flutter_animate`); `prose`
+5. **Modules 16–17 — Final Tailwind completeness:** ✅ **shipped** — `divide` + scroll-snap
+   (16); `bg-image`, 3D transforms, `mix-blend-mode`, `text-shadow` (17). Verified against the
+   full v4 catalog. **The engine is complete for the next phase (components + docs).**
+6. **Then, by demand only:** the niche/delegated/impossible sets in the headline — built when a
+   real flutterbits component needs one.
+7. **Never (in the engine):** an element-animation subsystem (→ `flutter_animate`); `prose`
    and forms (→ flutterbits); the §11a impossible set.
 
 ## Pre-docs completeness — done (module 15, 2026-06-07)

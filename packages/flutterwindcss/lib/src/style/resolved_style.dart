@@ -34,6 +34,7 @@ class ResolvedStyle {
     this.aspectRatio,
     this.background,
     this.gradient,
+    this.backgroundImage,
     this.border,
     this.borderStyle,
     this.borderRadius,
@@ -46,6 +47,7 @@ class ResolvedStyle {
     this.lineHeight,
     this.textAlign,
     this.textDecoration,
+    this.textShadows,
     this.fontFamily,
     this.fontStyle,
     this.maxLines,
@@ -61,8 +63,12 @@ class ResolvedStyle {
     this.skewY,
     this.transformAlignment,
     this.rotation,
+    this.rotateX,
+    this.rotateY,
+    this.perspective,
     this.translate,
     this.colorMatrix,
+    this.blendMode,
     this.fit,
     this.mouseCursor,
     this.ignorePointer,
@@ -112,6 +118,9 @@ class ResolvedStyle {
   /// Gradient fill.
   final Gradient? gradient;
 
+  /// Background image (Tailwind `bg-[url]`), painted in the decoration (M17).
+  final DecorationImage? backgroundImage;
+
   /// Border.
   final BoxBorder? border;
 
@@ -147,6 +156,9 @@ class ResolvedStyle {
 
   /// Default text decoration.
   final TextDecoration? textDecoration;
+
+  /// Text shadows for descendant text (Tailwind `text-shadow-*`, M17).
+  final List<Shadow>? textShadows;
 
   /// Default font family.
   final String? fontFamily;
@@ -193,11 +205,23 @@ class ResolvedStyle {
   /// Rotation radians.
   final double? rotation;
 
+  /// 3D X-axis rotation radians (M17).
+  final double? rotateX;
+
+  /// 3D Y-axis rotation radians (M17).
+  final double? rotateY;
+
+  /// Perspective depth in logical px for 3D rotations (M17).
+  final double? perspective;
+
   /// Translate offset.
   final Offset? translate;
 
   /// Composed CSS-filter colour matrix (4×5, 20 values) → `ColorFilter.matrix`.
   final List<double>? colorMatrix;
+
+  /// Mix-blend-mode against the backdrop (→ `FwBlendMode`, M17).
+  final BlendMode? blendMode;
 
   /// Object-fit for the content (→ `FittedBox`).
   final BoxFit? fit;

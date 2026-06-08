@@ -43,7 +43,10 @@ import 'fw_token_steps.dart';
 /// driven by the `FwGroup`/`FwPeer` widgets. Module 15 added **ergonomics**:
 /// gradient direction sugar (`bgGradientTo*`/`bgLinear`), `ring`, named-scale
 /// `shadow*`/`rounded*` (theme-resolved by `FwStyled` at build), and
-/// `borderDashed`/`borderDotted`.
+/// `borderDashed`/`borderDotted`. (Module 16 — `divide`/scroll-snap — lives on the
+/// layout widgets, not here.) Module 17 added **visual completeness**: `bgImage`
+/// (background-image), `rotateX`/`rotateY`/`perspective` (3D transforms),
+/// `blendMode` (`mix-blend-*`), and `textShadow`.
 mixin FwStyleOps<T> {
   /// The current accumulated style.
   FwStyle get fwStyle;
@@ -229,6 +232,26 @@ mixin FwStyleOps<T> {
   /// Gradient background fill (replaces a solid [bg] when both are set; the
   /// render chain prefers the gradient). Last-wins.
   T bgGradient(Gradient gradient) => fwRebuild(fwStyle.copyWith(gradient: gradient));
+
+  /// Background image (Tailwind `bg-[url(...)]` / `bg-cover`/`bg-center`/…). Pass
+  /// any `ImageProvider` (`AssetImage`, `NetworkImage`, …); [fit] maps `bg-cover`/
+  /// `bg-contain`, [alignment] maps `bg-{position}`, [repeat] maps `bg-repeat*`.
+  /// Renders as the box decoration's image (paints behind the child).
+  T bgImage(
+    ImageProvider image, {
+    BoxFit? fit,
+    AlignmentGeometry alignment = Alignment.center,
+    ImageRepeat repeat = ImageRepeat.noRepeat,
+  }) => fwRebuild(
+    fwStyle.copyWith(
+      backgroundImage: DecorationImage(
+        image: image,
+        fit: fit,
+        alignment: alignment,
+        repeat: repeat,
+      ),
+    ),
+  );
 
   // ---- Gradient direction sugar (Tailwind `bg-gradient-to-*`) ----
   //
@@ -557,6 +580,11 @@ mixin FwStyleOps<T> {
   /// (Tailwind `line-through`).
   T get lineThrough => _addDecoration(TextDecoration.lineThrough);
 
+  /// Text shadow(s) for descendant text (Tailwind `text-shadow-*`, v4). Pass a
+  /// `List<Shadow>` (an empty list = none). Flows through `DefaultTextStyle`, so
+  /// it inherits into descendant text like the other typography setters. Last-wins.
+  T textShadow(List<Shadow> shadows) => fwRebuild(fwStyle.copyWith(textShadows: shadows));
+
   // ---- Text completeness (module 11): family, line-clamp/truncate, wrapping ----
   //
   // All ride the existing `DefaultTextStyle.merge` (which carries `fontFamily`,
@@ -680,6 +708,11 @@ mixin FwStyleOps<T> {
       ),
     );
   }
+
+  /// Mix-blend-mode (Tailwind `mix-blend-*`): composites the whole box against
+  /// the content painted **behind** it (e.g. `BlendMode.multiply`, `screen`,
+  /// `overlay`). Best on visual content; wraps in an `FwBlendMode` layer. Last-wins.
+  T blendMode(BlendMode mode) => fwRebuild(fwStyle.copyWith(mixBlendMode: mode));
 
   /// Group opacity `0.0..1.0` (Tailwind `opacity-*`); `fwOpacity(50)` maps the
   /// `0..100` scale. Applies to the whole box as one layer.
@@ -816,6 +849,22 @@ mixin FwStyleOps<T> {
   /// Rotation in **degrees**, clockwise (Tailwind `rotate-*`; stored internally
   /// as radians). Paint-only.
   T rotate(double degrees) => fwRebuild(fwStyle.copyWith(rotation: degrees * math.pi / 180.0));
+
+  /// 3D rotation about the X axis in **degrees** (Tailwind `rotate-x-*`). Pair
+  /// with [perspective] for depth (otherwise the projection is orthographic).
+  T rotateX(double degrees) => fwRebuild(fwStyle.copyWith(rotateXAngle: degrees * math.pi / 180.0));
+
+  /// 3D rotation about the Y axis in **degrees** (Tailwind `rotate-y-*`) — the
+  /// flip-card axis. Pair with [perspective].
+  T rotateY(double degrees) => fwRebuild(fwStyle.copyWith(rotateYAngle: degrees * math.pi / 180.0));
+
+  /// Perspective depth in **logical px** (Tailwind `perspective-*`): the distance
+  /// from the viewer to the z=0 plane. Smaller = stronger 3D foreshortening.
+  /// Applied to `rotateX`/`rotateY`. Must be `> 0`.
+  T perspective(double depth) {
+    assert(depth > 0, 'flutterwindcss: perspective depth must be > 0 (got $depth).');
+    return fwRebuild(fwStyle.copyWith(perspectiveDepth: depth));
+  }
 
   Offset get _translation => fwStyle.translation ?? Offset.zero;
 
