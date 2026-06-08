@@ -219,6 +219,8 @@ void main() {
     expect(FwTypographyTheme.lerp(a, b, 0.49).sans, 'A');
     expect(FwTypographyTheme.lerp(a, b, 0.5).sans, 'B');
     expect(FwTypographyTheme.lerp(a, b, 1.0).mono, 'Bm');
+    expect(FwTypographyTheme.lerp(a, b, 0.0).serif, 'As');
+    expect(FwTypographyTheme.lerp(a, b, 1.0).serif, 'Bs');
 
     // tracking interpolates linearly (continuous through the crossover).
     expect(FwTypographyTheme.lerp(a, b, 0.0).tracking, 0);

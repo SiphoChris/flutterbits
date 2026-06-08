@@ -165,8 +165,8 @@ class FwTokens {
 /// rather than pretending the font is present. [family] is kept as a
 /// deprecated-free alias of [sans] for the common "just the body font" read.
 ///
-/// Note: `FwTokens.lerp` uses a hard crossover (t < 0.5 -> a, t >= 0.5 -> b)
-/// for this field, because [String] family names cannot numerically interpolate.
+/// Note: family names hard-crossover at `t = 0.5` (strings cannot interpolate)
+/// while [tracking] interpolates linearly — see [FwTypographyTheme.lerp].
 @immutable
 class FwTypographyTheme {
   /// Creates a typography theme from its family names and base letter-spacing.
