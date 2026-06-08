@@ -151,7 +151,10 @@ class _FwSnapPhysics extends ScrollPhysics {
   /// requested viewport position (0 for start; a fraction of the slack for
   /// center/end).
   double _alignOffset(ScrollMetrics position) {
-    final slack = position.viewportDimension - itemExtent;
+    // Clamp at 0: when an item is larger than the viewport the slack is negative,
+    // and a negative center/end offset would push the snap target off-screen
+    // (a silently broken carousel). Degrading to snap-to-start is the sane result.
+    final slack = (position.viewportDimension - itemExtent).clamp(0.0, double.infinity);
     return switch (align) {
       FwSnapAlign.start => 0,
       FwSnapAlign.center => slack / 2,

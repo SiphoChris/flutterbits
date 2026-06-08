@@ -99,12 +99,15 @@ Values are `Radius`/`double`; `lerp` provided.
 ### 4.4 `FwShadows` (`tokens/shadows.dart`)
 The Tailwind v4 box-shadow scale (`2xs, xs, sm, md, lg, xl, 2xl`) and inset variants, each a `List<BoxShadow>`. Verified values, e.g. `sm = [0 1px 3px rgb(0 0 0 /.1), 0 1px 2px -1px rgb(0 0 0 /.1)]`. `lerp` lerps shadow lists element-wise.
 
-### 4.5 `FwTypography` (`tokens/typography.dart`)
-- **Font-size scale** `xs…9xl` with paired line-heights (Tailwind v4 `--text-*` + `--text-*--line-height`).
-- **Font-weight** `thin(100)…black(900)`.
-- **Tracking** (letter-spacing) `tighter…widest`.
-- **Leading** (line-height) `tight…loose`.
-- **Font families** — `sans/serif/mono` family *names* only. The engine never bundles fonts; `google_fonts` wiring is the host app's concern. Unknown families surface as the platform default with no silent substitution claim.
+### 4.5 Typography — static scales (`tokens/typography.dart`) + per-theme families (`FwTypographyTheme`, `tokens/tokens.dart`)
+The **theme-independent** scales are separate `const` types in `tokens/typography.dart`:
+- **Font-size scale** `FwFontSize` `xs…9xl` with paired line-heights (Tailwind v4 `--text-*` + `--text-*--line-height`).
+- **Font-weight** `FwFontWeight` `thin(100)…black(900)`.
+- **Tracking** (letter-spacing) `FwTracking` `tighter…widest`.
+- **Leading** (line-height) `FwLeading` `tight…loose`.
+- **Font-family generics** `FwFontFamily` (`sans`/`serif`/`mono` → platform generic names).
+
+The **per-theme** typography is `FwTypographyTheme` (in `tokens/tokens.dart`, carried on `FwTokens` and lerp-crossfaded): it holds the theme's `sans`/`serif`/`mono` family **names** (with `family` aliasing `sans`). The engine never bundles fonts; `google_fonts` wiring is the host app's concern, and the generator emits a wiring stub (§7) rather than a silent substitution. (A theme-level base `--tracking-normal` is a known generator-phase addition — see §7.)
 
 ### 4.6 Scalar scales (`tokens/scales.dart`)
 - **Spacing:** base `0.25rem` → `fwSpace(double units) => units * 4.0` logical px (1 unit = 4 px). Fractional units supported (`fwSpace(0.5)` = 2 px).
@@ -121,7 +124,7 @@ class FwTokens {
   final FwColors colors;
   final FwRadii radii;        // .fromBase(radius) for the active theme
   final FwShadows shadows;
-  final FwTypography typography;
+  final FwTypographyTheme typography;
   final double radiusBase;    // the shadcn --radius this theme was built from
   const FwTokens({...});
   static FwTokens lerp(FwTokens a, FwTokens b, double t);
@@ -291,7 +294,7 @@ Multi-child structure the single-box chain cannot express. Each is a normal widg
 
 ## 8. Public API surface (`lib/flutterwindcss.dart`)
 
-The barrel re-exports exactly the supported surface (AGENTS.md §3.6): `context.fw`, the `.tw` extension + `FwStyled`, `FwStyle` (for advanced composition) and its public value types (`FwBorderSpec`, `FwLayer`/`FwCondition` — the latter now including `FwGroupCondition`/`FwRelation`, module 14), the **group/peer widgets `FwGroup`/`FwPeer`** (module 14), the layout widgets (`FwRow`, `FwColumn`, `FwWrap`, `FwStack`, `FwPositioned`, `FwGrid`, **`FwScroll`** — module 15), the **`FwBorderStyle`** enum, the **`FwRing`** value type, and the named-scale step enums **`FwRadiusStep`/`FwShadowStep`** (module 15 — all are types of public `FwStyle` fields, so they are exported; the internal `FwDashedBorderPainter` CustomPainter is NOT exported), the **`FwSnapAlign`** enum (module 16, used by `FwScroll`) and the **`FwBlendMode`** render widget (module 17), the grid track grammar (`FwGridTrack`/`FwFr`/`FwPx`), and the responsive patch types (`FwFlexPatch`/`FwWrapPatch`/`FwGridPatch`/`FwStackPatch`/`FwPositionedPatch` — all added module 8), `FwTokens/FwColors/FwRadii/FwShadows/FwTypography`, `FwPalette`, `FwTheme`, `FwThemeExtension`, `FwAnimatedTheme` (module 10), the enums/scales (`FwBreakpoint`, `FwState`, `FwBlur`, `FwFontSize`, …), and `fwSpace`. (There is no `FwShadow` enum — corrected, module 7; the shadow scale is the exported `FwShadows` class, and `shadow()` takes a resolved `List<BoxShadow>`.) The module-14 reactor plumbing (`fwReadRelationStates`/`FwRelationStates`) is deliberately **`hide`-n from the barrel** — like `resolve`/`ResolvedStyle`, it is engine-internal (consumed by `FwStyled` via a direct `src` import) and not part of the supported surface. Nothing under `lib/src/` is importable by consumers. Adding to the surface is always allowed; **renaming/removing requires a deprecation cycle** (every copied component in the wild pins these names).
+The barrel re-exports exactly the supported surface (AGENTS.md §3.6): `context.fw`, the `.tw` extension + `FwStyled`, `FwStyle` (for advanced composition) and its public value types (`FwBorderSpec`, `FwLayer`/`FwCondition` — the latter now including `FwGroupCondition`/`FwRelation`, module 14), the **group/peer widgets `FwGroup`/`FwPeer`** (module 14), the layout widgets (`FwRow`, `FwColumn`, `FwWrap`, `FwStack`, `FwPositioned`, `FwGrid`, **`FwScroll`** — module 15), the **`FwBorderStyle`** enum, the **`FwRing`** value type, and the named-scale step enums **`FwRadiusStep`/`FwShadowStep`** (module 15 — all are types of public `FwStyle` fields, so they are exported; the internal `FwDashedBorderPainter` CustomPainter is NOT exported), the **`FwSnapAlign`** enum (module 16, used by `FwScroll`) and the **`FwBlendMode`** render widget (module 17), the grid track grammar (`FwGridTrack`/`FwFr`/`FwPx`), and the responsive patch types (`FwFlexPatch`/`FwWrapPatch`/`FwGridPatch`/`FwStackPatch`/`FwPositionedPatch` — all added module 8), `FwTokens/FwColors/FwRadii/FwShadows/FwTypographyTheme`, `FwPalette`, `FwTheme`, `FwThemeExtension`, `FwAnimatedTheme` (module 10), the enums/scales (`FwBreakpoint`, `FwState`, `FwBlur`, `FwFontSize`, …), and `fwSpace`. (There is no `FwShadow` enum — corrected, module 7; the shadow scale is the exported `FwShadows` class, and `shadow()` takes a resolved `List<BoxShadow>`.) The module-14 reactor plumbing (`fwReadRelationStates`/`FwRelationStates`) is deliberately **`hide`-n from the barrel** — like `resolve`/`ResolvedStyle`, it is engine-internal (consumed by `FwStyled` via a direct `src` import) and not part of the supported surface. Nothing under `lib/src/` is importable by consumers. Adding to the surface is always allowed; **renaming/removing requires a deprecation cycle** (every copied component in the wild pins these names).
 
 ---
 
@@ -339,7 +342,7 @@ The architecture above is fixed up front. Implementation lands as modules, **eac
 | # | Module | Lands |
 |---|--------|-------|
 | 0 | **Scaffold** | `git` repo, root pub-workspace `pubspec.yaml`, `packages/flutterwindcss` package skeleton, barrel, analysis_options (100-col, strict), the pinned-font golden harness + `flutter_test_config.dart`, CI workflow running analyze+test+golden in the pinned container. |
-| 1 | **Tokens** | `FwPalette` (full v4 palette, baked), `FwColors`, `FwRadii`, `FwShadows`, `FwTypography`, scalar scales, `FwTokens` + `light/dark`, all `lerp`. Unit tests + value spot-checks. **Freeze the `FwState` and `FwBreakpoint` enums here as frozen API contract** — they feed exhaustive `switch`es across nearly every later module, so a late addition forces re-touching all of them (and the zero-warning bar makes that loud). Treat them as final from module 1's first commit. |
+| 1 | **Tokens** | `FwPalette` (full v4 palette, baked), `FwColors` (32 roles), `FwRadii`, `FwShadows`, the static typography scales + per-theme `FwTypographyTheme`, scalar scales, `FwTokens` + `light/dark`, all `lerp`. Unit tests + value spot-checks. **Freeze the `FwState` and `FwBreakpoint` enums here as frozen API contract** — they feed exhaustive `switch`es across nearly every later module, so a late addition forces re-touching all of them (and the zero-warning bar makes that loud). Treat them as final from module 1's first commit. |
 | 2 | **Theme access** | `FwTheme`, `FwThemeExtension`, `context.fw`, both paths + error. Tests incl. `MaterialApp` fallback. |
 | 3 | **Resolver core** ✅ landed | `FwStyle`, `ResolvedStyle`, `FwStyled`, render chain, the **nested** layering engine + precedence (incl. disabled suppression, joint `md:hover:`), **two-width** resolve (viewport vs container kept distinct), conditional `MediaQuery`/`LayoutBuilder`/interaction-sourcing (`MouseRegion`+non-traversable-`Focus`+`Listener`) insertion. The `.tw` entry. Ships the **padding + bg** base slice + the full variant surface; modules 4–9 add the rest. Tests for last-wins, precedence, nested resolution, render order, sizing reconciliation, focus-traversal hygiene, RTL + semantics transparency. **Landed in M5** (coupled to border width): content-clip radius **deflation** (Finding #3). **Deferred (perf-only)**: opacity fold (Finding #11) — an always-correct `Opacity` is emitted meanwhile. |
 | 4 | **Spacing + sizing** ✅ landed | margin (`m/mx/my/ms/me/mt/mb`, per-edge merge), fixed/min/max sizing (`w/h/minW/minH/maxW/maxH`, `fwSpace` units), fractional (`wFraction`/`hFraction` + `align`, `wFull`/`hFull`), aspect (`aspect`/`square`) setters — the sizing reconciliation + render-chain wrappers already existed from module 3; this adds only the typed `.tw` setters. (`padding` shipped as module 3's slice.) Unit (`fw_sizing_ops_test`) + golden (`sizing_slice`, LTR/RTL × light/dark). (`gap` lands with the flex widgets in module 8.) |

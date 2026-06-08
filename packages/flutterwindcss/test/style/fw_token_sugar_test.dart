@@ -90,4 +90,17 @@ void main() {
     await t.pumpWidget(_themed(const SizedBox(width: 40, height: 40).tw.rounded(4).roundedMd));
     expect(t.takeException(), isAssertionError);
   });
+
+  testWidgets('mixing a shadow step with a raw shadow in one chain asserts', (t) async {
+    // Symmetric to the radius case: a step and a raw value both feed the same
+    // render input (boxShadow), so the resolver asserts they can't coexist.
+    await t.pumpWidget(
+      _themed(
+        const SizedBox(width: 40, height: 40).tw.bg(const Color(0xFF111111)).shadow(
+          const <BoxShadow>[BoxShadow(color: Color(0x33000000), blurRadius: 2)],
+        ).shadowMd,
+      ),
+    );
+    expect(t.takeException(), isAssertionError);
+  });
 }
