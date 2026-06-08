@@ -12,8 +12,14 @@ working Flutter `theme.dart` with nothing dropped.
 
 ## 1. What it does
 
-**Input:** a pasted tweakcn/shadcn theme — a CSS `:root { … }` block (light) and a `.dark { … }`
-block (dark), each a set of `--token: value;` declarations.
+**Input:** a pasted tweakcn/shadcn theme — the **entire** CSS file as exported from tweakcn (see the
+worked fixture `__fixtures__/claude.css`, the real input behind `themes.dart`'s "Claude" theme).
+That file contains far more than the two blocks we read: a `@import "tailwindcss";` line, a
+`@custom-variant dark (…)`, a `:root { … }` block (light), a `.dark { … }` block (dark), a
+`@theme inline { … }` block (Tailwind's var→utility mapping, all `var()`/`calc()` indirection), and
+a `@layer base { … }` block. **We read values only from the `:root` and `.dark` blocks** and ignore
+everything else (§2.2). URL input (paste a tweakcn share link, fetch the CSS) is a recorded possible
+enhancement, not v1.
 
 **Output:** two downloadable files:
 - `theme.json` — the **source of truth**. Its schema mirrors the `FwTokens` shape (32 colors +
@@ -88,9 +94,31 @@ Pipeline (§7): `OKLCH → OKLab → LMS → linear sRGB → gamma-encode → sR
 `#rrggbb`, `#rrggbbaa`). Each must accept:
 - the **alpha slash-syntax** — `oklch(L C H / 0.1)`, `hsl(H S% L% / 10%)`, `rgb(r g b / 0.5)` — and
   carry it into the ARGB alpha byte. This is how dark-mode `border`/`input` get translucency
-  (e.g. stock dark `border` = `white/10%` = `0x1AFFFFFF`). **Not optional** — dropping it silently
-  loses real tokens.
+  (e.g. stock dark `border` = `white/10%` = `0x1AFFFFFF`), and how shadow colors arrive
+  (`hsl(0 0% 0% / 0.05)`). **Not optional** — dropping it silently loses real tokens.
 - **both lightness forms** for OKLCH: unit (`oklch(0.62 …)`) and percent (`oklch(62% …)`).
+
+Alpha → byte is **round-to-nearest** (verified against `_claudeShadows`: `0.05·255=12.75→0x0D`,
+`0.10·255=25.5→0x1A`, `0.25·255=63.75→0x40`). Hex without an alpha pair is fully opaque (`#rrggbb`
+→ `0xFFrrggbb`).
+
+### 2.2 Input structure — what the parser reads and ignores (G2)
+
+The tweakcn export is a full CSS file. The parser MUST be robust to all of it:
+
+- **Extract only the `:root` and `.dark` rule blocks**, matched by selector and brace-balanced
+  (handle nested `{ }`). Read each block's `--token: value;` declarations.
+- **Ignore** `@import`, `@custom-variant`, `@theme inline { … }`, `@layer { … }`, and any other
+  selector (`*`, `body`, …). In particular the `@theme inline` block re-declares `--color-*`,
+  `--radius-sm/md/lg/xl`, and `--shadow-*` as `var()`/`calc()` indirection — these are **not**
+  values and must not be read; the real values are in `:root`/`.dark`. (The `@theme inline`
+  `--radius-*: calc(var(--radius) ± Npx)` lines *confirm* the additive derivation in §4.1, but we
+  compute it from `--radius` ourselves rather than parsing the `calc()`.)
+- **Beware false `.dark` matches.** `@custom-variant dark (&:is(.dark *));` contains the substring
+  `.dark` but is **not** the `.dark` rule. Match a `.dark` *selector* immediately followed by `{`,
+  not a bare substring.
+- **Record, don't drop.** Any `--var` in `:root`/`.dark` we don't map (none in this theme beyond
+  the handled set) goes into `meta.droppedVars` (§4.4), never silently discarded (§12).
 
 ---
 
@@ -148,26 +176,42 @@ the per-axis primitives (assert this in G2).
 - color → `Color` (parsed via the §2.1 color core, alpha-aware)
 - multiple layers → a `List<BoxShadow>` in source order.
 
-> **Oracle decision (B2):** `_claudeShadows` in `themes.dart` is a hand-transcription, **not** the
-> canonical output of this transform. At G3 we run the real Claude CSS through the transform and
-> **replace `_claudeShadows` with the generator's output** in the same PR (with a
-> `// corrected — generator` note and a §12 drift line), making `themes.dart` a faithful oracle.
-> The end-to-end golden then asserts the **full bundle** (colors + radii + shadows + type), not
-> colors alone — narrowing it to colors is a §12 silent-scope failure and is disallowed.
+> **Oracle decision (B2) — resolved by checking the real CSS:** the worry was that
+> `_claudeShadows` (a hand-transcription) might diverge from the canonical transform. Running this
+> theme's actual `--shadow-*` through the transform by hand reproduces all 7 slots of
+> `_claudeShadows` **byte-for-byte** (`xs2`=`xs`=`[0x0D,(0,1),3]`; `sm`/`md`/`lg`/`xl` two-layer
+> `0x1A`; `xl2`=`[0x40,(0,1),3]`). So the planned "regenerate" step is a **verified no-op** that
+> *confirms* `themes.dart` as a faithful oracle rather than correcting it. The end-to-end golden
+> still asserts the **full bundle** (colors + radii + shadows + type), not colors alone — narrowing
+> it to colors is a §12 silent-scope failure and is disallowed. If a *future* theme's shadows ever
+> diverge from a hand-authored oracle, the rule stands: fix the oracle to the transform's output,
+> in-PR, with a `// corrected — generator` note (§12).
 
 ### 4.3 Typography — families + `tracking` (requires G0)
 
 Emit `FwTypographyTheme(sans:, serif:, mono:, tracking:)`:
-- **Families:** the `--font-sans`/`--font-serif`/`--font-mono` *names*. The generator emits the name
-  **and** a clearly-commented `google_fonts` wiring stub. It MUST NOT pretend to bundle a font; an
-  unknown family gets a `// TODO: bundle this font or map it` comment, never a silent fallback.
-- **`tracking`:** from `--tracking-normal`. tweakcn expresses it in **em** (e.g. `-0.025em`); we
-  store the **em value as a `double`** on `FwTypographyTheme.tracking`. Conversion to Flutter's
-  logical-px `letterSpacing` (em × font-size) happens at the text-apply site, **not** in the token.
+- **Families — extract one name from a CSS font *stack*.** The values are stacks, not single names:
+  `--font-sans: Outfit, sans-serif`, `--font-serif: ui-serif, Georgia, Cambria, "Times New Roman",
+  Times, serif`, `--font-mono: Geist Mono, ui-monospace, monospace`. The faithful rule (matching
+  `themes.dart`'s `sans:'Outfit'`, **`serif:'Georgia'`**, `mono:'Geist Mono'`) is: **take the first
+  family that is not a CSS generic keyword, with surrounding quotes stripped.** Generic keywords to
+  skip: `serif, sans-serif, monospace, cursive, fantasy, system-ui, math, emoji, fangsong, ui-serif,
+  ui-sans-serif, ui-monospace, ui-rounded`. (That is why serif resolves to `Georgia`, skipping the
+  leading `ui-serif`.) If *every* entry is generic, keep the first. The generator emits the chosen
+  name **and** a clearly-commented `google_fonts` wiring stub. It MUST NOT pretend to bundle a font;
+  an unknown family gets a `// TODO: bundle this font or map it` comment, never a silent fallback.
+- **`tracking`:** from `--tracking-normal`, read from **`:root`** (tweakcn puts it only there, not in
+  `.dark`) and applied to **both** light and dark typography. tweakcn expresses it in **em** (this
+  theme: `0em` → `0.0`; e.g. `-0.025em` → `-0.025`); we store the **em value as a `double`** on
+  `FwTypographyTheme.tracking`. Conversion to Flutter's logical-px `letterSpacing` (em × font-size)
+  happens at the text-apply site, **not** in the token. If `--tracking-normal` is absent, default
+  `0`.
 
 > **`--spacing` (knowing drop, §7):** flutterwindcss's spacing scale is a fixed `1 unit = 4px`
-> (`fwSpace`), context-free by design. A non-default `--spacing` is dropped **knowingly** with an
-> emitted comment noting it. Not silently lost.
+> (`fwSpace`), context-free by design. The drop-comment fires **only when `--spacing` ≠ the 4px
+> default**. This theme's `--spacing: 0.25rem` *is* 4px, so no comment is emitted; a non-default
+> value would emit a comment noting it was dropped (never silently lost). `--spacing`, like
+> `--tracking-normal`, is read from `:root`.
 
 > **Recorded follow-on (not this feature):** wiring `tracking` em×fontSize → `letterSpacing` on the
 > engine's `DefaultTextStyle` render path. Mechanism is known (a theme-resolved `letterSpacing` in
@@ -229,7 +273,7 @@ field; the UI needs the full pipeline).
 | **G0** | Engine: `tracking` field + `FwTypographyTheme.lerp` + `FwTokens.lerp` rewire + drift sweep | Dart analyze/format clean; existing goldens unchanged; new lerp unit test (tracking interpolates, families crossover) green |
 | **G1** | `color/`: 4 format parsers (alpha + both L forms) + OKLCH→sRGB convert + faithful-clip + opt-in chroma-reduction gamut-map | Vector fixtures pass (incl. **real OKLCH-source → baked-hex**, B1); alpha + percent-L cases covered |
 | **G2** | `parse/`: tolerant `:root`/`.dark` tokenizer → `RawTheme`; records unknown vars; ignores per-axis `--shadow-*` primitives; flags missing required tokens | Parser fixtures pass (messy whitespace, comments, all 4 formats, missing-token, alpha syntax) |
-| **G3** | `emit/`: `ResolvedTheme → ThemeJson → theme.dart`; additive radius, shadow transform, font stub, `tracking`, `--spacing` drop-comment; **regenerate `_claudeShadows`** | ThemeJson schema snapshot + `emitDart` totality test (S3) + non-10 radius guard (S4); **e2e golden (full bundle) vs `themes.dart`** green |
+| **G3** | `emit/`: `ResolvedTheme → ThemeJson → theme.dart`; additive radius, shadow transform, font-stack extraction, font stub, `tracking`, `--spacing` drop-comment; **verify `_claudeShadows` matches the transform** (it does — §4.2) | ThemeJson schema snapshot + `emitDart` totality test (S3) + non-10 radius guard (S4); **e2e golden (full bundle) vs `themes.dart`** green |
 | **G4** | Route + UI: paste → auto-detect → **hard-gate 32 colors** → preview (swatch/radius/shadow, light+dark) → download both + faithful/perceptual toggle | Manual run renders the Claude theme; missing-token gate refuses download with a listed error |
 | **G5** | Docs MDX page (usage, limitations, the `--spacing`/font caveats) + full drift sweep of §7/README/roadmap | Docs accurate; no doc contradicts code |
 
@@ -269,8 +313,11 @@ hand-produced without the generator's math. Layers:
     `chart4`/`chart5` oranges) doesn't match under clip, that's a real finding — surface it, don't
     quietly retune a literal.
 - **Parser (G2):** fixtures for messy whitespace/comments, all four formats, alpha syntax, missing
-  tokens (→ recorded), and presence of per-axis `--shadow-*` primitives (→ ignored, composed string
-  wins).
+  tokens (→ recorded), presence of per-axis `--shadow-*` primitives (→ ignored, composed string
+  wins), the full at-rule preamble (`@import`/`@custom-variant`/`@theme inline`/`@layer` → ignored),
+  and the **`@custom-variant dark (…)` false-match guard** (must not be parsed as the `.dark` block).
+  Font-stack extraction cases: `Outfit, sans-serif`→`Outfit`, `ui-serif, Georgia, …`→`Georgia`
+  (generic skipped), `"Times New Roman", …`→`Times New Roman` (quotes stripped).
 - **Emitter (G3):** `ThemeJson` schema snapshot; `emitDart(themeJson)` totality (every field
   consumed, S3); non-10 radius guard (S4).
 - **End-to-end golden (G3):** the **real pasted Claude CSS** (committed as
@@ -278,10 +325,14 @@ hand-produced without the generator's math. Layers:
   shadows *and* typography — equals `themes.dart`'s `_claudeLight`/`_claudeDark`/`_claudeRadii`/
   `_claudeShadows`/`_claudeType`. Expected values are transcribed into a TS fixture that **mirrors**
   `themes.dart` (which is the human-checked source of those values; noted in the fixture header).
-  Shadows are asserted after the G3 regeneration step makes `_claudeShadows` faithful (§4.2).
+  Shadows are asserted directly: the §4.2 transform reproduces `_claudeShadows` byte-for-byte (a
+  verified no-op, not a regeneration). `tracking` here is `0`, so a **separate emitter unit test**
+  covers a non-zero `--tracking-normal` (e.g. `-0.025em` → `tracking: -0.025`) and its interpolation
+  (G0's `FwTypographyTheme.lerp`); the golden alone wouldn't exercise non-zero tracking.
 
-> **Input needed at G3:** the exact `:root`/`.dark` CSS the Claude theme was transcribed from
-> (user provides). Committed verbatim as the golden fixture.
+> **Input obtained:** the exact tweakcn export is committed verbatim as
+> `apps/docs/src/lib/generator/__fixtures__/claude.css` (tweakcn theme `cmdght103000n04lh3e2ae93r`).
+> It is the real input behind `themes.dart`'s Claude theme and is the end-to-end golden's source.
 
 ---
 
@@ -290,8 +341,9 @@ hand-produced without the generator's math. Layers:
 - **No OKLCH inputs in-repo** → the faithfulness proof depends on externally-sourced Tailwind v4
   `oklch()` definitions (public). Mitigated by the B1 vector fixture; flagged so the dependency is
   explicit, not hidden.
-- **`themes.dart` shadows currently diverge** from the canonical transform → resolved by
-  regenerating them at G3 (decision recorded, §4.2), not by narrowing the test.
+- **`themes.dart` shadows as oracle** → checked against the real CSS: the canonical transform
+  reproduces `_claudeShadows` exactly (§4.2), so the oracle is sound and the golden asserts shadows
+  directly. No regeneration needed for this theme.
 - **`tracking` is stored but not yet applied to rendered text** → recorded follow-on with mechanism
   (§4.3); the token still round-trips and interpolates, satisfying §7.
 - **Perceptual gamut-map** is opt-in and lower-traffic → covered by clip≠map vectors, not a full
