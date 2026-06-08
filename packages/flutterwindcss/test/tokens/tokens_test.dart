@@ -210,6 +210,19 @@ void main() {
     expect(a == const FwTypographyTheme(sans: 'Outfit'), isTrue);
   });
 
+  test('FwTokens.lerp interpolates typography tracking', () {
+    FwTokens withTracking(double tracking) => FwTokens(
+      colors: FwTokens.light.colors,
+      radii: FwTokens.light.radii,
+      shadows: FwTokens.light.shadows,
+      typography: FwTypographyTheme(sans: 'A', tracking: tracking),
+      radiusBase: FwTokens.light.radiusBase,
+    );
+    final a = withTracking(0);
+    final b = withTracking(-0.04);
+    expect(FwTokens.lerp(a, b, 0.5).typography.tracking, closeTo(-0.02, 1e-9));
+  });
+
   test('FwTypographyTheme.lerp crosses families at 0.5 and interpolates tracking', () {
     const a = FwTypographyTheme(sans: 'A', serif: 'As', mono: 'Am', tracking: 0);
     const b = FwTypographyTheme(sans: 'B', serif: 'Bs', mono: 'Bm', tracking: -0.04);

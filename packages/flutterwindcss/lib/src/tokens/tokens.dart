@@ -134,9 +134,9 @@ class FwTokens {
     colors: FwColors.lerp(a.colors, b.colors, t),
     radii: FwRadii.lerp(a.radii, b.radii, t),
     shadows: FwShadows.lerp(a.shadows, b.shadows, t),
-    // String family names cannot numerically interpolate; use a hard
-    // crossover at t=0.5 (same approach Flutter takes for non-lerpable fields).
-    typography: t < 0.5 ? a.typography : b.typography,
+    // Family names hard-crossover at t=0.5 while tracking interpolates — see
+    // FwTypographyTheme.lerp. (Was a whole-object crossover before tracking.)
+    typography: FwTypographyTheme.lerp(a.typography, b.typography, t),
     radiusBase: a.radiusBase + (b.radiusBase - a.radiusBase) * t,
   );
 
