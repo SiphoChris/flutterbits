@@ -438,5 +438,29 @@ void main() {
       expect(() => FwGridPatch(columnGap: -1), throwsAssertionError);
       expect(() => FwGridPatch(rowGap: -1), throwsAssertionError);
     });
+
+    testWidgets('a viewport patch that overrides columns with an empty list trips the '
+        'resolved-zero-tracks assert at build (debug); release falls back to base', (t) async {
+      // Empty resolved columns would otherwise spin the render object forever
+      // (no column ever fits a span-≥1 item). The build-time assert catches it in
+      // debug; the _raw fallback (cols = base columns) makes release safe.
+      final grid = FwGrid(
+        columns: const <FwGridTrack>[FwFr()],
+        viewport: const <FwBreakpoint, FwGridPatch>{
+          FwBreakpoint.md: FwGridPatch(columns: <FwGridTrack>[]),
+        },
+        children: const <Widget>[SizedBox(width: 20, height: 20)],
+      );
+      await t.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(size: Size(1200, 600)), // >= md → patch active
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: Align(alignment: Alignment.topLeft, child: SizedBox(width: 200, child: grid)),
+          ),
+        ),
+      );
+      expect(t.takeException(), isA<AssertionError>());
+    });
   });
 }

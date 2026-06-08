@@ -60,6 +60,33 @@ void main() {
     expect(_borders(t), isEmpty);
   });
 
+  testWidgets('FwRow divide is RTL-correct: the divider is a logical '
+      'BorderDirectional (end edge), so it mirrors automatically under RTL', (t) async {
+    // Pumping under RTL must NOT change the divider into a physical right/left
+    // Border — it stays a BorderDirectional with the END side set. That logical
+    // type is exactly what makes Flutter paint it on the physical LEFT under RTL
+    // and the physical RIGHT under LTR, with zero per-direction branching in our
+    // code (§3.3 directional-by-default). A physical `Border(right:)` here would
+    // be the bug this guards against.
+    await t.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.rtl,
+        child: FwRow(
+          divideWidth: 2,
+          divideColor: _line,
+          children: <Widget>[SizedBox(width: 20), SizedBox(width: 20)],
+        ),
+      ),
+    );
+    final border = _borders(t).first; // _borders only yields BorderDirectional.
+    expect(border, isA<BorderDirectional>());
+    expect(border.end.width, 2);
+    expect(border.end.color, _line);
+    expect(border.start, BorderSide.none);
+    expect(border.top, BorderSide.none);
+    expect(border.bottom, BorderSide.none);
+  });
+
   test('divideWidth > 0 requires a divideColor', () {
     expect(
       () => FwRow(divideWidth: 1, children: const <Widget>[SizedBox(), SizedBox()]),
