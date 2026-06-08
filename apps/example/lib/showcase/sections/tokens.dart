@@ -1,6 +1,7 @@
-// Tokens section: the full set of semantic colors (all 19), the derived radius
-// scale, the box-shadow scale, and the typography theme — all read from
-// `context.fw` so they re-theme live with the light/dark toggle.
+// Tokens section: the full shadcn semantic vocabulary (all 32 — 19 core + 5
+// chart + 8 sidebar), the derived radius scale, the box-shadow scale, and the
+// typography families — all read from `context.fw` so they re-theme live with
+// the light/dark toggle.
 import 'package:flutter/widgets.dart';
 import 'package:flutterwindcss/flutterwindcss.dart';
 
@@ -15,7 +16,7 @@ class TokensSection extends StatelessWidget {
     final t = context.fw;
     final c = t.colors;
 
-    // All 19 shadcn semantic colors, paired with a sensible foreground.
+    // The 19 core shadcn semantic colors, paired with a sensible foreground.
     final colorPairs = <(String, Color, Color)>[
       ('background', c.background, c.foreground),
       ('foreground', c.foreground, c.background),
@@ -38,12 +39,33 @@ class TokensSection extends StatelessWidget {
       ('ring', c.ring, c.background),
     ];
 
+    // The 5 chart data-viz colors (foreground = the theme background for legibility).
+    final chartColors = <(String, Color)>[
+      ('chart-1', c.chart1),
+      ('chart-2', c.chart2),
+      ('chart-3', c.chart3),
+      ('chart-4', c.chart4),
+      ('chart-5', c.chart5),
+    ];
+
+    // The 8 sidebar tokens, paired with their foregrounds.
+    final sidebarPairs = <(String, Color, Color)>[
+      ('sidebar', c.sidebar, c.sidebarForeground),
+      ('sidebarFg', c.sidebarForeground, c.sidebar),
+      ('sidebarPrimary', c.sidebarPrimary, c.sidebarPrimaryForeground),
+      ('sidebarPrimaryFg', c.sidebarPrimaryForeground, c.sidebarPrimary),
+      ('sidebarAccent', c.sidebarAccent, c.sidebarAccentForeground),
+      ('sidebarAccentFg', c.sidebarAccentForeground, c.sidebarAccent),
+      ('sidebarBorder', c.sidebarBorder, c.sidebarForeground),
+      ('sidebarRing', c.sidebarRing, c.sidebar),
+    ];
+
     return FwColumn(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       gap: 4,
       children: <Widget>[
         ShowcaseSection(
-          title: 'Semantic colors (19)',
+          title: 'Core semantic colors (19)',
           description:
               'Components reference these role names — never raw swatches — so swapping the theme reskins everything.',
           children: <Widget>[
@@ -52,6 +74,34 @@ class TokensSection extends StatelessWidget {
               runGap: 3,
               children: <Widget>[
                 for (final (name, bg, fg) in colorPairs) Swatch(name: name, bg: bg, fg: fg),
+              ],
+            ),
+          ],
+        ),
+        ShowcaseSection(
+          title: 'Chart colors (5)',
+          description:
+              'shadcn chart-1…5 — the categorical data-viz palette, part of the baked-in vocabulary.',
+          children: <Widget>[
+            FwWrap(
+              gap: 3,
+              runGap: 3,
+              children: <Widget>[
+                for (final (name, bg) in chartColors) Swatch(name: name, bg: bg, fg: c.background),
+              ],
+            ),
+          ],
+        ),
+        ShowcaseSection(
+          title: 'Sidebar (8)',
+          description:
+              'The sidebar component’s own sub-theme — generated themes reskin it alongside everything else.',
+          children: <Widget>[
+            FwWrap(
+              gap: 3,
+              runGap: 3,
+              children: <Widget>[
+                for (final (name, bg, fg) in sidebarPairs) Swatch(name: name, bg: bg, fg: fg),
               ],
             ),
           ],
@@ -94,12 +144,17 @@ class TokensSection extends StatelessWidget {
           ],
         ),
         ShowcaseSection(
-          title: 'Typography theme',
-          description: 'The theme carries the font family; the type scale lives on FwFontSize.',
+          title: 'Typography families',
+          description:
+              'The theme carries sans/serif/mono family names (flutterwindcss bundles no fonts — '
+              'the generator emits a google_fonts wiring stub); the type scale lives on FwFontSize.',
           children: <Widget>[
-            Text(
-              'family: ${t.typography.family}',
-            ).tw.textSize(FwFontSize.base.px).weight(FwFontWeight.medium),
+            for (final (label, fam) in <(String, String)>[
+              ('sans', t.typography.sans),
+              ('serif', t.typography.serif),
+              ('mono', t.typography.mono),
+            ])
+              Text('$label: $fam').tw.textSize(FwFontSize.base.px).weight(FwFontWeight.medium),
           ],
         ),
       ],

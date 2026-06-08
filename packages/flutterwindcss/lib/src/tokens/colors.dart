@@ -2,8 +2,13 @@ import 'dart:ui' show Color;
 
 import 'package:flutter/foundation.dart' show immutable;
 
-/// The 19 shadcn semantic color tokens — the contract the theme generator
-/// targets (spec §4.2, §5). Components reference these, never raw swatches.
+/// The 32 shadcn semantic color tokens — the contract the theme generator
+/// targets (spec §4.2, §5): the 19 core roles plus the 5 `chart-*` data-viz
+/// colors and the 8 `sidebar-*` tokens. Every current shadcn/tweakcn theme
+/// ships all of them, so flutterwindcss bakes the full vocabulary in (a pasted
+/// theme round-trips with nothing dropped). Components reference these semantic
+/// roles, never raw palette swatches. (The raw Tailwind palette lives on the
+/// theme-independent [FwPalette]; these are the theme-resolved layer.)
 @immutable
 class FwColors {
   /// Creates a semantic color set. All fields are required; a theme defines
@@ -28,6 +33,19 @@ class FwColors {
     required this.border,
     required this.input,
     required this.ring,
+    required this.chart1,
+    required this.chart2,
+    required this.chart3,
+    required this.chart4,
+    required this.chart5,
+    required this.sidebar,
+    required this.sidebarForeground,
+    required this.sidebarPrimary,
+    required this.sidebarPrimaryForeground,
+    required this.sidebarAccent,
+    required this.sidebarAccentForeground,
+    required this.sidebarBorder,
+    required this.sidebarRing,
   });
 
   /// App background.
@@ -87,6 +105,45 @@ class FwColors {
   /// Focus-ring color.
   final Color ring;
 
+  /// Categorical data-viz color 1 (shadcn `chart-1`), for charts/graphs.
+  final Color chart1;
+
+  /// Categorical data-viz color 2 (shadcn `chart-2`).
+  final Color chart2;
+
+  /// Categorical data-viz color 3 (shadcn `chart-3`).
+  final Color chart3;
+
+  /// Categorical data-viz color 4 (shadcn `chart-4`).
+  final Color chart4;
+
+  /// Categorical data-viz color 5 (shadcn `chart-5`).
+  final Color chart5;
+
+  /// Sidebar surface (shadcn `sidebar`) — the sidebar component's own sub-theme.
+  final Color sidebar;
+
+  /// Foreground on [sidebar].
+  final Color sidebarForeground;
+
+  /// Primary action color within the sidebar.
+  final Color sidebarPrimary;
+
+  /// Foreground on [sidebarPrimary].
+  final Color sidebarPrimaryForeground;
+
+  /// Accent surface within the sidebar.
+  final Color sidebarAccent;
+
+  /// Foreground on [sidebarAccent].
+  final Color sidebarAccentForeground;
+
+  /// Border color within the sidebar.
+  final Color sidebarBorder;
+
+  /// Focus-ring color within the sidebar.
+  final Color sidebarRing;
+
   /// Returns a copy with the given fields replaced.
   FwColors copyWith({
     Color? background,
@@ -108,6 +165,19 @@ class FwColors {
     Color? border,
     Color? input,
     Color? ring,
+    Color? chart1,
+    Color? chart2,
+    Color? chart3,
+    Color? chart4,
+    Color? chart5,
+    Color? sidebar,
+    Color? sidebarForeground,
+    Color? sidebarPrimary,
+    Color? sidebarPrimaryForeground,
+    Color? sidebarAccent,
+    Color? sidebarAccentForeground,
+    Color? sidebarBorder,
+    Color? sidebarRing,
   }) {
     return FwColors(
       background: background ?? this.background,
@@ -129,6 +199,19 @@ class FwColors {
       border: border ?? this.border,
       input: input ?? this.input,
       ring: ring ?? this.ring,
+      chart1: chart1 ?? this.chart1,
+      chart2: chart2 ?? this.chart2,
+      chart3: chart3 ?? this.chart3,
+      chart4: chart4 ?? this.chart4,
+      chart5: chart5 ?? this.chart5,
+      sidebar: sidebar ?? this.sidebar,
+      sidebarForeground: sidebarForeground ?? this.sidebarForeground,
+      sidebarPrimary: sidebarPrimary ?? this.sidebarPrimary,
+      sidebarPrimaryForeground: sidebarPrimaryForeground ?? this.sidebarPrimaryForeground,
+      sidebarAccent: sidebarAccent ?? this.sidebarAccent,
+      sidebarAccentForeground: sidebarAccentForeground ?? this.sidebarAccentForeground,
+      sidebarBorder: sidebarBorder ?? this.sidebarBorder,
+      sidebarRing: sidebarRing ?? this.sidebarRing,
     );
   }
 
@@ -155,6 +238,19 @@ class FwColors {
       border: l(a.border, b.border),
       input: l(a.input, b.input),
       ring: l(a.ring, b.ring),
+      chart1: l(a.chart1, b.chart1),
+      chart2: l(a.chart2, b.chart2),
+      chart3: l(a.chart3, b.chart3),
+      chart4: l(a.chart4, b.chart4),
+      chart5: l(a.chart5, b.chart5),
+      sidebar: l(a.sidebar, b.sidebar),
+      sidebarForeground: l(a.sidebarForeground, b.sidebarForeground),
+      sidebarPrimary: l(a.sidebarPrimary, b.sidebarPrimary),
+      sidebarPrimaryForeground: l(a.sidebarPrimaryForeground, b.sidebarPrimaryForeground),
+      sidebarAccent: l(a.sidebarAccent, b.sidebarAccent),
+      sidebarAccentForeground: l(a.sidebarAccentForeground, b.sidebarAccentForeground),
+      sidebarBorder: l(a.sidebarBorder, b.sidebarBorder),
+      sidebarRing: l(a.sidebarRing, b.sidebarRing),
     );
   }
 
@@ -179,7 +275,20 @@ class FwColors {
       other.destructiveForeground == destructiveForeground &&
       other.border == border &&
       other.input == input &&
-      other.ring == ring;
+      other.ring == ring &&
+      other.chart1 == chart1 &&
+      other.chart2 == chart2 &&
+      other.chart3 == chart3 &&
+      other.chart4 == chart4 &&
+      other.chart5 == chart5 &&
+      other.sidebar == sidebar &&
+      other.sidebarForeground == sidebarForeground &&
+      other.sidebarPrimary == sidebarPrimary &&
+      other.sidebarPrimaryForeground == sidebarPrimaryForeground &&
+      other.sidebarAccent == sidebarAccent &&
+      other.sidebarAccentForeground == sidebarAccentForeground &&
+      other.sidebarBorder == sidebarBorder &&
+      other.sidebarRing == sidebarRing;
 
   @override
   int get hashCode => Object.hashAll(<Object>[
@@ -202,5 +311,18 @@ class FwColors {
     border,
     input,
     ring,
+    chart1,
+    chart2,
+    chart3,
+    chart4,
+    chart5,
+    sidebar,
+    sidebarForeground,
+    sidebarPrimary,
+    sidebarPrimaryForeground,
+    sidebarAccent,
+    sidebarAccentForeground,
+    sidebarBorder,
+    sidebarRing,
   ]);
 }

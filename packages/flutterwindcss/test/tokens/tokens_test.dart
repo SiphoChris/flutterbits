@@ -29,13 +29,13 @@ void main() {
     expect(FwTokens.dark.colors.background, FwPalette.neutral.shade950);
   });
 
-  // Comprehensive provenance test: every one of the 19 color roles in both
+  // Comprehensive provenance test: every one of the 32 color roles in both
   // light and dark is pinned — either to the named palette swatch from its
-  // annotation comment, or (for alpha-on-white values) to the explicit literal.
-  // This catches any typo in a hex literal that the annotation comment would
-  // otherwise conceal.
+  // annotation comment, or (for chart/alpha-on-white values) to the explicit
+  // literal. This catches any typo in a hex literal that the annotation comment
+  // would otherwise conceal.
   test('every annotated theme literal matches its named palette swatch', () {
-    // ── light theme (19 roles) ────────────────────────────────────────────────
+    // ── light theme (32 roles) ────────────────────────────────────────────────
     expect(FwTokens.light.colors.background, FwPalette.white);
     expect(FwTokens.light.colors.foreground, FwPalette.neutral.shade950);
     expect(FwTokens.light.colors.card, FwPalette.white);
@@ -55,8 +55,22 @@ void main() {
     expect(FwTokens.light.colors.border, FwPalette.neutral.shade200);
     expect(FwTokens.light.colors.input, FwPalette.neutral.shade200);
     expect(FwTokens.light.colors.ring, FwPalette.neutral.shade400);
+    // light chart-* (stock shadcn, OKLCH→clip) + sidebar-* (grays = neutral).
+    expect(FwTokens.light.colors.chart1, const Color(0xFFF54900));
+    expect(FwTokens.light.colors.chart2, const Color(0xFF009689));
+    expect(FwTokens.light.colors.chart3, const Color(0xFF104E64));
+    expect(FwTokens.light.colors.chart4, const Color(0xFFFFB900));
+    expect(FwTokens.light.colors.chart5, const Color(0xFFFE9A00));
+    expect(FwTokens.light.colors.sidebar, FwPalette.white);
+    expect(FwTokens.light.colors.sidebarForeground, FwPalette.neutral.shade950);
+    expect(FwTokens.light.colors.sidebarPrimary, FwPalette.neutral.shade900);
+    expect(FwTokens.light.colors.sidebarPrimaryForeground, FwPalette.neutral.shade50);
+    expect(FwTokens.light.colors.sidebarAccent, FwPalette.neutral.shade100);
+    expect(FwTokens.light.colors.sidebarAccentForeground, FwPalette.neutral.shade900);
+    expect(FwTokens.light.colors.sidebarBorder, FwPalette.neutral.shade200);
+    expect(FwTokens.light.colors.sidebarRing, FwPalette.neutral.shade400);
 
-    // ── dark theme (19 roles) ─────────────────────────────────────────────────
+    // ── dark theme (32 roles) ─────────────────────────────────────────────────
     expect(FwTokens.dark.colors.background, FwPalette.neutral.shade950);
     expect(FwTokens.dark.colors.foreground, FwPalette.neutral.shade50);
     expect(FwTokens.dark.colors.card, FwPalette.neutral.shade900);
@@ -78,10 +92,37 @@ void main() {
     expect(FwTokens.dark.colors.border, const Color(0x1AFFFFFF)); // white/10%
     expect(FwTokens.dark.colors.input, const Color(0x26FFFFFF)); // white/15%
     expect(FwTokens.dark.colors.ring, FwPalette.neutral.shade500);
+    // dark chart-* + sidebar-*.
+    expect(FwTokens.dark.colors.chart1, const Color(0xFF1447E6));
+    expect(FwTokens.dark.colors.chart2, const Color(0xFF00BC7D));
+    expect(FwTokens.dark.colors.chart3, const Color(0xFFFE9A00));
+    expect(FwTokens.dark.colors.chart4, const Color(0xFFAD46FF));
+    expect(FwTokens.dark.colors.chart5, const Color(0xFFFF2056));
+    expect(FwTokens.dark.colors.sidebar, FwPalette.neutral.shade900);
+    expect(FwTokens.dark.colors.sidebarForeground, FwPalette.neutral.shade50);
+    expect(FwTokens.dark.colors.sidebarPrimary, const Color(0xFF1447E6));
+    expect(FwTokens.dark.colors.sidebarPrimaryForeground, FwPalette.neutral.shade50);
+    expect(FwTokens.dark.colors.sidebarAccent, FwPalette.neutral.shade800);
+    expect(FwTokens.dark.colors.sidebarAccentForeground, FwPalette.neutral.shade50);
+    expect(FwTokens.dark.colors.sidebarBorder, const Color(0x1AFFFFFF)); // white/10%
+    expect(FwTokens.dark.colors.sidebarRing, FwPalette.neutral.shade500);
+  });
+
+  test('typography carries sans/serif/mono; family aliases sans', () {
+    const t = FwTypographyTheme(sans: 'Outfit', serif: 'Lora', mono: 'Geist Mono');
+    expect(t.sans, 'Outfit');
+    expect(t.serif, 'Lora');
+    expect(t.mono, 'Geist Mono');
+    expect(t.family, 'Outfit'); // alias of sans
+    // Differing on any one family breaks equality.
+    expect(t == const FwTypographyTheme(sans: 'Outfit', serif: 'Lora', mono: 'X'), isFalse);
+    // standard uses the platform generics.
+    expect(FwTypographyTheme.standard.serif, FwFontFamily.serif);
+    expect(FwTypographyTheme.standard.mono, FwFontFamily.mono);
   });
 
   test('equality includes typography', () {
-    const other = FwTypographyTheme(family: 'CustomSans');
+    const other = FwTypographyTheme(sans: 'CustomSans');
     const a = FwTokens.light;
     final b = FwTokens(
       colors: a.colors,
@@ -95,8 +136,8 @@ void main() {
   });
 
   test('lerp carries typography across the t=0.5 threshold', () {
-    const tA = FwTypographyTheme(family: 'A');
-    const tB = FwTypographyTheme(family: 'B');
+    const tA = FwTypographyTheme(sans: 'A');
+    const tB = FwTypographyTheme(sans: 'B');
     final a = FwTokens(
       colors: FwTokens.light.colors,
       radii: FwTokens.light.radii,
