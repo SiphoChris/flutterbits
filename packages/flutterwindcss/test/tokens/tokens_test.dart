@@ -193,4 +193,20 @@ void main() {
     expect(hi.radiusBase, FwTokens.dark.radiusBase);
     expect(hi.radii, FwTokens.dark.radii);
   });
+
+  test('typography tracking defaults to 0 and round-trips', () {
+    expect(FwTypographyTheme.standard.tracking, 0);
+    expect(const FwTypographyTheme().tracking, 0);
+    const t = FwTypographyTheme(sans: 'Outfit', tracking: -0.025);
+    expect(t.tracking, -0.025);
+  });
+
+  test('typography equality and hashCode include tracking', () {
+    const a = FwTypographyTheme(sans: 'Outfit', tracking: 0);
+    const b = FwTypographyTheme(sans: 'Outfit', tracking: -0.025);
+    expect(a == b, isFalse);
+    expect(a.hashCode == b.hashCode, isFalse);
+    // Same tracking + same families stays equal.
+    expect(a == const FwTypographyTheme(sans: 'Outfit'), isTrue);
+  });
 }

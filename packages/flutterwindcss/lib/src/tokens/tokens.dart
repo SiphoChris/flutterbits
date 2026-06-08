@@ -169,11 +169,12 @@ class FwTokens {
 /// for this field, because [String] family names cannot numerically interpolate.
 @immutable
 class FwTypographyTheme {
-  /// Creates a typography theme from its three family names.
+  /// Creates a typography theme from its family names and base letter-spacing.
   const FwTypographyTheme({
     this.sans = FwFontFamily.sans,
     this.serif = FwFontFamily.serif,
     this.mono = FwFontFamily.mono,
+    this.tracking = 0,
   });
 
   /// The default UI/body (sans) family name.
@@ -185,10 +186,17 @@ class FwTypographyTheme {
   /// The monospace family name.
   final String mono;
 
+  /// Theme base letter-spacing in **em** (shadcn `--tracking-normal`), stored as an
+  /// em multiple (e.g. `-0.025` for `-0.025em`). Consumers convert to Flutter's
+  /// logical-px `TextStyle.letterSpacing` as `tracking × fontSize` at the text-apply
+  /// site — the token only carries the value. `0` (the default) means no extra
+  /// tracking, preserving prior behavior and all existing goldens.
+  final double tracking;
+
   /// Convenience alias for [sans] — the default body family.
   String get family => sans;
 
-  /// The standard theme using the platform sans/serif/mono families.
+  /// The standard theme using the platform sans/serif/mono families and zero tracking.
   static const FwTypographyTheme standard = FwTypographyTheme();
 
   @override
@@ -196,8 +204,9 @@ class FwTypographyTheme {
       other is FwTypographyTheme &&
       other.sans == sans &&
       other.serif == serif &&
-      other.mono == mono;
+      other.mono == mono &&
+      other.tracking == tracking;
 
   @override
-  int get hashCode => Object.hash(sans, serif, mono);
+  int get hashCode => Object.hash(sans, serif, mono, tracking);
 }
