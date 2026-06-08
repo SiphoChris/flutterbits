@@ -36,6 +36,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     this.aspectRatio,
     this.background,
     this.gradient,
+    this.backgroundImage,
     this.borderSpec,
     this.borderStyle,
     this.borderRadius,
@@ -50,6 +51,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     this.lineHeight,
     this.textAlign,
     this.textDecoration,
+    this.textShadows,
     this.fontFamily,
     this.fontStyle,
     this.maxLineCount,
@@ -65,8 +67,12 @@ class FwStyle with FwStyleOps<FwStyle> {
     this.skewYAngle,
     this.transformAlignment,
     this.rotation,
+    this.rotateXAngle,
+    this.rotateYAngle,
+    this.perspectiveDepth,
     this.translation,
     this.colorMatrix,
+    this.mixBlendMode,
     this.boxFit,
     this.mouseCursor,
     this.ignorePointer,
@@ -120,6 +126,10 @@ class FwStyle with FwStyleOps<FwStyle> {
   /// Gradient fill (replaces [background] when both set).
   final Gradient? gradient;
 
+  /// Background image (Tailwind `bg-[url(...)]`); set by `bgImage`. Rendered as
+  /// the decoration's `DecorationImage` (module 17).
+  final DecorationImage? backgroundImage;
+
   /// Accumulating border description (uniform or per-side directional); resolves
   /// to a concrete `BoxBorder` at resolve time. Renamed from M3's `border`
   /// placeholder (spec §6.1; the field now holds an [FwBorderSpec], not a
@@ -171,6 +181,10 @@ class FwStyle with FwStyleOps<FwStyle> {
 
   /// Default text decoration.
   final TextDecoration? textDecoration;
+
+  /// Text shadows for descendant text (Tailwind `text-shadow-*`); set by
+  /// `textShadow` (module 17).
+  final List<Shadow>? textShadows;
 
   /// Default font family (set by `font`/`fontSans`/`fontSerif`/`fontMono`).
   final String? fontFamily;
@@ -229,6 +243,16 @@ class FwStyle with FwStyleOps<FwStyle> {
   /// Rotation in radians (set by the `rotate` setter, which takes degrees).
   final double? rotation;
 
+  /// 3D rotation about the X axis in radians (set by `rotateX`, degrees); module 17.
+  final double? rotateXAngle;
+
+  /// 3D rotation about the Y axis in radians (set by `rotateY`, degrees); module 17.
+  final double? rotateYAngle;
+
+  /// Perspective depth in logical px for 3D transforms (set by `perspective`;
+  /// smaller = stronger). Module 17.
+  final double? perspectiveDepth;
+
   /// Translation offset in logical px (set by `translate`/`translateX/Y`).
   final Offset? translation;
 
@@ -237,6 +261,12 @@ class FwStyle with FwStyleOps<FwStyle> {
   /// `hueRotate`). Filters **compose** within a chain (matrices multiply); across
   /// layers it last-wins like every other field.
   final List<double>? colorMatrix;
+
+  /// Mix-blend-mode: composites the box against the backdrop (set by the
+  /// `blendMode` setter; Tailwind `mix-blend-*`). Named `mixBlendMode` so the
+  /// Tailwind-natural `blendMode` setter doesn't collide with the field (like
+  /// `groupOpacity` vs `opacity`). Module 17.
+  final BlendMode? mixBlendMode;
 
   /// Object-fit for the child content (set by the `fit` setter; named `boxFit`
   /// so the Tailwind-natural `fit` setter doesn't collide with the field).
@@ -293,6 +323,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     double? aspectRatio,
     Color? background,
     Gradient? gradient,
+    DecorationImage? backgroundImage,
     FwBorderSpec? borderSpec,
     FwBorderStyle? borderStyle,
     BorderRadiusDirectional? borderRadius,
@@ -307,6 +338,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     double? lineHeight,
     TextAlign? textAlign,
     TextDecoration? textDecoration,
+    List<Shadow>? textShadows,
     String? fontFamily,
     FontStyle? fontStyle,
     int? maxLineCount,
@@ -322,8 +354,12 @@ class FwStyle with FwStyleOps<FwStyle> {
     double? skewYAngle,
     AlignmentGeometry? transformAlignment,
     double? rotation,
+    double? rotateXAngle,
+    double? rotateYAngle,
+    double? perspectiveDepth,
     Offset? translation,
     List<double>? colorMatrix,
+    BlendMode? mixBlendMode,
     BoxFit? boxFit,
     MouseCursor? mouseCursor,
     bool? ignorePointer,
@@ -346,6 +382,7 @@ class FwStyle with FwStyleOps<FwStyle> {
       aspectRatio: aspectRatio ?? this.aspectRatio,
       background: background ?? this.background,
       gradient: gradient ?? this.gradient,
+      backgroundImage: backgroundImage ?? this.backgroundImage,
       borderSpec: borderSpec ?? this.borderSpec,
       borderStyle: borderStyle ?? this.borderStyle,
       borderRadius: borderRadius ?? this.borderRadius,
@@ -360,6 +397,7 @@ class FwStyle with FwStyleOps<FwStyle> {
       lineHeight: lineHeight ?? this.lineHeight,
       textAlign: textAlign ?? this.textAlign,
       textDecoration: textDecoration ?? this.textDecoration,
+      textShadows: textShadows ?? this.textShadows,
       fontFamily: fontFamily ?? this.fontFamily,
       fontStyle: fontStyle ?? this.fontStyle,
       maxLineCount: maxLineCount ?? this.maxLineCount,
@@ -375,8 +413,12 @@ class FwStyle with FwStyleOps<FwStyle> {
       skewYAngle: skewYAngle ?? this.skewYAngle,
       transformAlignment: transformAlignment ?? this.transformAlignment,
       rotation: rotation ?? this.rotation,
+      rotateXAngle: rotateXAngle ?? this.rotateXAngle,
+      rotateYAngle: rotateYAngle ?? this.rotateYAngle,
+      perspectiveDepth: perspectiveDepth ?? this.perspectiveDepth,
       translation: translation ?? this.translation,
       colorMatrix: colorMatrix ?? this.colorMatrix,
+      mixBlendMode: mixBlendMode ?? this.mixBlendMode,
       boxFit: boxFit ?? this.boxFit,
       mouseCursor: mouseCursor ?? this.mouseCursor,
       ignorePointer: ignorePointer ?? this.ignorePointer,
@@ -407,6 +449,7 @@ class FwStyle with FwStyleOps<FwStyle> {
       aspectRatio == other.aspectRatio &&
       background == other.background &&
       gradient == other.gradient &&
+      backgroundImage == other.backgroundImage &&
       borderSpec == other.borderSpec &&
       borderStyle == other.borderStyle &&
       borderRadius == other.borderRadius &&
@@ -421,6 +464,7 @@ class FwStyle with FwStyleOps<FwStyle> {
       lineHeight == other.lineHeight &&
       textAlign == other.textAlign &&
       textDecoration == other.textDecoration &&
+      listEquals(textShadows, other.textShadows) &&
       fontFamily == other.fontFamily &&
       fontStyle == other.fontStyle &&
       maxLineCount == other.maxLineCount &&
@@ -436,8 +480,12 @@ class FwStyle with FwStyleOps<FwStyle> {
       skewYAngle == other.skewYAngle &&
       transformAlignment == other.transformAlignment &&
       rotation == other.rotation &&
+      rotateXAngle == other.rotateXAngle &&
+      rotateYAngle == other.rotateYAngle &&
+      perspectiveDepth == other.perspectiveDepth &&
       translation == other.translation &&
       listEquals(colorMatrix, other.colorMatrix) &&
+      mixBlendMode == other.mixBlendMode &&
       boxFit == other.boxFit &&
       mouseCursor == other.mouseCursor &&
       ignorePointer == other.ignorePointer &&
@@ -461,6 +509,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     aspectRatio,
     background,
     gradient,
+    backgroundImage,
     borderSpec,
     borderStyle,
     borderRadius,
@@ -475,6 +524,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     lineHeight,
     textAlign,
     textDecoration,
+    textShadows == null ? null : Object.hashAll(textShadows!),
     fontFamily,
     fontStyle,
     maxLineCount,
@@ -490,8 +540,12 @@ class FwStyle with FwStyleOps<FwStyle> {
     skewYAngle,
     transformAlignment,
     rotation,
+    rotateXAngle,
+    rotateYAngle,
+    perspectiveDepth,
     translation,
     colorMatrix == null ? null : Object.hashAll(colorMatrix!),
+    mixBlendMode,
     boxFit,
     mouseCursor,
     ignorePointer,

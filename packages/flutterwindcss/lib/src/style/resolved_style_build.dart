@@ -2,6 +2,7 @@ import 'dart:ui' as ui show ImageFilter;
 
 import 'package:flutter/widgets.dart';
 
+import 'fw_blend_mode.dart';
 import 'fw_border_spec.dart';
 import 'fw_dashed_border.dart';
 import 'resolved_style.dart';
@@ -53,7 +54,8 @@ extension ResolvedStyleBuild on ResolvedStyle {
         fontStyle != null ||
         maxLines != null ||
         textOverflow != null ||
-        softWrap != null) {
+        softWrap != null ||
+        textShadows != null) {
       current = DefaultTextStyle.merge(
         style: TextStyle(
           color: foreground,
@@ -62,6 +64,7 @@ extension ResolvedStyleBuild on ResolvedStyle {
           letterSpacing: letterSpacing,
           height: lineHeight,
           decoration: textDecoration,
+          shadows: textShadows,
           fontFamily: fontFamily,
           fontStyle: fontStyle,
         ),
@@ -107,7 +110,8 @@ extension ResolvedStyleBuild on ResolvedStyle {
 
     // Surface: optional backdrop blur clipped to the box, then the decoration
     // composited on top so a semi-transparent fill frosts the backdrop.
-    final hasDecoration = background != null || gradient != null || decoBorder != null;
+    final hasDecoration =
+        background != null || gradient != null || backgroundImage != null || decoBorder != null;
     if (backdropBlur != null) {
       current = ClipRRect(
         borderRadius: borderRadius ?? BorderRadius.zero,
@@ -191,17 +195,28 @@ extension ResolvedStyleBuild on ResolvedStyle {
     final sy = (scale ?? 1) * (scaleY ?? 1);
     final hasScale = scale != null || scaleX != null || scaleY != null;
     final hasSkew = skewX != null || skewY != null;
-    if (translate != null || rotation != null || hasScale || hasSkew) {
+    final has3d = rotateX != null || rotateY != null || perspective != null;
+    if (translate != null || rotation != null || hasScale || hasSkew || has3d) {
       // Composed via stable constructors. Right-multiplying T·R·Skew·S applies
       // scale first, then skew, then rotation, then translation — matching CSS
       // `transform` semantics. `transformAlignment` is the origin (default
-      // center).
+      // center). 3D: a perspective projection (module 17) is set on the base
+      // matrix so rotateX/rotateY foreshorten; orthographic if no perspective.
       var m = Matrix4.identity();
+      if (perspective != null) {
+        m.setEntry(3, 2, -1 / perspective!);
+      }
       if (translate != null) {
         m = m.multiplied(Matrix4.translationValues(translate!.dx, translate!.dy, 0));
       }
       if (rotation != null) {
         m = m.multiplied(Matrix4.rotationZ(rotation!));
+      }
+      if (rotateX != null) {
+        m = m.multiplied(Matrix4.rotationX(rotateX!));
+      }
+      if (rotateY != null) {
+        m = m.multiplied(Matrix4.rotationY(rotateY!));
       }
       if (hasSkew) {
         m = m.multiplied(Matrix4.skew(skewX ?? 0, skewY ?? 0));
@@ -214,6 +229,12 @@ extension ResolvedStyleBuild on ResolvedStyle {
         alignment: transformAlignment ?? Alignment.center,
         child: current,
       );
+    }
+
+    // Mix-blend-mode: composite the (transformed) box against the backdrop
+    // (module 17). Outside the transform so the final rendered result blends.
+    if (blendMode != null) {
+      current = FwBlendMode(blendMode: blendMode!, child: current);
     }
 
     // Fractional sizing.
@@ -333,6 +354,7 @@ extension ResolvedStyleBuild on ResolvedStyle {
     decoration: BoxDecoration(
       color: gradient == null ? background : null,
       gradient: gradient,
+      image: backgroundImage,
       border: decoBorder,
       borderRadius: borderRadius,
     ),

@@ -19,6 +19,7 @@ export 'src/layout/fw_wrap.dart';
 
 // Styling engine (Module 3). resolve/ResolvedStyle/the render chain are engine
 // internals (consumers never call them directly), so they are not exported.
+export 'src/style/fw_blend_mode.dart';
 export 'src/style/fw_border_spec.dart';
 // FwGroup/FwPeer are public; `fwReadRelationStates`/`FwRelationStates` are
 // reactor-side resolver plumbing (consumed by FwStyled via a direct import, not
