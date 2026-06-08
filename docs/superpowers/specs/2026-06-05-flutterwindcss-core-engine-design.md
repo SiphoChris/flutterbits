@@ -85,9 +85,10 @@ The raw Tailwind v4 color palette — every hue (`slate, gray, zinc, neutral, st
 > Rationale: components use semantic tokens only (AGENTS.md §3.1). The palette exists to **build** themes (the default `FwTokens`, and to give app authors the Tailwind vocabulary for non-themeable one-offs). It is not the conversion pipeline — these are baked constants, the generator (§2) owns runtime conversion.
 
 ### 4.2 `FwColors` (`tokens/colors.dart`)
-The 19 semantic tokens (the contract the generator targets):
-`background, foreground, card, cardForeground, popover, popoverForeground, primary, primaryForeground, secondary, secondaryForeground, muted, mutedForeground, accent, accentForeground, destructive, destructiveForeground, border, input, ring`.
-`const` constructor, static `lerp(a, b, t)` lerping every field with `Color.lerp`.
+The **32** shadcn semantic tokens (the full vocabulary — the contract the generator targets; baked in whole so a pasted theme drops nothing, see AGENTS.md §5 "Layering decision"). The 19 core roles:
+`background, foreground, card, cardForeground, popover, popoverForeground, primary, primaryForeground, secondary, secondaryForeground, muted, mutedForeground, accent, accentForeground, destructive, destructiveForeground, border, input, ring`
+— plus `chart1…chart5` (data-viz) and `sidebar, sidebarForeground, sidebarPrimary, sidebarPrimaryForeground, sidebarAccent, sidebarAccentForeground, sidebarBorder, sidebarRing`.
+`const` constructor, static `lerp(a, b, t)` lerping every field with `Color.lerp`. (Added chart/sidebar — corrected from the original 19, 2026-06-08; additive per §5.)
 
 ### 4.3 `FwRadii` (`tokens/radii.dart`)
 Built two ways:

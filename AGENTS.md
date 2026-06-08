@@ -81,14 +81,18 @@ These encode hard-won decisions. Violating any of them is a review failure.
 
 ## 5. The token system
 
-Semantic colors (the shadcn set — this list is the contract the generator targets):
+Semantic colors — the **full shadcn vocabulary** (32 tokens; this list is the contract the generator targets). flutterwindcss bakes in the *entire* set, not a subset, so any pasted shadcn/tweakcn theme round-trips with nothing dropped. The 19 **core** roles:
 
 `background, foreground, card, cardForeground, popover, popoverForeground, primary, primaryForeground, secondary, secondaryForeground, muted, mutedForeground, accent, accentForeground, destructive, destructiveForeground, border, input, ring`
+
+…plus the 5 **chart** data-viz colors (`chart1…chart5`) and the 8 **sidebar** tokens (`sidebar, sidebarForeground, sidebarPrimary, sidebarPrimaryForeground, sidebarAccent, sidebarAccentForeground, sidebarBorder, sidebarRing`).
+
+> **Layering decision (locked 2026-06-08):** the semantic *vocabulary* is shadcn's, but it is the **shared contract** between the two layers, so it lives in flutterwindcss core in full — including `chart`/`sidebar`. The rule is "all or nothing": cherry-picking the 19 and excluding chart/sidebar was never principled (shadcn ships all of them), and baking the whole set in avoids a separate token-extension dependency. This does **not** make flutterwindcss "less Tailwind" — the raw palette (`FwPalette.amber.shade500`) is the Tailwind layer and is usable standalone with raw colors on any widget; the semantic set is an additional, theme-resolved "batteries-included" layer. Genuinely *component-private* tokens a future component invents (beyond shadcn's published set) still belong with that component in flutterbits, not here.
 
 - Radius is derived from one base value (shadcn `--radius`): `sm = ×0.6, md = ×0.8, lg = ×1, xl = ×1.4`. Components use `t.radii.md` etc., never a literal radius.
 - Spacing scale: **1 utility unit = 4 logical pixels** (`fwSpace`). `.px(4)` ⇒ 16 px.
 - Two `FwTokens` instances exist per theme (light + dark). Theme switching is the host app's job; transitions animate via `FwTokens.lerp`.
-- The semantic set is not the whole token system. A `FwTokens` bundle carries `colors` (the 19 above), `radii`, `shadows` (`FwShadows`), and `typography`. **Theme-independent** scales live on their own types: the raw Tailwind v4 palette (`FwPalette`, baked — used to *build* themes, never referenced directly by components), the Tailwind named radius/typography/shadow/blur scales, and scalar scales for opacity, border-width, z-index, and breakpoints. The interaction-state and breakpoint enums (`FwState`, `FwBreakpoint`) are a **frozen API contract** — exhaustive `switch`es depend on them, so adding a value is a breaking change, not additive.
+- The semantic set is not the whole token system. A `FwTokens` bundle carries `colors` (the 32 above), `radii`, `shadows` (`FwShadows`), and `typography` (`sans`/`serif`/`mono` family names — flutterwindcss bundles no fonts, so the generator emits a `google_fonts` wiring stub rather than a silent fallback, per §7). **Theme-independent** scales live on their own types: the raw Tailwind v4 palette (`FwPalette`, baked — used to *build* themes, never referenced directly by components), the Tailwind named radius/typography/shadow/blur scales, and scalar scales for opacity, border-width, z-index, and breakpoints. The interaction-state and breakpoint enums (`FwState`, `FwBreakpoint`) are a **frozen API contract** — exhaustive `switch`es depend on them, so adding a value is a breaking change, not additive.
 - To add a new semantic token: add the field to `FwColors` (+ `copyWith`, `lerp`, `==`/`hashCode`), wire it into the `FwTokens.light`/`dark` defaults, add it to the generator's parse map (§7), and document it. Adding a *semantic color* is additive and safe; adding an `FwState`/`FwBreakpoint` enum value is **not** (see above).
 
 ---

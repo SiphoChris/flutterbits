@@ -66,6 +66,22 @@ class FwTokens {
       border: Color(0xFFE5E5E5), // neutral-200
       input: Color(0xFFE5E5E5), // neutral-200
       ring: Color(0xFFA1A1A1), // neutral-400
+      // chart-* and sidebar-* are the stock shadcn defaults, converted from
+      // their OKLCH source via the project's clip pipeline (the grayscale
+      // sidebar values reproduce the neutral palette exactly).
+      chart1: Color(0xFFF54900),
+      chart2: Color(0xFF009689),
+      chart3: Color(0xFF104E64),
+      chart4: Color(0xFFFFB900),
+      chart5: Color(0xFFFE9A00),
+      sidebar: FwPalette.white,
+      sidebarForeground: Color(0xFF0A0A0A), // neutral-950
+      sidebarPrimary: Color(0xFF171717), // neutral-900
+      sidebarPrimaryForeground: Color(0xFFFAFAFA), // neutral-50
+      sidebarAccent: Color(0xFFF5F5F5), // neutral-100
+      sidebarAccentForeground: Color(0xFF171717), // neutral-900
+      sidebarBorder: Color(0xFFE5E5E5), // neutral-200
+      sidebarRing: Color(0xFFA1A1A1), // neutral-400
     ),
   );
 
@@ -96,6 +112,20 @@ class FwTokens {
       border: Color(0x1AFFFFFF), // white/10%
       input: Color(0x26FFFFFF), // white/15%
       ring: Color(0xFF737373), // neutral-500
+      // Stock shadcn dark chart/sidebar defaults (OKLCH → clip).
+      chart1: Color(0xFF1447E6),
+      chart2: Color(0xFF00BC7D),
+      chart3: Color(0xFFFE9A00),
+      chart4: Color(0xFFAD46FF),
+      chart5: Color(0xFFFF2056),
+      sidebar: Color(0xFF171717), // neutral-900
+      sidebarForeground: Color(0xFFFAFAFA), // neutral-50
+      sidebarPrimary: Color(0xFF1447E6), // matches chart-1 (dark)
+      sidebarPrimaryForeground: Color(0xFFFAFAFA), // neutral-50
+      sidebarAccent: Color(0xFF262626), // neutral-800
+      sidebarAccentForeground: Color(0xFFFAFAFA), // neutral-50
+      sidebarBorder: Color(0x1AFFFFFF), // white/10%
+      sidebarRing: Color(0xFF737373), // neutral-500
     ),
   );
 
@@ -123,26 +153,51 @@ class FwTokens {
   int get hashCode => Object.hash(colors, radii, shadows, typography, radiusBase);
 }
 
-/// Placeholder per-theme typography marker. Type scales are static
-/// (`FwFontSize` etc.); this exists so a theme can carry a default family in a
-/// later module without changing the `FwTokens` shape.
+/// Per-theme typography families — the [sans], [serif], and [mono] family
+/// *names* a shadcn theme carries (`--font-sans`/`--font-serif`/`--font-mono`).
+/// Type *scales* are static (`FwFontSize` etc.); this carries only the families.
+///
+/// **flutterwindcss bundles no fonts.** These are family-name strings handed to
+/// `TextStyle.fontFamily`; if the named family isn't a platform/system font and
+/// isn't wired by the host app, Flutter falls back silently to the default. The
+/// theme generator therefore emits the name **and** a clearly-commented wiring
+/// stub (`// TODO: wire this font — add google_fonts / bundle it`) per spec §7,
+/// rather than pretending the font is present. [family] is kept as a
+/// deprecated-free alias of [sans] for the common "just the body font" read.
 ///
 /// Note: `FwTokens.lerp` uses a hard crossover (t < 0.5 -> a, t >= 0.5 -> b)
 /// for this field, because [String] family names cannot numerically interpolate.
 @immutable
 class FwTypographyTheme {
-  /// Creates a typography theme with a default sans [family].
-  const FwTypographyTheme({required this.family});
+  /// Creates a typography theme from its three family names.
+  const FwTypographyTheme({
+    this.sans = FwFontFamily.sans,
+    this.serif = FwFontFamily.serif,
+    this.mono = FwFontFamily.mono,
+  });
 
-  /// The default font family name.
-  final String family;
+  /// The default UI/body (sans) family name.
+  final String sans;
 
-  /// The standard theme using the platform sans family.
-  static const FwTypographyTheme standard = FwTypographyTheme(family: FwFontFamily.sans);
+  /// The serif family name.
+  final String serif;
+
+  /// The monospace family name.
+  final String mono;
+
+  /// Convenience alias for [sans] — the default body family.
+  String get family => sans;
+
+  /// The standard theme using the platform sans/serif/mono families.
+  static const FwTypographyTheme standard = FwTypographyTheme();
 
   @override
-  bool operator ==(Object other) => other is FwTypographyTheme && other.family == family;
+  bool operator ==(Object other) =>
+      other is FwTypographyTheme &&
+      other.sans == sans &&
+      other.serif == serif &&
+      other.mono == mono;
 
   @override
-  int get hashCode => family.hashCode;
+  int get hashCode => Object.hash(sans, serif, mono);
 }
