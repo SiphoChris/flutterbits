@@ -209,4 +209,20 @@ void main() {
     // Same tracking + same families stays equal.
     expect(a == const FwTypographyTheme(sans: 'Outfit'), isTrue);
   });
+
+  test('FwTypographyTheme.lerp crosses families at 0.5 and interpolates tracking', () {
+    const a = FwTypographyTheme(sans: 'A', serif: 'As', mono: 'Am', tracking: 0);
+    const b = FwTypographyTheme(sans: 'B', serif: 'Bs', mono: 'Bm', tracking: -0.04);
+
+    // Families hard-crossover at t = 0.5 (strings cannot interpolate).
+    expect(FwTypographyTheme.lerp(a, b, 0.0).sans, 'A');
+    expect(FwTypographyTheme.lerp(a, b, 0.49).sans, 'A');
+    expect(FwTypographyTheme.lerp(a, b, 0.5).sans, 'B');
+    expect(FwTypographyTheme.lerp(a, b, 1.0).mono, 'Bm');
+
+    // tracking interpolates linearly (continuous through the crossover).
+    expect(FwTypographyTheme.lerp(a, b, 0.0).tracking, 0);
+    expect(FwTypographyTheme.lerp(a, b, 0.5).tracking, closeTo(-0.02, 1e-9));
+    expect(FwTypographyTheme.lerp(a, b, 1.0).tracking, closeTo(-0.04, 1e-9));
+  });
 }

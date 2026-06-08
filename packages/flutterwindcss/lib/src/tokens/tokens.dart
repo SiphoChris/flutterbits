@@ -199,6 +199,20 @@ class FwTypographyTheme {
   /// The standard theme using the platform sans/serif/mono families and zero tracking.
   static const FwTypographyTheme standard = FwTypographyTheme();
 
+  /// Interpolates two typography themes. Family **names** are [String]s and cannot
+  /// numerically interpolate, so they hard-crossover at `t = 0.5` (the approach
+  /// Flutter uses for non-lerpable fields); [tracking] is numeric and interpolates
+  /// linearly, so it stays continuous through the crossover.
+  static FwTypographyTheme lerp(FwTypographyTheme a, FwTypographyTheme b, double t) {
+    final FwTypographyTheme families = t < 0.5 ? a : b;
+    return FwTypographyTheme(
+      sans: families.sans,
+      serif: families.serif,
+      mono: families.mono,
+      tracking: a.tracking + (b.tracking - a.tracking) * t,
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       other is FwTypographyTheme &&
