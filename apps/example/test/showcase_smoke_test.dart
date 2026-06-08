@@ -30,6 +30,32 @@ void main() {
     }
   });
 
+  testWidgets('switching the semantic theme reskins every category cleanly', (tester) async {
+    await pumpApp(tester);
+    // Starts on the Default theme.
+    expect(find.text('Theme: Default'), findsOneWidget);
+
+    // Cycle to the Claude theme (the pasted tweakcn theme) and let it animate.
+    await tester.tap(find.textContaining('Theme:'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Theme: Claude'), findsOneWidget);
+
+    // Every category must render under the swapped theme — proves the 32 tokens
+    // (incl. chart/sidebar), the 1rem radius, and the custom shadows all resolve.
+    for (final category in ShowcaseCategory.values) {
+      await tester.tap(find.text(category.label).first);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull, reason: 'Claude theme "${category.label}" threw');
+    }
+
+    // And in Claude + dark.
+    await tester.tap(find.text('Light'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Dark'), findsOneWidget);
+  });
+
   testWidgets('dark + RTL toggles animate cleanly across every category', (tester) async {
     await pumpApp(tester);
 
