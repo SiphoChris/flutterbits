@@ -12,11 +12,10 @@ export function baseOptions(): BaseLayoutProps {
         </span>
       ),
     },
-    links: [
-      { text: 'flutterwindcss', url: '/docs/flutterwindcss' },
-      { text: 'flutterbits', url: '/docs/flutterbits' },
-      { text: 'Theme generator', url: '/theme-generator' },
-    ],
+    // The flutterwindcss / flutterbits products are switched via the sidebar tab
+    // switcher inside /docs, so they're intentionally NOT duplicated here. Only
+    // the Theme generator (a standalone route) gets a top-nav link.
+    links: [{ text: 'Theme generator', url: '/theme-generator' }],
     githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
   };
 }

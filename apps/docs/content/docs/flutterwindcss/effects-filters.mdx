@@ -1,0 +1,64 @@
+---
+title: Effects & filters
+description: Shadows, focus rings, opacity, blur, mix-blend modes, composable CSS color filters, and object-fit.
+---
+
+## Shadow
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `shadow(t.shadows.md)` | arbitrary shadow list |
+| `shadowXs2` `shadowXs` `shadowSm` `shadowMd` `shadowLg` `shadowXl` `shadow2xl` | `shadow-2xs … shadow-2xl` (theme steps, getters) |
+| `shadowNone` | `shadow-none` (getter) |
+
+The named-scale getters resolve the active theme's `shadows.*` at build. Don't mix a step with a raw
+`shadow(list)` in the same chain.
+
+## Focus ring
+
+`ring(width, {required color, offset, offsetColor})` — a zero-blur spread shadow that follows the
+box's `rounded*` shape and composes with `shadow`. With `offset > 0`, `offsetColor` is required (the
+surface colour behind the box).
+
+```dart
+final t = context.fw;
+const SizedBox()
+    .tw
+    .size(12)
+    .rounded(t.radii.md)
+    .ring(2, color: t.colors.ring); // Tailwind `ring-2 ring-ring`
+```
+
+## Opacity, blur & blend
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `opacity(0.5)` | `opacity-50` |
+| `blur(8)` | `blur-*` (content; Gaussian sigma in px) |
+| `backdropBlur(8)` | `backdrop-blur-*` (frosts content behind) |
+| `blendMode(BlendMode.multiply)` | `mix-blend-multiply` |
+
+## Color filters
+
+These **compose** within a chain (CSS `filter: a() b()` → matrix multiply), resolving to one
+`ColorFilter.matrix`:
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `grayscale()` | `grayscale` (`grayscale(0.5)` for partial) |
+| `brightness(1.2)` | `brightness-125` |
+| `contrast(1.2)` | `contrast-125` |
+| `saturate(1.5)` | `saturate-150` |
+| `invert()` `sepia()` | `invert` `sepia` |
+| `hueRotate(90)` | `hue-rotate-90` (degrees) |
+
+## Object-fit
+
+`fit(BoxFit.cover)` maps Tailwind `object-cover` (etc.) for the child content — needs a bounded box.
+
+## Next
+
+<Cards>
+  <Card title="Transforms & interactivity" href="/docs/flutterwindcss/transforms-interactivity" />
+  <Card title="Conditional styling (states)" href="/docs/flutterwindcss/states" />
+</Cards>

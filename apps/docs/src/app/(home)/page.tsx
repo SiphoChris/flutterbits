@@ -11,12 +11,12 @@ export default function HomePage() {
       <section className="brand-hero text-white">
         <div className="mx-auto max-w-5xl px-4 py-20 text-center sm:py-24">
           <Image
-            src="/flutterbits-logo-stacked.png"
+            src="/flutterwindcss-image2-no-bg.png"
             alt="flutterbits"
-            width={1408}
-            height={768}
+            width={677}
+            height={369}
             priority
-            className="mx-auto h-auto w-[min(520px,88%)] rounded-2xl shadow-2xl ring-1 ring-white/10"
+            className="mx-auto h-auto w-[min(440px,82%)] drop-shadow-2xl"
           />
           <h1 className="mt-10 text-4xl font-bold tracking-tight sm:text-5xl">
             Tailwind &amp; shadcn/ui, <span className="brand-gradient-text">for Flutter</span>

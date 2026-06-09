@@ -11,23 +11,15 @@ follow the [official install guide](https://docs.flutter.dev/get-started/install
 
 ## Add the dependency
 
-<Callout title="Not on pub.dev yet">
-  flutterwindcss is early and lives in the project monorepo — it isn't published to
-  [pub.dev](https://pub.dev) yet. For now, depend on it straight from Git (pub
-  [supports this](https://dart.dev/tools/pub/dependencies#git-packages)); a `pub add flutterwindcss`
-  will follow once it's published.
-</Callout>
+```bash
+flutter pub add flutterwindcss
+```
+
+…or add it to your `pubspec.yaml` and run `flutter pub get`:
 
 ```yaml title="pubspec.yaml"
 dependencies:
-  flutterwindcss:
-    git:
-      url: https://github.com/SiphoChris/flutterbits.git
-      path: packages/flutterwindcss
-```
-
-```bash
-flutter pub get
+  flutterwindcss: ^1.0.0
 ```
 
 There is a single import — the package barrel. Importing from `package:flutterwindcss/src/...` is

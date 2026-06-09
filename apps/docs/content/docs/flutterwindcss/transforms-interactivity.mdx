@@ -1,0 +1,59 @@
+---
+title: Transforms & interactivity
+description: Paint-only 2D and 3D transforms (scale, rotate, skew, translate, perspective) plus cursor, pointer-events, and visibility.
+---
+
+## Transforms
+
+Like CSS `transform`, these are **paint-only** — they change painting and hit-testing but **not**
+layout, so a scaled or translated box still occupies its original footprint and can overlap
+siblings. Composition order is fixed (scale → rotate → translate). Rotations and skews are in
+**degrees**; `translate*` is in **utility units** (× 4 px).
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `scale(1.05)` | `scale-105` (uniform) |
+| `scaleX(1.2)` `scaleY(0.8)` | `scale-x-*` `scale-y-*` |
+| `rotate(45)` | `rotate-45` (degrees) |
+| `skewX(6)` `skewY(6)` | `skew-x-6` `skew-y-6` |
+| `translate(2, 1)` | `translate-x-2 translate-y-1` |
+| `translateX(2)` `translateY(1)` | `translate-x-2` `translate-y-1` |
+| `transformOrigin(AlignmentDirectional.topStart)` | `origin-top-left` (RTL-aware) |
+
+### 3D
+
+`rotateX` / `rotateY` (degrees) tilt the box in 3D; pair with `perspective(depth)` (logical px,
+smaller = stronger foreshortening) for the flip-card effect:
+
+```dart
+final t = context.fw;
+const SizedBox()
+    .tw
+    .size(20)
+    .bg(t.colors.card)
+    .rounded(t.radii.lg)
+    .perspective(600)
+    .rotateY(25); // Tailwind `perspective-[600px] rotate-y-[25deg]`
+```
+
+## Interactivity & visibility
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `cursor(SystemMouseCursors.click)` | `cursor-pointer` |
+| `pointerEventsNone` | `pointer-events-none` (getter) |
+| `invisible` `visible` | `invisible` `visible` (getters; keep layout space) |
+
+<Callout>
+  Element-level **animation** (`transition`, `animate-*`) isn't built into `.tw` — compose it with
+  [`flutter_animate`](https://pub.dev/packages/flutter_animate), which is Material-free and chains
+  cleanly (`widget.animate().fadeIn()`). The engine animates **theme** transitions via
+  [`FwAnimatedTheme`](/docs/flutterwindcss/theming).
+</Callout>
+
+## Next
+
+<Cards>
+  <Card title="Conditional styling (states)" href="/docs/flutterwindcss/states" />
+  <Card title="Breakpoints & responsive" href="/docs/flutterwindcss/breakpoints" />
+</Cards>

@@ -1,0 +1,64 @@
+---
+title: Spacing & sizing
+description: Padding, margin, width/height, min/max, fractional sizing, and aspect ratio — all on .tw, in utility units of 4 logical pixels.
+---
+
+All values here are in **utility units of 4 logical px** (Tailwind's default scale): `p(4)` →
+`p-4` → 16 px. Padding and margin merge **per-edge** within a chain (last-wins per edge); every
+edge setter is directional (`s`/`e` = start/end, RTL-aware).
+
+## Padding
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `p(4)` | `p-4` |
+| `px(4)` `py(4)` | `px-4` `py-4` |
+| `ps(4)` `pe(4)` | `ps-4` `pe-4` (start/end) |
+| `pt(4)` `pb(4)` | `pt-4` `pb-4` |
+
+## Margin
+
+Same shape as padding (`m` / `mx` / `my` / `ms` / `me` / `mt` / `mb`).
+
+<Callout title="Negative margins">
+  Tailwind's `-m-*` isn't supported — margin renders via `Padding`, which requires non-negative
+  insets. flutterwindcss asserts with a clear message; use `FwStack` / `translate` for overlap.
+</Callout>
+
+## Width & height
+
+| flutterwindcss | Tailwind | Notes |
+| --- | --- | --- |
+| `w(10)` `h(10)` | `w-10` `h-10` | fixed; wins its axis |
+| `size(10)` | `size-10` | fixed width **and** height |
+| `minW(10)` `maxW(40)` | `min-w-*` `max-w-*` | |
+| `minH(10)` `maxH(40)` | `min-h-*` `max-h-*` | |
+| `wFull` `hFull` | `w-full` `h-full` | getters; fill the parent |
+| `wFraction(0.5)` `hFraction(0.5)` | `w-1/2` `h-1/2` | fraction of the parent |
+
+`wFraction` / `hFraction` accept an optional `align` (`AlignmentDirectional`) controlling where the
+fractional box sits.
+
+## Aspect ratio
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `aspect(16 / 9)` | `aspect-[16/9]` |
+| `square` | `aspect-square` (getter) |
+
+```dart
+final t = context.fw;
+const SizedBox()
+    .tw
+    .wFull
+    .aspect(16 / 9)
+    .bg(t.colors.muted)
+    .rounded(t.radii.lg);
+```
+
+## Next
+
+<Cards>
+  <Card title="Backgrounds, borders & radius" href="/docs/flutterwindcss/backgrounds-borders" />
+  <Card title="Layout (multi-child)" href="/docs/flutterwindcss/layout" />
+</Cards>
