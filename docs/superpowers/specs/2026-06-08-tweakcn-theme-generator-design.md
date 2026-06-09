@@ -1,9 +1,9 @@
 # tweakcn → `theme.dart` generator — design
 
-**Status:** approved design · **G0 + G1 + G2 shipped (PR #22, #23, #25); G3–G5 remain** · **Date:** 2026-06-08
+**Status:** approved design · **G0 + G1 + G2 + G3 shipped (PR #22, #23, #25, #26); G4–G5 remain** · **Date:** 2026-06-08
 (status updated 2026-06-09) · **Home:** `apps/docs` (Next.js / TypeScript) ·
-**Audience:** engineers building the generator (the G0 engine prereq, the G1 color core, and the
-G2 CSS parser are merged).
+**Audience:** engineers building the generator (the G0 engine prereq, the G1 color core, the
+G2 CSS parser, and the G3 emitter are merged — only the G4 web UI and G5 docs remain).
 
 This spec implements **AGENTS.md §7**. §7 is the contract; this document is the *how*. Where §7
 and this spec ever disagree, §7 wins and this file is the drift (fix it). The headline product
@@ -307,11 +307,23 @@ Fixed at build time. Shape mirrors `FwTokens`:
   "colors": { "light": { /* 32 named hex/argb */ }, "dark": { /* 32 */ } },
   "shadows": { /* 7 slots, each a list of {color, x, y, blur, spread} */ },
   "typography": { "sans": "Outfit", "serif": "Georgia", "mono": "Geist Mono", "tracking": -0.025 },
-  "meta": { "conversion": "faithful" | "perceptual", "droppedVars": [ /* recorded unknowns */ ] }
+  "meta": {
+    "conversion": "faithful" | "perceptual",
+    "droppedVars": [ /* recorded unknown --vars (parser) */ ],
+    "notes": [ /* human-readable account of every defaulted/dropped token (§7.4) */ ]
+  }
 }
 ```
 
-`emit/` is strictly `ResolvedTheme → ThemeJson → dartSource`. A test asserts `emitDart(themeJson)`
+Colors (and shadow colors) serialize as `AARRGGBB` hex strings keyed by the **`FwColors` field name**
+(camelCase: `card-foreground` → `cardForeground`). `meta.notes` (added — G3) is the
+default-and-report channel (§7.4): every omitted font/shadow/radius (→ engine default), absolute-unit
+tracking, dropped non-default `--spacing`, and `--sidebar-ring → ring` fallback lands here, and the
+emitter renders them as `theme.dart` header comments so nothing is silent (§12).
+
+`emit/` is strictly `RawTheme → ResolvedTheme → ThemeJson → dartSource` (the `color/` core resolves
+each color; the non-color resolution — additive radius, the 7 shadow slots, font-stack extraction,
+tracking — lives in `emit/resolve.ts`, since it is not color math). A test asserts `emitDart(themeJson)`
 consumes **every** schema field (S3) — so "json is source of truth" is structural, not cosmetic.
 
 ---
@@ -347,15 +359,15 @@ any statement the new field falsifies.
 
 ## 6. Module decomposition (one branch → PR → `gh` merge each)
 
-Ordered **G0 ✅ → G1 ✅ → G2 ✅ → G3 → G4 → G5** (G0, G1, and G2 are merged; the emitter (G3) needs the
-color core *and* the `tracking` field; the UI needs the full pipeline).
+Ordered **G0 ✅ → G1 ✅ → G2 ✅ → G3 ✅ → G4 → G5** (G0–G3 are merged; the G4 UI needs the full
+pipeline, which now exists end-to-end).
 
 | Module | Scope | Done when |
 |---|---|---|
 | **G0** ✅ | Engine: `tracking` field + `FwTypographyTheme.lerp` + `FwTokens.lerp` rewire + drift sweep | **Merged PR #22.** Dart analyze/format clean; existing goldens unchanged; new lerp unit test (tracking interpolates, families crossover) green |
 | **G1** ✅ | `color/`: 4 format parsers (alpha + both L forms) + OKLCH→sRGB convert + faithful-clip + opt-in chroma-reduction gamut-map + `requireFinite` NaN-guards | **Merged PR #23.** 46 vitest tests; four-format convergence byte-exact (Δ0); malformed-input guards; lint + scoped tsc clean; covered by the `docs-generator` CI job |
 | **G2** ✅ | `parse/`: tolerant brace-balanced `:root`/`.dark` tokenizer → `RawTheme`; records unknown vars (`RawTheme.unknownVars`); retains per-axis `--shadow-*` primitives + the DEFAULT `--shadow` verbatim (classified "known", ignored by emit); token **absence recorded by omission** from `RawBlock.vars` (for graceful-default reporting); **rejects Tailwind-v3 input** (`@tailwind` directive *or* bare `H S% L%` colors); `@custom-variant dark` false-match guard. Font-stack extraction is G3 (it reads `RawBlock.vars`), not G2. | **Merged PR #25.** 43 vitest tests across all 4 real fixtures (preamble ignored, false-match guard, messy whitespace/comments, alpha pass-through, per-axis retain, missing-token omission, unknown-var recording, v3-reject, missing-block errors); lint + scoped tsc clean |
-| **G3** | `emit/`: `ResolvedTheme → ThemeJson → theme.dart`; additive radius (clamped ≥0), 7 named shadow slots (DEFAULT dropped), font-stack extraction, font stub, `tracking` (unit-normalized), `--spacing` drop-comment, **non-color graceful defaults + report**; **verify `_claudeShadows` matches the transform** (it does — §4.2) | ThemeJson schema snapshot + `emitDart` totality test (S3) + non-10/zero radius guards (S4) + universality fixtures (§8) |
+| **G3** ✅ | `emit/`: `RawTheme → ResolvedTheme → ThemeJson → theme.dart` (`resolve.ts` + `theme-json.ts` + `dart.ts`); additive radius (clamped ≥0), 7 named shadow slots (paren-aware layer split so `rgba(…)`/`hsl(…)` colors survive; DEFAULT `--shadow` + per-axis primitives ignored), font-stack extraction, google_fonts stub, `tracking` (unit-normalized), `--spacing` drop-note, **non-color graceful defaults + `meta.notes` report** (per-slot shadow fallback, radius→10, fonts→platform, `--sidebar-ring`→`ring`). `_claudeShadows` matches the transform (verified — golden is byte-exact). | **Merged PR #26.** 67 vitest tests: 4-fixture end-to-end golden (32×2 colors converge to `themes.dart` — hex/rgb/hsl byte-exact, oklch ±1; radii/shadows/typography byte-exact), ThemeJson schema, `emitDart` totality (S3), non-10/zero radius (S4), tracking units, font cases, colored-shadow, DEFAULT≠md, missing-color gate, sidebar-ring default. Lint + scoped tsc clean. |
 | **G4** | Route + UI: paste → **reject v3** → auto-detect → **hard-gate 32 colors** + **default-and-report** non-color tokens → preview (swatch/radius/shadow, light+dark) → download both + faithful/perceptual toggle | Manual run renders the Claude theme; color gate refuses download with a listed error; defaulted tokens are reported |
 | **G5** | Docs MDX page (usage, limitations, the `--spacing`/font caveats) + full drift sweep of §7/README/roadmap | Docs accurate; no doc contradicts code |
 
@@ -416,7 +428,7 @@ hand-produced without the generator's math. Layers:
   as the `.dark` block). **Font-stack *extraction* is an emit transform (G3)** — G2 captures the full
   verbatim stack (`--font-serif: ui-serif, Georgia, …`) because the parse stage is verbatim-only per
   the §2 architecture; the extraction cases below live with G3.
-- **Universality (G2/G3) — the variety the research surfaced:** a **colored-shadow** fixture
+- **Universality (G2/G3) ✅ — the variety the research surfaced:** a **colored-shadow** fixture
   (`hsl(255 86% 66%)` / `rgba(...)` shadow base → correct `BoxShadow` color via the composed string);
   the **`--shadow` DEFAULT ≠ `--shadow-md`** guard (assert `md` reads `--shadow-md`, and the DEFAULT
   `--shadow` is dropped); **radius zero** (`--radius: 0px` → `FwRadii(0,0,0,0,4)`, clamped, not
@@ -424,18 +436,18 @@ hand-produced without the generator's math. Layers:
   non-color tokens** (a colors+radius-only theme → fonts/shadow/tracking default, all *reported*);
   **missing `--sidebar-ring`** → defaults to `ring`; and a **Tailwind-v3 input → rejected** with the
   clear error (not misparsed).
-- **Emitter (G3):** `ThemeJson` schema snapshot; `emitDart(themeJson)` totality (every field
+- **Emitter (G3) ✅:** `ThemeJson` schema snapshot; `emitDart(themeJson)` totality (every field
   consumed, S3); non-10 radius guard (S4). **Font-stack extraction cases** (read from the verbatim
   `RawBlock.vars` the parser produced): `Outfit, sans-serif`→`Outfit`, `ui-serif, Georgia, …`→
   `Georgia` (generic skipped), `"Times New Roman", …`→`Times New Roman` (outer quotes),
   `'"Oxanium", …'`→`Oxanium` (inner quotes), `Merriweather, serif` in the `sans` slot
   (cross-category, by name).
-- **End-to-end golden (G3):** **each** of the four `__fixtures__/claude.{hex,rgb,hsl,oklch}.css` →
+- **End-to-end golden (G3) ✅:** **each** of the four `__fixtures__/claude.{hex,rgb,hsl,oklch}.css` →
   emit → assert the **full bundle** — 32 colors *and* radii *and* shadows *and* typography — equals
   `themes.dart`'s `_claudeLight`/`_claudeDark`/`_claudeRadii`/`_claudeShadows`/`_claudeType` (oklch
-  colors within the ±1 tolerance, the other three byte-exact). Expected values are transcribed into
-  a TS fixture that **mirrors** `themes.dart` (the human-checked source of those values; noted in
-  the fixture header). Shadows are asserted directly: the §4.2 transform reproduces `_claudeShadows`
+  colors within the ±1 tolerance, the other three byte-exact; **observed delta 0**). Expected values
+  are transcribed into `__fixtures__/claude-expected.ts`, which **mirrors** `themes.dart` (the
+  human-checked source of those values; noted in the fixture header). Shadows are asserted directly: the §4.2 transform reproduces `_claudeShadows`
   byte-for-byte (a verified no-op, not a regeneration). `tracking` here is `0`, so a **separate
   emitter unit test** covers a non-zero `--tracking-normal` (e.g. `-0.025em` → `tracking: -0.025`)
   and its interpolation (G0's `FwTypographyTheme.lerp`); the golden alone wouldn't exercise non-zero
