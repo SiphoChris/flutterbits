@@ -27,3 +27,25 @@ describe('oklchToRgb01 (faithful)', () => {
     expect(Math.abs(b - 68)).toBeLessThanOrEqual(1);
   });
 });
+
+describe('oklchToRgb01 gamut handling', () => {
+  const OOG = { L: 0.7, C: 0.3, h: 25 };
+
+  it('faithful and perceptual agree for an in-gamut color', () => {
+    const f = oklchToRgb01(0.6171, 0.1375, 39.0427, 'faithful');
+    const p = oklchToRgb01(0.6171, 0.1375, 39.0427, 'perceptual');
+    expect(p).toEqual(f);
+  });
+
+  it('faithful clips an out-of-gamut color (some channel pinned to 0 or 1)', () => {
+    const f = oklchToRgb01(OOG.L, OOG.C, OOG.h, 'faithful');
+    const pinned = [f.r, f.g, f.b].some((c) => c === 0 || c === 1);
+    expect(pinned).toBe(true);
+  });
+
+  it('perceptual differs from faithful for an out-of-gamut color', () => {
+    const f = oklchToRgb01(OOG.L, OOG.C, OOG.h, 'faithful');
+    const p = oklchToRgb01(OOG.L, OOG.C, OOG.h, 'perceptual');
+    expect(p).not.toEqual(f);
+  });
+});

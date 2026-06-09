@@ -112,3 +112,18 @@ export function parseOklch(value: string, mode: ConversionMode): Rgba8 {
   const { r, g, b } = oklchToRgb01(L, C, h, mode);
   return { r: channelTo8(r), g: channelTo8(g), b: channelTo8(b), a: alphaTo8(parseAlpha(alpha)) };
 }
+
+/// Parse any supported CSS color string — `#hex`, `rgb()/rgba()`, `hsl()/hsla()`,
+/// or `oklch()` — into an [Rgba8]. `mode` selects the OKLCH out-of-gamut policy
+/// (only affects `oklch()` inputs). Throws on an unrecognized format (e.g. a
+/// bare Tailwind-v3 `H S% L%` triple or a named color), which the caller (G2)
+/// surfaces as a clear error.
+export function parseCssColor(value: string, mode: ConversionMode = 'faithful'): Rgba8 {
+  const v = value.trim();
+  if (v.startsWith('#')) return parseHex(v);
+  const lower = v.toLowerCase();
+  if (lower.startsWith('oklch(')) return parseOklch(v, mode);
+  if (lower.startsWith('hsl(') || lower.startsWith('hsla(')) return parseHsl(v);
+  if (lower.startsWith('rgb(') || lower.startsWith('rgba(')) return parseRgb(v);
+  throw new Error(`Unrecognized color format: "${value}". Expected hex, rgb(), hsl(), or oklch().`);
+}
