@@ -31,7 +31,8 @@ class FwTokens {
   /// Box-shadow scale.
   final FwShadows shadows;
 
-  /// Typography marker (scales are static; present for future per-theme type).
+  /// Per-theme typography: the `sans`/`serif`/`mono` family names and `tracking`
+  /// (em base letter-spacing). The static type *scales* live on their own types.
   final FwTypographyTheme typography;
 
   /// The shadcn `--radius` this theme was built from (logical px).
@@ -134,9 +135,9 @@ class FwTokens {
     colors: FwColors.lerp(a.colors, b.colors, t),
     radii: FwRadii.lerp(a.radii, b.radii, t),
     shadows: FwShadows.lerp(a.shadows, b.shadows, t),
-    // String family names cannot numerically interpolate; use a hard
-    // crossover at t=0.5 (same approach Flutter takes for non-lerpable fields).
-    typography: t < 0.5 ? a.typography : b.typography,
+    // Family names hard-crossover at t=0.5 while tracking interpolates — see
+    // FwTypographyTheme.lerp. (Was a whole-object crossover before tracking.)
+    typography: FwTypographyTheme.lerp(a.typography, b.typography, t),
     radiusBase: a.radiusBase + (b.radiusBase - a.radiusBase) * t,
   );
 
@@ -165,15 +166,16 @@ class FwTokens {
 /// rather than pretending the font is present. [family] is kept as a
 /// deprecated-free alias of [sans] for the common "just the body font" read.
 ///
-/// Note: `FwTokens.lerp` uses a hard crossover (t < 0.5 -> a, t >= 0.5 -> b)
-/// for this field, because [String] family names cannot numerically interpolate.
+/// Note: family names hard-crossover at `t = 0.5` (strings cannot interpolate)
+/// while [tracking] interpolates linearly — see [FwTypographyTheme.lerp].
 @immutable
 class FwTypographyTheme {
-  /// Creates a typography theme from its three family names.
+  /// Creates a typography theme from its family names and base letter-spacing.
   const FwTypographyTheme({
     this.sans = FwFontFamily.sans,
     this.serif = FwFontFamily.serif,
     this.mono = FwFontFamily.mono,
+    this.tracking = 0,
   });
 
   /// The default UI/body (sans) family name.
@@ -185,19 +187,41 @@ class FwTypographyTheme {
   /// The monospace family name.
   final String mono;
 
+  /// Theme base letter-spacing in **em** (shadcn `--tracking-normal`), stored as an
+  /// em multiple (e.g. `-0.025` for `-0.025em`). Consumers convert to Flutter's
+  /// logical-px `TextStyle.letterSpacing` as `tracking × fontSize` at the text-apply
+  /// site — the token only carries the value. `0` (the default) means no extra
+  /// tracking, preserving prior behavior and all existing goldens.
+  final double tracking;
+
   /// Convenience alias for [sans] — the default body family.
   String get family => sans;
 
-  /// The standard theme using the platform sans/serif/mono families.
+  /// The standard theme using the platform sans/serif/mono families and zero tracking.
   static const FwTypographyTheme standard = FwTypographyTheme();
+
+  /// Interpolates two typography themes. Family **names** are [String]s and cannot
+  /// numerically interpolate, so they hard-crossover at `t = 0.5` (the approach
+  /// Flutter uses for non-lerpable fields); [tracking] is numeric and interpolates
+  /// linearly, so it stays continuous through the crossover.
+  static FwTypographyTheme lerp(FwTypographyTheme a, FwTypographyTheme b, double t) {
+    final FwTypographyTheme families = t < 0.5 ? a : b;
+    return FwTypographyTheme(
+      sans: families.sans,
+      serif: families.serif,
+      mono: families.mono,
+      tracking: a.tracking + (b.tracking - a.tracking) * t,
+    );
+  }
 
   @override
   bool operator ==(Object other) =>
       other is FwTypographyTheme &&
       other.sans == sans &&
       other.serif == serif &&
-      other.mono == mono;
+      other.mono == mono &&
+      other.tracking == tracking;
 
   @override
-  int get hashCode => Object.hash(sans, serif, mono);
+  int get hashCode => Object.hash(sans, serif, mono, tracking);
 }

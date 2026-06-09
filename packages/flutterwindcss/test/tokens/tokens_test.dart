@@ -193,4 +193,51 @@ void main() {
     expect(hi.radiusBase, FwTokens.dark.radiusBase);
     expect(hi.radii, FwTokens.dark.radii);
   });
+
+  test('typography tracking defaults to 0 and round-trips', () {
+    expect(FwTypographyTheme.standard.tracking, 0);
+    expect(const FwTypographyTheme().tracking, 0);
+    const t = FwTypographyTheme(sans: 'Outfit', tracking: -0.025);
+    expect(t.tracking, -0.025);
+  });
+
+  test('typography equality and hashCode include tracking', () {
+    const a = FwTypographyTheme(sans: 'Outfit', tracking: 0);
+    const b = FwTypographyTheme(sans: 'Outfit', tracking: -0.025);
+    expect(a == b, isFalse);
+    expect(a.hashCode == b.hashCode, isFalse);
+    // Same tracking + same families stays equal.
+    expect(a == const FwTypographyTheme(sans: 'Outfit'), isTrue);
+  });
+
+  test('FwTokens.lerp interpolates typography tracking', () {
+    FwTokens withTracking(double tracking) => FwTokens(
+      colors: FwTokens.light.colors,
+      radii: FwTokens.light.radii,
+      shadows: FwTokens.light.shadows,
+      typography: FwTypographyTheme(sans: 'A', tracking: tracking),
+      radiusBase: FwTokens.light.radiusBase,
+    );
+    final a = withTracking(0);
+    final b = withTracking(-0.04);
+    expect(FwTokens.lerp(a, b, 0.5).typography.tracking, closeTo(-0.02, 1e-9));
+  });
+
+  test('FwTypographyTheme.lerp crosses families at 0.5 and interpolates tracking', () {
+    const a = FwTypographyTheme(sans: 'A', serif: 'As', mono: 'Am', tracking: 0);
+    const b = FwTypographyTheme(sans: 'B', serif: 'Bs', mono: 'Bm', tracking: -0.04);
+
+    // Families hard-crossover at t = 0.5 (strings cannot interpolate).
+    expect(FwTypographyTheme.lerp(a, b, 0.0).sans, 'A');
+    expect(FwTypographyTheme.lerp(a, b, 0.49).sans, 'A');
+    expect(FwTypographyTheme.lerp(a, b, 0.5).sans, 'B');
+    expect(FwTypographyTheme.lerp(a, b, 1.0).mono, 'Bm');
+    expect(FwTypographyTheme.lerp(a, b, 0.0).serif, 'As');
+    expect(FwTypographyTheme.lerp(a, b, 1.0).serif, 'Bs');
+
+    // tracking interpolates linearly (continuous through the crossover).
+    expect(FwTypographyTheme.lerp(a, b, 0.0).tracking, 0);
+    expect(FwTypographyTheme.lerp(a, b, 0.5).tracking, closeTo(-0.02, 1e-9));
+    expect(FwTypographyTheme.lerp(a, b, 1.0).tracking, closeTo(-0.04, 1e-9));
+  });
 }
