@@ -1,7 +1,6 @@
-import type { Rgba8 } from './types';
+import type { Rgba8, ConversionMode } from './types';
 import { alphaTo8, channelTo8 } from './srgb';
 import { oklchToRgb01 } from './oklch';
-import type { ConversionMode } from './types';
 
 /// Split the inside of a `fn(...)` color into its components, supporting both
 /// CSS comma syntax (`a, b, c`) and modern space syntax with optional
