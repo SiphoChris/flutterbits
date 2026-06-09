@@ -1,0 +1,77 @@
+---
+title: Conditional styling
+description: Apply styles only in a state — hover, focus, pressed, disabled — and propagate state to descendants and siblings with groups and peers.
+---
+
+The accumulator resolves lazily against the active interaction states, so state variants are
+first-class. Each variant takes a builder that receives the current style and returns a modified one
+— it layers **over** the base (and still follows [last-wins](/docs/flutterwindcss/styling#the-accumulator-model)).
+
+## Interaction states
+
+```dart
+final t = context.fw;
+const Text('Hover me')
+    .tw
+    .px(4)
+    .py(2)
+    .rounded(t.radii.md)
+    .bg(t.colors.secondary)
+    .text(t.colors.secondaryForeground)
+    .hover((s) => s.bg(t.colors.primary).text(t.colors.primaryForeground));
+```
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `hover((s) => …)` | `hover:` |
+| `focus((s) => …)` | `focus:` |
+| `pressed((s) => …)` | `active:` |
+| `disabled((s) => …)` | `disabled:` |
+
+<Callout title="Material-free, by design">
+  On a plain styled box these states are sourced from the widgets layer (a `MouseRegion` for hover, a
+  non-traversable `Focus`, a `Listener` for press) — there's no Material ink or extra tab stop. A
+  truly *interactive* component that owns focus + keyboard activation (a button, say) belongs to the
+  [flutterbits](/docs/flutterbits) component layer.
+</Callout>
+
+## Groups — react to an ancestor's state
+
+Flutter has no CSS `:hover` that descendants can read, so flutterwindcss makes the scope explicit.
+Wrap a subtree in `FwGroup`; it sources its own hover/focus/pressed and broadcasts them, and
+descendants opt in with `groupHover` / `groupFocus` / `groupPressed`:
+
+```dart
+FwGroup(
+  child: FwColumn(
+    gap: 1,
+    children: [
+      const Text('Card title').tw.weight(600).text(t.colors.cardForeground),
+      // Brightens when the whole card is hovered — not just this text.
+      const Text('Hover anywhere on the card')
+          .tw
+          .text(t.colors.mutedForeground)
+          .groupHover((s) => s.text(t.colors.foreground)),
+    ],
+  ).tw.p(4).bg(t.colors.card).rounded(t.radii.lg).border(1, color: t.colors.border),
+);
+```
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `FwGroup` + `groupHover((s) => …)` | `group` + `group-hover:` |
+| `FwPeer` + `peerHover((s) => …)` | `peer` + `peer-hover:` |
+
+## Peers — react to a sibling's state
+
+Since Flutter has no DOM sibling selectors, a "peer" relationship is an explicit shared scope: an
+`FwPeer` sources state and its siblings react with `peerHover` / `peerFocus` / …. When you nest
+groups or peers, disambiguate with a **name** (`groupHover(…, name: 'card')`, like Tailwind's
+`group/card` + `group-hover/card:`).
+
+## Next steps
+
+<Cards>
+  <Card title="Breakpoints & responsive" href="/docs/flutterwindcss/breakpoints" />
+  <Card title="Layout" href="/docs/flutterwindcss/layout" />
+</Cards>

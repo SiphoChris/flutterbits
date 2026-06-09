@@ -8,7 +8,8 @@ export function baseOptions(): BaseLayoutProps {
       title: appName,
     },
     links: [
-      { text: 'Docs', url: '/docs' },
+      { text: 'flutterwindcss', url: '/docs/flutterwindcss' },
+      { text: 'flutterbits', url: '/docs/flutterbits' },
       { text: 'Theme generator', url: '/theme-generator' },
     ],
     githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,

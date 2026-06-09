@@ -1,0 +1,75 @@
+---
+title: Colors
+description: Two layers — the raw baked Tailwind palette, and theme-resolved semantic color roles. Components use roles so a theme swap reskins everything.
+---
+
+flutterwindcss gives you colors at **two layers**, and which one you reach for matters.
+
+## Semantic color roles (theme-resolved)
+
+The layer you'll use most. Read a role off the active theme with `context.fw.colors.<role>` and pass
+it to any color setter:
+
+```dart
+final t = context.fw;
+const Text('Delete')
+    .tw
+    .px(4)
+    .py(2)
+    .bg(t.colors.destructive)
+    .text(t.colors.destructiveForeground)
+    .rounded(t.radii.md);
+```
+
+These roles are **resolved by the active theme**, so swapping the theme (or light ↔ dark) reskins
+every widget that uses them — see [Semantic tokens & theming](/docs/flutterwindcss/theming). The
+full vocabulary is the **32 shadcn tokens**: the 19 core roles…
+
+`background` · `foreground` · `card` · `cardForeground` · `popover` · `popoverForeground` ·
+`primary` · `primaryForeground` · `secondary` · `secondaryForeground` · `muted` · `mutedForeground` ·
+`accent` · `accentForeground` · `destructive` · `destructiveForeground` · `border` · `input` · `ring`
+
+…plus the 5 chart colors (`chart1`…`chart5`) and the 8 sidebar tokens (`sidebar`,
+`sidebarForeground`, `sidebarPrimary`, `sidebarPrimaryForeground`, `sidebarAccent`,
+`sidebarAccentForeground`, `sidebarBorder`, `sidebarRing`).
+
+<Callout title="Coming from Tailwind / shadcn">
+  These are the same semantic CSS variables shadcn uses — `t.colors.primary` is `bg-primary` /
+  `var(--primary)`, `t.colors.mutedForeground` is `text-muted-foreground`. A pasted tweakcn theme
+  maps onto them one-to-one.
+</Callout>
+
+## The raw Tailwind palette (`FwPalette`)
+
+The complete Tailwind v4 palette is baked in as `const` values (22 hues × 11 shades, plus
+`white`/`black`) — no runtime color math. It's **theme-independent**:
+
+```dart
+const SizedBox()
+    .tw
+    .size(10)
+    .bg(FwPalette.blue.shade500)   // Tailwind `bg-blue-500`
+    .border(1, color: FwPalette.slate.shade200);
+```
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `FwPalette.blue.shade500` | `blue-500` |
+| `FwPalette.amber.shade400` | `amber-400` |
+| `FwPalette.white` `FwPalette.black` | `white` `black` |
+
+## Which layer to use
+
+<Callout type="warn" title="Components should use semantic roles">
+  If you hardcode a raw swatch (`FwPalette.blue.shade500`) where a role belongs, that widget stops
+  theming — a theme swap won't touch it. Reach for the raw palette only to **build** a theme, or for
+  a genuinely one-off, non-themeable color. This is exactly shadcn's discipline, and it's what makes
+  the [Theme generator](/theme-generator) able to reskin everything.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Semantic tokens & theming" href="/docs/flutterwindcss/theming" />
+  <Card title="Conditional styling (states)" href="/docs/flutterwindcss/states" />
+</Cards>

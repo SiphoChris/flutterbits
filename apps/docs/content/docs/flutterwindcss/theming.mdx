@@ -1,0 +1,88 @@
+---
+title: Semantic tokens & theming
+description: How theming works by semantic indirection — components reference roles, the theme resolves them, and swapping the theme reskins the whole app.
+---
+
+A theme is one `FwTokens` bundle: the **32 semantic colors**, the radius set, the shadow scale, and
+the typography (family names + tracking). Components never reference raw values — they reference
+**roles** — and the active `FwTokens` resolves them. That indirection is the whole trick.
+
+## Semantic indirection
+
+```dart
+// A component references roles…
+final t = context.fw;
+const Text('Subscribe').tw.px(4).py(2).bg(t.colors.primary).text(t.colors.primaryForeground);
+```
+
+Because the widget reads `primary`/`primaryForeground` (not a fixed color), swapping the active
+`FwTokens` reskins it — along with every other role-using widget — from a **single** change. This is
+the same model as shadcn/ui: change the theme, the components follow.
+
+## Providing a theme
+
+`FwTheme` is an `InheritedWidget` that publishes a bundle to everything below it; `context.fw` reads
+it (falling back to the [`FwThemeExtension`](/docs/flutterwindcss/installation#inside-a-materialapp-interop)
+bridge inside a `MaterialApp`).
+
+```dart
+FwTheme(tokens: FwTokens.light, child: const HomeScreen());
+```
+
+`FwTokens.light` and `FwTokens.dark` are the built-in stock shadcn-neutral themes. **Switching**
+between them is the host app's job — flutterwindcss just resolves whichever bundle is active.
+
+## Animating theme changes
+
+Swap `FwTheme` for `FwAnimatedTheme` and every `context.fw`-styled descendant **crossfades** when the
+tokens change — colors, radii, shadows, and typography all interpolate (`FwTokens.lerp`). Perfect for
+a light ↔ dark toggle:
+
+```dart
+class App extends StatefulWidget {
+  const App({super.key});
+  @override
+  State<App> createState() => _AppState();
+}
+
+class _AppState extends State<App> {
+  bool _dark = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return WidgetsApp(
+      color: const Color(0xFF000000),
+      builder: (context, _) => FwAnimatedTheme(
+        tokens: _dark ? FwTokens.dark : FwTokens.light,
+        duration: const Duration(milliseconds: 200),
+        child: HomeScreen(onToggleDark: () => setState(() => _dark = !_dark)),
+      ),
+    );
+  }
+}
+```
+
+## Using a custom (pasted) theme
+
+To use any tweakcn/shadcn theme instead of the stock one, generate a `theme.dart` with the
+[Theme generator](/theme-generator) — paste the CSS, copy the output. It defines two
+`const FwTokens` (`lightTheme` / `darkTheme`) you hand straight to `FwTheme` / `FwAnimatedTheme`:
+
+```dart
+import 'theme.dart'; // generated
+
+FwAnimatedTheme(tokens: isDark ? darkTheme : lightTheme, child: const HomeScreen());
+```
+
+<Callout>
+  Every color in a `FwTokens` is required — there are no defaults — so a generated theme always
+  carries all 32 roles. That's why a pasted theme round-trips with nothing dropped.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Theme generator" href="/docs/flutterwindcss/theme-generator" />
+  <Card title="Colors" href="/docs/flutterwindcss/colors" />
+  <Card title="Layout" href="/docs/flutterwindcss/layout" />
+</Cards>

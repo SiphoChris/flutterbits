@@ -1,0 +1,42 @@
+---
+title: Overview
+description: flutterbits is shadcn/ui for Flutter — copy-paste components you own, styled entirely through flutterwindcss semantic tokens.
+---
+
+**flutterbits** is *shadcn/ui for Flutter*: a registry of **copy-paste components** you own. You don't
+add a versioned widget library — you pull a component's source into your project and it's yours to
+read and edit. Every component is styled entirely through [flutterwindcss](/docs/flutterwindcss)
+semantic tokens, so a theme reskins them all.
+
+<Callout title="Components — coming soon">
+  The styling engine ([flutterwindcss](/docs/flutterwindcss)) and the
+  [Theme generator](/theme-generator) are shipped and stable. The component registry and CLI
+  described below are the **next** thing being built — this page is the plan, not a released
+  product yet.
+</Callout>
+
+## How it will work
+
+- **Copy-paste, not a dependency.** Components are source you own — fetched from a registry, written
+  into your project (default `lib/components/ui/`). You can change anything; nothing is locked behind
+  a package version. This is the model shadcn/ui pioneered.
+- **A CLI to fetch and update.** `flutterbits add <name>` writes a component's files into your app,
+  installs its package dependencies, and pulls in any other components it needs. `flutterbits diff
+  <name>` shows what changed upstream versus your copy — the survival mechanism for code you've since
+  edited.
+- **Styled through tokens.** Components reference only semantic roles (`primary`, `muted`, `border`)
+  via `context.fw` — never raw colors. So a `theme.dart` generated from any tweakcn/shadcn theme
+  reskins every component at once.
+- **Accessible and Material-free.** Components are built on the widgets layer with real semantics,
+  keyboard activation, and focus — no Material components or visuals.
+
+## Relationship to flutterwindcss
+
+flutterwindcss is the **styling layer** (Tailwind's vocabulary); flutterbits is the **component
+layer** (shadcn's components) built on top of it. If you're styling your own widgets, you only need
+flutterwindcss. flutterbits will give you pre-built, themeable components when you want them.
+
+<Cards>
+  <Card title="flutterwindcss — start here" href="/docs/flutterwindcss" />
+  <Card title="Theme generator" href="/theme-generator" />
+</Cards>
