@@ -104,11 +104,15 @@ policy was "always gamut-map"; it was corrected to **faithful-clip default, gamu
 because coherence with the recognizable Tailwind/shadcn hex matters more than matching
 browser-rendered pixels for the realistic color range. The four-format fixtures *prove this is the
 right default*: tweakcn's exported `oklch()` values are **already in-gamut sRGB projections**, not
-the wild out-of-gamut Tailwind *source* values. Concretely — dark `destructive` is `#ef4444`
-(Tailwind red-500) but its oklch export is `oklch(0.6368 0.2078 25.3313)`: chroma **0.2078**, the
-value you get converting `#ef4444` *back* to oklch, **not** Tailwind's out-of-gamut source chroma
-`0.237`. So under faithful-clip the clip barely engages and **all four formats converge** on the
-same sRGB. (Gamut-map would *move* these already-correct colors and is therefore correctly opt-in.)
+the wild out-of-gamut design-token *source* values. Concretely — the Claude theme's dark
+`destructive` `#ef4444` is exported as `oklch(0.6368 0.2078 25.3313)`, and that chroma `0.2078` is
+exactly the value you get converting `#ef4444` *back* to oklch — so it round-trips byte-exact under
+faithful-clip (verified Δ0 in G1). Contrast a genuinely out-of-gamut *source*: a vivid hand-authored
+`oklch` (or a wide-gamut/P3 token) whose chroma exceeds the sRGB boundary is where clip vs gamut-map
+diverge. Because every real tweakcn export is in-gamut, **all four formats converge** on the same
+sRGB and gamut-map would only *move* already-correct colors — hence it is correctly opt-in. (Note:
+do not equate `#ef4444` with Tailwind **v4** red-500 — that is `oklch(0.637 0.237 25.331)` →
+`#fb2c36`; `#ef4444` is a distinct red. The in-gamut round-trip point holds regardless.)
 
 This makes the four-format fixtures the keystone color oracle: 32 authoritative `oklch → sRGB`
 pairs from the exact tool we are cloning. Expected convergence (§8): **hex/rgb/hsl byte-exact** to
@@ -371,13 +375,18 @@ hand-produced without the generator's math. Layers:
     `themes.dart`, and **oklch is within ±1 per 8-bit channel** of them. This is 32 authoritative
     `oklch → sRGB` pairs from tweakcn/culori itself — a stronger faithfulness proof than synthetic
     vectors, and it directly exercises the full OKLCH→OKLab→linear→gamma→sRGB→clip path (the
-    palette JSON alone is hex-only and would just test the hex parser — circular). Once G1 runs,
-    pin the exact computed oklch ARGBs as a reviewed snapshot (each verified ≤1 from `themes.dart`)
-    so the test is byte-tight going forward.
-  - **Out-of-gamut clip vectors:** a handful of Tailwind v4 *source* `oklch()` values whose chroma
-    is out of sRGB gamut (e.g. red-500 source `oklch(0.637 0.237 25.331)` → published `#ef4444`),
-    asserting faithful-clip reproduces the published hex and that clip ≠ gamut-map there. (The
-    four-format fixtures cover the in-gamut path; these cover the clip path the fixtures don't hit.)
+    palette JSON alone is hex-only and would just test the hex parser — circular). **Tolerance
+    (corrected — G1):** `hex`/`rgb`/`hsl` are asserted **byte-exact** (deterministic — no
+    transcendental math), and `oklch` is asserted **within ±1 per channel** because libm
+    `pow`/`cos`/`sin` may differ by ~1 ULP across platforms and could flip a rounding boundary; this
+    is a deliberate, documented tolerance, not a silent relaxation. In practice the observed delta is
+    **0** for all Claude tokens (verified in G1), so a regression of even 1 LSB is visible.
+  - **Out-of-gamut clip-vs-map behavior:** asserted with a **synthetic, clearly out-of-gamut**
+    `oklch` (e.g. `oklch(0.7 0.3 25)`): faithful **clips** (≥1 channel pinned to 0 or 1) while
+    perceptual **reduces chroma** (hue-preserved), stays in gamut, and differs from faithful. (This
+    replaces an earlier, incorrect spec example — `oklch(0.637 0.237 25.331)` is in fact *in-gamut*
+    and maps to `#fb2c36`, not a clipped `#ef4444`. Faithfulness against real values is proven
+    byte-exact by the four-format convergence, which covers the in-gamut path real exports use.)
   - Per-channel matrix vectors (math internal-consistency), alpha-syntax cases (`hsl(… / 0.10)`,
     `oklch(… / 0.1)`), and percent-vs-unit OKLCH lightness.
 - **Parser (G2):** fixtures for messy whitespace/comments, all four formats, alpha syntax, missing
@@ -417,8 +426,9 @@ hand-produced without the generator's math. Layers:
 ## 9. Risks & honest calls
 
 - **OKLCH faithfulness proof** → resolved: the four-format fixtures give 32 authoritative
-  `oklch → sRGB` pairs from tweakcn itself (in-gamut path), and a small set of Tailwind v4 source
-  `oklch()` values covers the out-of-gamut clip path. No reliance on hand-produced artifacts.
+  `oklch → sRGB` pairs from tweakcn itself (in-gamut path; G1 reproduces them Δ0), and a synthetic
+  clearly-out-of-gamut `oklch` exercises the clip-vs-map path behaviorally (§8). No reliance on
+  hand-produced artifacts.
 - **oklch ≠ byte-exact to hex** → expected and bounded: tweakcn's oklch is an in-gamut projection,
   so it converges to ±1 of the hex export, not necessarily the same bit. Honest call (§12): we
   assert ±1 for oklch and byte-exact for hex/rgb/hsl, and pin the reviewed oklch ARGBs as a
