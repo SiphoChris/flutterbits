@@ -1,11 +1,16 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
-import { appName, gitConfig } from './shared';
+import { gitConfig } from './shared';
 
 export function baseOptions(): BaseLayoutProps {
   return {
     nav: {
-      // JSX supported
-      title: appName,
+      // The wordmark echoes the logo: "flutter" in the foreground, "bits" in the
+      // brand blue (`text-fd-primary`, retinted in global.css).
+      title: (
+        <span className="font-semibold tracking-tight">
+          flutter<span className="text-fd-primary">bits</span>
+        </span>
+      ),
     },
     links: [
       { text: 'flutterwindcss', url: '/docs/flutterwindcss' },
