@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseHex, parseRgb, parseHsl, parseOklch } from './parse';
+import { parseHex, parseRgb, parseHsl, parseOklch, parseCssColor } from './parse';
 
 describe('parseHex', () => {
   it('parses 6-digit', () => {
@@ -54,5 +54,17 @@ describe('parseOklch', () => {
   });
   it('parses alpha slash-syntax (round-to-nearest)', () => {
     expect(parseOklch('oklch(0 0 0 / 0.1)', 'faithful')).toEqual({ r: 0, g: 0, b: 0, a: 26 });
+  });
+});
+
+describe('parseCssColor error handling', () => {
+  it('throws on a bare Tailwind-v3 HSL triple (no wrapper)', () => {
+    expect(() => parseCssColor('220 14% 95%')).toThrow(/Unrecognized color format/);
+  });
+  it('throws on a named color (unsupported)', () => {
+    expect(() => parseCssColor('rebeccapurple')).toThrow(/Unrecognized color format/);
+  });
+  it('defaults to faithful mode', () => {
+    expect(parseCssColor('#c96442')).toEqual({ r: 201, g: 100, b: 66, a: 255 });
   });
 });
