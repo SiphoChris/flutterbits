@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseHex, parseRgb, parseHsl } from './parse';
+import { parseHex, parseRgb, parseHsl, parseOklch } from './parse';
 
 describe('parseHex', () => {
   it('parses 6-digit', () => {
@@ -40,5 +40,19 @@ describe('parseHsl', () => {
   });
   it('converts the Claude primary HSL to its sRGB bytes', () => {
     expect(parseHsl('hsl(15.1111 55.5556% 52.3529%)')).toEqual({ r: 201, g: 100, b: 66, a: 255 });
+  });
+});
+
+describe('parseOklch', () => {
+  it('parses unit lightness', () => {
+    expect(parseOklch('oklch(1 0 0)', 'faithful')).toEqual({ r: 255, g: 255, b: 255, a: 255 });
+  });
+  it('treats percent lightness the same as unit', () => {
+    const unit = parseOklch('oklch(0.6171 0.1375 39.0427)', 'faithful');
+    const pct = parseOklch('oklch(61.71% 0.1375 39.0427)', 'faithful');
+    expect(pct).toEqual(unit);
+  });
+  it('parses alpha slash-syntax (round-to-nearest)', () => {
+    expect(parseOklch('oklch(0 0 0 / 0.1)', 'faithful')).toEqual({ r: 0, g: 0, b: 0, a: 26 });
   });
 });

@@ -1,5 +1,7 @@
 import type { Rgba8 } from './types';
 import { alphaTo8, channelTo8 } from './srgb';
+import { oklchToRgb01 } from './oklch';
+import type { ConversionMode } from './types';
 
 /// Split the inside of a `fn(...)` color into its components, supporting both
 /// CSS comma syntax (`a, b, c`) and modern space syntax with optional
@@ -97,4 +99,17 @@ export function parseHsl(value: string): Rgba8 {
     b: channelTo8(b),
     a: alphaTo8(parseAlpha(alpha)),
   };
+}
+
+/// Parse `oklch(L C h)` / `oklch(L C h / a)`. L may be unit ([0,1]) or percent;
+/// C is a number; h is degrees. `mode` selects faithful-clip vs perceptual.
+export function parseOklch(value: string, mode: ConversionMode): Rgba8 {
+  const inside = value.trim().replace(/^oklch\(/, '').replace(/\)$/, '');
+  const { parts, alpha } = splitComponents(inside);
+  if (parts.length !== 3) throw new Error(`Invalid oklch color: ${value}`);
+  const L = parts[0] === 'none' ? 0 : parseMaybePercent(parts[0]);
+  const C = parts[1] === 'none' ? 0 : parseFloat(parts[1]);
+  const h = parts[2] === 'none' ? 0 : parseFloat(parts[2]);
+  const { r, g, b } = oklchToRgb01(L, C, h, mode);
+  return { r: channelTo8(r), g: channelTo8(g), b: channelTo8(b), a: alphaTo8(parseAlpha(alpha)) };
 }
