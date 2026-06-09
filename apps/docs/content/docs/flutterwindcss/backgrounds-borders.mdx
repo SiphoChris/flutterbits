@@ -1,0 +1,77 @@
+---
+title: Backgrounds, borders & radius
+description: Solid and gradient fills, background images, directional per-edge borders, dashed/dotted styles, per-corner radius, and clipping.
+---
+
+Border **widths** and **radii** are in **logical px** (not utility units) — they ride Tailwind's
+border-width and radius scales, so pass token values like `t.radii.md`.
+
+## Background
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `bg(t.colors.card)` | `bg-card` |
+| `bgImage(NetworkImage(url), fit: BoxFit.cover)` | `bg-cover` + an arbitrary background-image |
+| `bgGradient(LinearGradient(...))` | arbitrary gradient |
+
+### Gradient direction sugar
+
+Pass the colors (usually `context.fw.colors.*`); only the direction is sugar. Horizontal/diagonal
+variants are **RTL-aware** (`toEnd` flows toward the reading end).
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `bgGradientToBottom([a, b])` | `bg-gradient-to-b` |
+| `bgGradientToEnd([a, b])` | `bg-gradient-to-r` (RTL-aware) |
+| `bgGradientToBottomEnd([a, b])` | `bg-gradient-to-br` |
+| `bgLinear(begin:, end:, colors:)` | general form |
+
+`bgGradientToTop` / `ToStart` / `ToTopStart` / `ToTopEnd` / `ToBottomStart` round out the eight
+directions; each takes optional `stops`.
+
+## Border
+
+Directional, per-edge; width and color are independent axes. A uniform border can be rounded; a
+per-side border **cannot** (a Flutter limitation — combining it with `rounded*` asserts).
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `border(1, color: t.colors.border)` | `border border-border` |
+| `borderWidth(2)` `borderColor(c)` | `border-2` / set color only |
+| `borderS(width: 2, color: c)` `borderT(...)` | `border-s-2` `border-t-*` |
+| `borderDashed` `borderDotted` `borderSolid` | `border-dashed` `border-dotted` (getters) |
+
+## Radius
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `rounded(t.radii.md)` | `rounded-[…]` |
+| `roundedSm` `roundedMd` `roundedLg` `roundedXl` | `rounded-sm…xl` (theme steps, getters) |
+| `roundedT(r)` `roundedB(r)` `roundedS(r)` `roundedE(r)` | `rounded-t/b/s/e-*` |
+| `roundedFull` `roundedNone` | `rounded-full` `rounded-none` (getters) |
+
+The named-scale getters (`roundedMd`, …) resolve the active theme's `radii.*` at build, so they
+track the theme's `--radius`. Use the raw `rounded(value)` for per-corner control — don't mix a step
+and a raw radius in the same chain.
+
+## Clip
+
+`clip()` clips overflowing content to the box shape (deflated by the border width when there's a
+radius). Tailwind `overflow-hidden`.
+
+```dart
+final t = context.fw;
+const SizedBox()
+    .tw
+    .size(16)
+    .bgGradientToBottomEnd([t.colors.chart1, t.colors.chart2])
+    .rounded(t.radii.xl)
+    .border(1, color: t.colors.border);
+```
+
+## Next
+
+<Cards>
+  <Card title="Typography" href="/docs/flutterwindcss/typography" />
+  <Card title="Effects & filters" href="/docs/flutterwindcss/effects-filters" />
+</Cards>

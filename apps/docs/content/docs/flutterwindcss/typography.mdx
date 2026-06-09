@@ -1,0 +1,62 @@
+---
+title: Typography
+description: Text color, size, weight, leading, tracking, alignment, family, decoration, line-clamp/truncate, wrapping, and text shadow — inherited through DefaultTextStyle.
+---
+
+Typography setters ride `DefaultTextStyle` (and `IconTheme`), so they **inherit** into descendant
+text and icons, exactly like CSS. Sizes are **logical px** (pass a token like `FwFontSize.lg.px`);
+`leading` is a line-height **multiple**; `tracking` is **absolute logical px** (Flutter's model —
+not em).
+
+## Color, size, weight
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `text(t.colors.foreground)` | `text-foreground` |
+| `textSize(FwFontSize.lg.px)` | `text-lg` |
+| `weight(600)` | `font-semibold` (CSS `100…900`) |
+| `leading(1.5)` | `leading-relaxed` |
+| `tracking(-0.4)` | `tracking-tight` (logical px) |
+| `align(TextAlign.center)` | `text-center` (`start`/`end` RTL-aware) |
+
+## Family
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `font('Inter')` | `font-[Inter]` |
+| `fontSans` `fontSerif` `fontMono` | `font-sans` `font-serif` `font-mono` (getters) |
+
+## Style & decoration
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `italic` `notItalic` | `italic` `not-italic` (getters) |
+| `underline` `lineThrough` | `underline` `line-through` (getters; combine) |
+| `textShadow([Shadow(...)])` | `text-shadow-*` (v4) |
+
+## Clamping & wrapping
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `lineClamp(3)` | `line-clamp-3` (clamps + ellipsizes) |
+| `maxLines(3)` | cap lines, no forced ellipsis |
+| `truncate` | `truncate` (one line + ellipsis, getter) |
+| `overflow(TextOverflow.fade)` | `text-ellipsis` / `text-clip` / fade |
+| `nowrap` `wrap` | `whitespace-nowrap` `whitespace-normal` (getters) |
+
+```dart
+final t = context.fw;
+const Text('A long description that should clamp to two lines…')
+    .tw
+    .textSize(FwFontSize.sm.px)
+    .text(t.colors.mutedForeground)
+    .leading(1.4)
+    .lineClamp(2);
+```
+
+## Next
+
+<Cards>
+  <Card title="Effects & filters" href="/docs/flutterwindcss/effects-filters" />
+  <Card title="Colors" href="/docs/flutterwindcss/colors" />
+</Cards>

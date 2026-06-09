@@ -1,10 +1,21 @@
 # Docs site — design
 
-**Status:** approved (brainstorm 2026-06-09) · **Home:** `apps/docs` (Fumadocs / Next.js / TS) ·
+**Status:** shipped (brainstorm 2026-06-09; built PR #30, branded PR #31, expanded PR #33) ·
+**Home:** `apps/docs` (Fumadocs / Next.js / TS) ·
 **Audience:** whoever builds and maintains the documentation site.
 
 The docs site documents **both** products in the monorepo under one roof. This spec defines its
 information architecture and the content of the first substantive pass.
+
+> **Update (2026-06-09, post-v1).** After the first pass the engine docs felt thin next to the
+> 148-setter API, so the **"no exhaustive reference" non-goal below was lifted**: a **Utility
+> reference** section was added — five family pages (spacing/sizing; backgrounds, borders & radius;
+> typography; effects & filters; transforms & interactivity) covering the full `.tw` surface, with
+> the `styling` page slimmed to the accumulator model + a family map. Same pass: the redundant
+> flutterwindcss/flutterbits **top-nav links were removed** (the sidebar tab switcher already
+> handles product switching; only Theme generator remains in the nav); the home hero uses the
+> **transparent no-bg logo**; and, with flutterwindcss published to pub.dev v1.0.0, **installation
+> now uses `flutter pub add flutterwindcss`** (was a Git dependency).
 
 ---
 

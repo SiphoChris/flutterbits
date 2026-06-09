@@ -28,58 +28,29 @@ Two things follow from that:
   scale. `p(4)` → `p-4` → 16 px. `w(10)` → 40 px.
 </Callout>
 
-## Single-box utilities
+## The utility families
 
-These all live on `.tw`. (Multi-child layout — direction, `gap`, positioning — is **not** `.tw`; see
-[Layout](/docs/flutterwindcss/layout).)
+Every single-box utility lives on `.tw`. They're documented in full in the **Utility reference**;
+here's the map (multi-child layout — direction, `gap`, positioning — is **not** `.tw`; see
+[Layout](/docs/flutterwindcss/layout)):
 
-### Spacing
-
-| flutterwindcss | Tailwind | Notes |
-| --- | --- | --- |
-| `p(4)` `px(4)` `py(4)` | `p-4` `px-4` `py-4` | all / horizontal / vertical |
-| `ps(4)` `pe(4)` `pt(4)` `pb(4)` | `ps-4` `pe-4` `pt-4` `pb-4` | start / end / top / bottom (RTL-aware) |
-| `m(4)` `mx(4)` `ms(4)` … | `m-4` `mx-4` `ms-4` … | same shape as padding |
-
-### Sizing
-
-| flutterwindcss | Tailwind |
-| --- | --- |
-| `w(10)` `h(10)` | `w-10` `h-10` |
-| `minW(10)` `maxW(40)` `minH` `maxH` | `min-w-*` `max-w-*` `min-h-*` `max-h-*` |
-| `wFull` `hFull` | `w-full` `h-full` |
-| `wFraction(0.5)` | `w-1/2` |
-| `size(10)` `aspect(16 / 9)` | `size-10` `aspect-[16/9]` |
-
-### Color, border & radius
-
-| flutterwindcss | Tailwind |
-| --- | --- |
-| `bg(t.colors.card)` | `bg-card` |
-| `text(t.colors.foreground)` | `text-foreground` |
-| `border(1, color: t.colors.border)` | `border border-border` |
-| `borderS(width: 2, color: c)` `borderT(...)` | `border-s-2` `border-t-*` |
-| `rounded(t.radii.md)` `roundedFull` | `rounded-md` `rounded-full` |
-| `roundedT(r)` `roundedS(r)` | `rounded-t-*` `rounded-s-*` |
-
-### Typography
-
-| flutterwindcss | Tailwind |
-| --- | --- |
-| `textSize(FwFontSize.sm.px)` | `text-sm` |
-| `weight(600)` | `font-semibold` |
-| `leading(1.5)` | `leading-relaxed` |
-| `tracking(-0.4)` | `tracking-tight` (logical px) |
-| `underline` `lineThrough` | `underline` `line-through` |
-
-### Effects
-
-| flutterwindcss | Tailwind |
-| --- | --- |
-| `shadow(t.shadows.md)` | `shadow-md` |
-| `opacity(0.5)` | `opacity-50` |
-| `blur(8)` | `blur-*` (content) |
-| `backdropBlur(8)` | `backdrop-blur-*` |
+<Cards>
+  <Card title="Spacing & sizing" href="/docs/flutterwindcss/spacing-sizing">
+    `p` `px` `m` · `w` `h` `size` `min/max` · `wFraction` · `aspect`
+  </Card>
+  <Card title="Backgrounds, borders & radius" href="/docs/flutterwindcss/backgrounds-borders">
+    `bg` · gradients · `bgImage` · `border` `borderS` · `rounded*` · `clip`
+  </Card>
+  <Card title="Typography" href="/docs/flutterwindcss/typography">
+    `text` `textSize` `weight` `leading` `tracking` · `font*` · `lineClamp` `truncate`
+  </Card>
+  <Card title="Effects & filters" href="/docs/flutterwindcss/effects-filters">
+    `shadow*` `ring` `opacity` `blur` `blendMode` · color filters · `fit`
+  </Card>
+  <Card title="Transforms & interactivity" href="/docs/flutterwindcss/transforms-interactivity">
+    `scale` `rotate` `skew` `translate` · 3D · `cursor` · visibility
+  </Card>
+</Cards>
 
 ## Composing it
 

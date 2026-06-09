@@ -4,14 +4,23 @@
   "description": "Tailwind's styling vocabulary for Flutter",
   "icon": "Wind",
   "pages": [
+    "---Getting started---",
     "index",
     "installation",
+    "---Concepts---",
     "styling",
     "colors",
     "theming",
     "states",
     "breakpoints",
     "layout",
+    "---Utility reference---",
+    "spacing-sizing",
+    "backgrounds-borders",
+    "typography",
+    "effects-filters",
+    "transforms-interactivity",
+    "---Tools---",
     "theme-generator"
   ]
 }
