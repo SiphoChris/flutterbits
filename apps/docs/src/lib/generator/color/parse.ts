@@ -1,5 +1,5 @@
 import type { Rgba8, ConversionMode } from './types';
-import { alphaTo8, channelTo8 } from './srgb';
+import { alphaTo8, channelTo8, clamp01, requireFinite } from './srgb';
 import { oklchToRgb01 } from './oklch';
 
 /// Split the inside of a `fn(...)` color into its components, supporting both
@@ -22,14 +22,16 @@ function splitComponents(inside: string): { parts: string[]; alpha?: string } {
 }
 
 /// Parse a number that may be a percentage (`50%` → 0.5) or a plain number.
-function parseMaybePercent(token: string): number {
-  return token.endsWith('%') ? parseFloat(token) / 100 : parseFloat(token);
+/// Throws (via [requireFinite]) on a non-numeric token like `foo` or `b%`.
+function parseMaybePercent(token: string, source: string): number {
+  const raw = token.endsWith('%') ? parseFloat(token) / 100 : parseFloat(token);
+  return requireFinite(raw, `component "${token}"`, source);
 }
 
 /// Parse a CSS alpha token (`0.5` or `50%`) to [0,1]; undefined → 1 (opaque).
-function parseAlpha(token: string | undefined): number {
+function parseAlpha(token: string | undefined, source: string): number {
   if (token === undefined) return 1;
-  return parseMaybePercent(token);
+  return parseMaybePercent(token, source);
 }
 
 /// Parse `#rgb`, `#rgba`, `#rrggbb`, or `#rrggbbaa`.
@@ -44,6 +46,12 @@ export function parseHex(value: string): Rgba8 {
   if (hex.length !== 6 && hex.length !== 8) {
     throw new Error(`Invalid hex color: ${value}`);
   }
+  // `parseInt` is lenient — `parseInt('1g', 16)` is `1` and `parseInt('xy', 16)`
+  // is `NaN`, so a non-hex digit would silently truncate or poison a channel.
+  // Reject anything that isn't a pure hex digit before parsing.
+  if (!/^[0-9a-fA-F]+$/.test(hex)) {
+    throw new Error(`Invalid hex color: ${value}`);
+  }
   const r = parseInt(hex.slice(0, 2), 16);
   const g = parseInt(hex.slice(2, 4), 16);
   const b = parseInt(hex.slice(4, 6), 16);
@@ -56,13 +64,19 @@ export function parseRgb(value: string): Rgba8 {
   const inside = value.trim().replace(/^rgba?\(/, '').replace(/\)$/, '');
   const { parts, alpha } = splitComponents(inside);
   if (parts.length !== 3) throw new Error(`Invalid rgb color: ${value}`);
+  // Numeric channels are 0–255; route BOTH the percent and numeric paths through
+  // clamp+round so an out-of-range channel like `rgb(300 -5 0)` is clamped to a
+  // valid byte (otherwise `300` would emit the 3-char garbage hex `12C`) and a
+  // non-numeric token throws via [requireFinite] rather than leaking `NaN`.
   const ch = (t: string) =>
-    t.endsWith('%') ? channelTo8(parseFloat(t) / 100) : Math.round(parseFloat(t));
+    t.endsWith('%')
+      ? channelTo8(requireFinite(parseFloat(t) / 100, `component "${t}"`, value))
+      : Math.round(clamp01(requireFinite(parseFloat(t), `component "${t}"`, value) / 255) * 255);
   return {
     r: ch(parts[0]),
     g: ch(parts[1]),
     b: ch(parts[2]),
-    a: alphaTo8(parseAlpha(alpha)),
+    a: alphaTo8(parseAlpha(alpha, value)),
   };
 }
 
@@ -88,15 +102,15 @@ export function parseHsl(value: string): Rgba8 {
   const inside = value.trim().replace(/^hsla?\(/, '').replace(/\)$/, '');
   const { parts, alpha } = splitComponents(inside);
   if (parts.length !== 3) throw new Error(`Invalid hsl color: ${value}`);
-  const h = parseFloat(parts[0]);
-  const s = parseMaybePercent(parts[1]);
-  const l = parseMaybePercent(parts[2]);
+  const h = requireFinite(parseFloat(parts[0]), `hue "${parts[0]}"`, value);
+  const s = parseMaybePercent(parts[1], value);
+  const l = parseMaybePercent(parts[2], value);
   const { r, g, b } = hslToRgb01(h, s, l);
   return {
     r: channelTo8(r),
     g: channelTo8(g),
     b: channelTo8(b),
-    a: alphaTo8(parseAlpha(alpha)),
+    a: alphaTo8(parseAlpha(alpha, value)),
   };
 }
 
@@ -106,11 +120,18 @@ export function parseOklch(value: string, mode: ConversionMode): Rgba8 {
   const inside = value.trim().replace(/^oklch\(/, '').replace(/\)$/, '');
   const { parts, alpha } = splitComponents(inside);
   if (parts.length !== 3) throw new Error(`Invalid oklch color: ${value}`);
-  const L = parts[0] === 'none' ? 0 : parseMaybePercent(parts[0]);
-  const C = parts[1] === 'none' ? 0 : parseFloat(parts[1]);
-  const h = parts[2] === 'none' ? 0 : parseFloat(parts[2]);
+  const L = parts[0] === 'none' ? 0 : parseMaybePercent(parts[0], value);
+  const C =
+    parts[1] === 'none' ? 0 : requireFinite(parseFloat(parts[1]), `chroma "${parts[1]}"`, value);
+  const h =
+    parts[2] === 'none' ? 0 : requireFinite(parseFloat(parts[2]), `hue "${parts[2]}"`, value);
   const { r, g, b } = oklchToRgb01(L, C, h, mode);
-  return { r: channelTo8(r), g: channelTo8(g), b: channelTo8(b), a: alphaTo8(parseAlpha(alpha)) };
+  return {
+    r: channelTo8(r),
+    g: channelTo8(g),
+    b: channelTo8(b),
+    a: alphaTo8(parseAlpha(alpha, value)),
+  };
 }
 
 /// Parse any supported CSS color string — `#hex`, `rgb()/rgba()`, `hsl()/hsla()`,
