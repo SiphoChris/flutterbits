@@ -1,9 +1,9 @@
 # tweakcn → `theme.dart` generator — design
 
-**Status:** approved design · **G0 + G1 + G2 + G3 shipped (PR #22, #23, #25, #26); G4–G5 remain** · **Date:** 2026-06-08
+**Status:** approved design · **G0–G4 shipped (PR #22, #23, #25, #26, #27); only G5 (docs MDX) remains** · **Date:** 2026-06-08
 (status updated 2026-06-09) · **Home:** `apps/docs` (Next.js / TypeScript) ·
 **Audience:** engineers building the generator (the G0 engine prereq, the G1 color core, the
-G2 CSS parser, and the G3 emitter are merged — only the G4 web UI and G5 docs remain).
+G2 CSS parser, the G3 emitter, and the G4 web UI are merged — only the G5 docs MDX page remains).
 
 This spec implements **AGENTS.md §7**. §7 is the contract; this document is the *how*. Where §7
 and this spec ever disagree, §7 wins and this file is the drift (fix it). The headline product
@@ -359,8 +359,8 @@ any statement the new field falsifies.
 
 ## 6. Module decomposition (one branch → PR → `gh` merge each)
 
-Ordered **G0 ✅ → G1 ✅ → G2 ✅ → G3 ✅ → G4 → G5** (G0–G3 are merged; the G4 UI needs the full
-pipeline, which now exists end-to-end).
+Ordered **G0 ✅ → G1 ✅ → G2 ✅ → G3 ✅ → G4 ✅ → G5** (G0–G4 are merged; only the G5 docs page
+remains).
 
 | Module | Scope | Done when |
 |---|---|---|
@@ -368,14 +368,16 @@ pipeline, which now exists end-to-end).
 | **G1** ✅ | `color/`: 4 format parsers (alpha + both L forms) + OKLCH→sRGB convert + faithful-clip + opt-in chroma-reduction gamut-map + `requireFinite` NaN-guards | **Merged PR #23.** 46 vitest tests; four-format convergence byte-exact (Δ0); malformed-input guards; lint + scoped tsc clean; covered by the `docs-generator` CI job |
 | **G2** ✅ | `parse/`: tolerant brace-balanced `:root`/`.dark` tokenizer → `RawTheme`; records unknown vars (`RawTheme.unknownVars`); retains per-axis `--shadow-*` primitives + the DEFAULT `--shadow` verbatim (classified "known", ignored by emit); token **absence recorded by omission** from `RawBlock.vars` (for graceful-default reporting); **rejects Tailwind-v3 input** (`@tailwind` directive *or* bare `H S% L%` colors); `@custom-variant dark` false-match guard. Font-stack extraction is G3 (it reads `RawBlock.vars`), not G2. | **Merged PR #25.** 43 vitest tests across all 4 real fixtures (preamble ignored, false-match guard, messy whitespace/comments, alpha pass-through, per-axis retain, missing-token omission, unknown-var recording, v3-reject, missing-block errors); lint + scoped tsc clean |
 | **G3** ✅ | `emit/`: `RawTheme → ResolvedTheme → ThemeJson → theme.dart` (`resolve.ts` + `theme-json.ts` + `dart.ts`); additive radius (clamped ≥0), 7 named shadow slots (paren-aware layer split so `rgba(…)`/`hsl(…)` colors survive; DEFAULT `--shadow` + per-axis primitives ignored), font-stack extraction, google_fonts stub, `tracking` (unit-normalized), `--spacing` drop-note, **non-color graceful defaults + `meta.notes` report** (per-slot shadow fallback, radius→10, fonts→platform, `--sidebar-ring`→`ring`). `_claudeShadows` matches the transform (verified — golden is byte-exact). | **Merged PR #26.** 67 vitest tests: 4-fixture end-to-end golden (32×2 colors converge to `themes.dart` — hex/rgb/hsl byte-exact, oklch ±1; radii/shadows/typography byte-exact), ThemeJson schema, `emitDart` totality (S3), non-10/zero radius (S4), tracking units, font cases, colored-shadow, DEFAULT≠md, missing-color gate, sidebar-ring default. Lint + scoped tsc clean. |
-| **G4** | Route + UI: paste → **reject v3** → auto-detect → **hard-gate 32 colors** + **default-and-report** non-color tokens → preview (swatch/radius/shadow, light+dark) → download both + faithful/perceptual toggle | Manual run renders the Claude theme; color gate refuses download with a listed error; defaulted tokens are reported |
+| **G4** ✅ | Route `src/app/(home)/theme-generator/page.tsx` (client) + nav link: paste → live `runGenerator` (auto-detect per value) → **reject v3** → **hard-gate 32 colors** + **default-and-report** (`meta.notes` + dropped vars banner) → preview (swatch grid + radius + shadow samples, light+dark, in the theme's own colors) → download `theme.dart` + `theme.json` + faithful/perceptual toggle. Real logic lives in the pure, tested `lib/generator/preview.ts`; `page.tsx` is a thin shell. | **Merged PR #27.** Dev-server verified (Playwright): renders the Claude theme (32×2 swatches = `themes.dart`, radius 12/14/16/20, 7 shadows), downloads `theme.dart`, v3 paste → error banner + downloads removed. 11 `preview.test.ts` tests (suite 167); route type-checked in CI (added to `tsconfig.generator.json`); lint clean. |
 | **G5** | Docs MDX page (usage, limitations, the `--spacing`/font caveats) + full drift sweep of §7/README/roadmap | Docs accurate; no doc contradicts code |
 
 ---
 
-## 7. Web UI (G4)
+## 7. Web UI (G4 ✅ — shipped PR #27)
 
-Single route. Behavior:
+Single route at `src/app/(home)/theme-generator/page.tsx` (a `'use client'` component;
+the pure logic lives in the tested `lib/generator/preview.ts` so the component stays a thin shell).
+Behavior:
 1. **Paste** the full tweakcn v4 CSS into a textarea.
 2. **Reject Tailwind v3 input** up front (bare `H S% L%` colors / `@tailwind base`) with a clear
    "re-export as Tailwind v4" message (§1) — never misparse it.

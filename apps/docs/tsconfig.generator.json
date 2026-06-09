@@ -7,6 +7,13 @@
     // this scoped config (which CI type-checks in isolation) must name them.
     "types": ["node"]
   },
-  "include": ["src/lib/generator/**/*.ts"],
+  // The generator kernel + the one app route that consumes it. Scoped here (not
+  // the whole `src/app`) so CI type-checks the generator UI without tripping on
+  // the pre-existing Fumadocs scaffold type errors elsewhere under `src/app`.
+  "include": [
+    "src/lib/generator/**/*.ts",
+    "src/app/(home)/theme-generator/**/*.ts",
+    "src/app/(home)/theme-generator/**/*.tsx"
+  ],
   "exclude": ["node_modules"]
 }
