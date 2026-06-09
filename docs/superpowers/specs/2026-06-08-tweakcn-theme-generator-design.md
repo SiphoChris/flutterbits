@@ -19,8 +19,16 @@ four as golden fixtures: `__fixtures__/claude.{hex,rgb,hsl,oklch}.css`. Each fil
 than the two blocks we read: a `@import "tailwindcss";` line, a `@custom-variant dark (…)`, a
 `:root { … }` block (light), a `.dark { … }` block (dark), a `@theme inline { … }` block (Tailwind's
 var→utility mapping, all `var()`/`calc()` indirection), and a `@layer base { … }` block. **We read
-values only from the `:root` and `.dark` blocks** and ignore everything else (§2.2). URL input
-(paste a tweakcn share link, fetch the CSS) is a recorded possible enhancement, not v1.
+values only from the `:root` and `.dark` blocks** and ignore everything else (§2.2).
+
+**Scope: Tailwind v4 export only (decided).** tweakcn can also export **Tailwind v3** CSS, which
+differs structurally — colors are emitted as **bare `H S% L%` triples** (no `hsl()` wrapper) and
+`:root`/`.dark` are **nested inside `@layer base { … }`** with `@tailwind` directives instead of
+`@import`. v3 support is **deliberately descoped** (feasible — bare-HSL parse + nested-block match —
+but not built; recorded, not "can't"). The generator MUST **detect** a v3 input (bare-number color
+values / `@tailwind base`) and **reject it with a clear "Tailwind v3 export not supported — re-export
+as Tailwind v4" error**, never silently misparse. URL input (paste a tweakcn share link, fetch the
+CSS) is likewise a recorded possible enhancement, not v1.
 
 **Output:** two downloadable files:
 - `theme.json` — the **source of truth**. Its schema mirrors the `FwTokens` shape (32 colors +
@@ -147,8 +155,10 @@ Two `const FwTokens`. Field-for-field against the engine types
 - **`colors: FwColors(...)`** — **all 32**, mapped directly from CSS names: the 19 core +
   `chart1…chart5` (`--chart-1`→`chart1`) + the 8 `sidebar*` (`--sidebar-foreground`→
   `sidebarForeground`). `FwColors`'s `const` ctor has **no defaults** — omitting any color means
-  `theme.dart` won't compile. The generator never relies on that downstream; it **hard-gates**
-  before emit (S6).
+  `theme.dart` won't compile. The generator never relies on that downstream; it **hard-gates the 32
+  colors** before emit (S6). One exception: `--sidebar-ring` is **not** in tweakcn's Zod schema
+  (only in its defaults), so a hand-edited theme may omit it — **default `sidebar-ring` to `ring`**
+  (and report it) rather than gating on it. All other non-color tokens default gracefully (§7).
 - **`radiusBase: <px>`** and **`radii: FwRadii(base:, sm:, md:, lg:, xl:)`** — explicit additive
   derivation from `--radius` (§4.1). **Never** `FwRadii.fromBase`.
 - **`shadows: FwShadows(xs2:, xs:, sm:, md:, lg:, xl:, xl2:)`** — 7 slots from `--shadow-*` (§4.2).
@@ -166,8 +176,14 @@ Two `const FwTokens`. Field-for-field against the engine types
 shadcn derives the set **additively** from `--radius`:
 `sm = r − 4px`, `md = r − 2px`, `lg = r`, `xl = r + 4px` (px after rem→px at 16px root).
 
-Emit an **explicit** `FwRadii(base: r, sm: r−4, md: r−2, lg: r, xl: r+4)`. Do **not** use
-`FwRadii.fromBase` — its `×0.6/0.8/1.0/1.4` factors coincide with the additive set *only* at the
+**Parse the `--radius` unit:** real presets use `rem`, `px`, and a bare `0`/`0px`/`0rem` (doom-64,
+neo-brutalism use 0; violet-bloom 1.4rem; range seen `0 … 1.5rem`). Convert to logical px
+(`rem × 16`, `px` as-is, bare `0` → 0). **Clamp the derived steps at ≥ 0:** at `r = 0`, additive
+`sm`/`md` would be `−4`/`−2` (invalid radii) — clamp to `0` so a sharp-corner theme emits
+`FwRadii(base: 0, sm: 0, md: 0, lg: 0, xl: 4)`.
+
+Emit an **explicit** `FwRadii(base: r, sm: max(0,r−4), md: max(0,r−2), lg: r, xl: r+4)`. Do **not**
+use `FwRadii.fromBase` — its `×0.6/0.8/1.0/1.4` factors coincide with the additive set *only* at the
 10px default and diverge for any other base. `_claudeRadii` in `themes.dart` (base 16 → 12/14/16/20)
 is the worked reference.
 
@@ -175,15 +191,32 @@ is the worked reference.
 > `FwRadii(base: 8, sm: 4, md: 6, lg: 8, xl: 12)` — asserts the emitted Dart is exactly that and
 > is **not** `fromBase(8)` (which would give sm 4.8 / md 6.4 / xl 11.2).
 
-### 4.2 Shadows — 7 slots + the default, from the composed strings
+### 4.2 Shadows — 7 named slots, from the composed strings
 
-Emit `FwShadows{xs2, xs, sm, md, lg, xl, xl2}` from `--shadow-2xs … --shadow-2xl`. The **unprefixed
-`--shadow`** (and `shadow-DEFAULT`) maps onto **`md`**.
+Map the **seven named** composed slots **by name**: `--shadow-2xs`→`xs2`, `--shadow-xs`→`xs`,
+`--shadow-sm`→`sm`, `--shadow-md`→`md`, `--shadow-lg`→`lg`, `--shadow-xl`→`xl`, `--shadow-2xl`→`xl2`.
+
+> **Correction (corrected — generator, §12): the unprefixed `--shadow` does NOT map to `md`.** The
+> original §7/spec said "`--shadow` (DEFAULT) maps onto `md`" — that is a wrong-value bug. tweakcn
+> emits **eight** shadow levels: `2xs, xs, sm, `**`shadow`** (the Tailwind DEFAULT, between `sm` and
+> `md`)`, md, lg, xl, 2xl`. Its `--shadow` is computed with the **`sm`** second-layer formula
+> (`secondLayer("1px","2px")`), while `--shadow-md` uses `secondLayer("2px","4px")` — so
+> `--shadow ≠ --shadow-md`. Feeding the DEFAULT into `md` emits the wrong `md`. `FwShadows` has a
+> **7-slot** scale with **no DEFAULT level**, so the unprefixed `--shadow` is **dropped knowingly**
+> (Flutter components reference the named slots, not a DEFAULT). This matches the verified oracle:
+> the byte-for-byte `_claudeShadows` check below uses `--shadow-md` for `md`, not `--shadow`. (A
+> future engine enhancement could add a DEFAULT slot to `FwShadows`; not needed now — recorded, not
+> "can't.") AGENTS.md §7 carries the same error and is corrected in the same change.
 
 **Authoritative source = the composed `--shadow-*` strings.** tweakcn also emits the per-axis
 builder *inputs* (`--shadow-x/y/blur/spread/opacity/color`); these **bake into** the composed
 strings and are **not** separate outputs. The parser reads the composed `--shadow-*` and **ignores**
-the per-axis primitives (assert this in G2).
+the per-axis primitives (assert this in G2). **This is what makes colored/odd shadows universal for
+free:** real presets use colored shadow bases (`hsl(255 86% 66%)`, `rgba(29,161,242,…)`, hex), hard
+offsets (neo-brutalism `4px 4px`), `+4px` spread (claymorphism), opacity up to `1.0` — all already
+baked into the composed strings, so we never reproduce tweakcn's builder formula. The composed
+shadow **colors are always `hsl(H S% L% / a)`** (tweakcn hardcodes hsl for shadows regardless of the
+theme's color format), so the shadow-color parser MUST accept `hsl(... / alpha)`.
 
 **CSS shadow string → `BoxShadow` transform.** A CSS box-shadow is
 `<offset-x> <offset-y> <blur> <spread> <color>` (multiple comma-separated layers allowed):
@@ -214,15 +247,23 @@ Emit `FwTypographyTheme(sans:, serif:, mono:, tracking:)`:
   family that is not a CSS generic keyword, with surrounding quotes stripped.** Generic keywords to
   skip: `serif, sans-serif, monospace, cursive, fantasy, system-ui, math, emoji, fangsong, ui-serif,
   ui-sans-serif, ui-monospace, ui-rounded`. (That is why serif resolves to `Georgia`, skipping the
-  leading `ui-serif`.) If *every* entry is generic, keep the first. The generator emits the chosen
-  name **and** a clearly-commented `google_fonts` wiring stub. It MUST NOT pretend to bundle a font;
-  an unknown family gets a `// TODO: bundle this font or map it` comment, never a silent fallback.
+  leading `ui-serif`.) Strip **both** outer *and* inner quotes — real presets carry inner-quoted
+  names like `'"Oxanium", sans-serif'`. If *every* entry is generic, keep the first. **Slots are not
+  semantically typed:** tweakcn freely puts a serif/mono in the `sans` slot (e.g. the `mono` preset
+  uses `Geist Mono` in all three; `starry-night` has `Merriweather, serif` as `sans`) — so extract
+  and look up by family **name regardless of slot**, never assume `sans` slot ⇒ a sans-serif. The
+  generator emits the chosen name **and** a clearly-commented `google_fonts` wiring stub. It MUST NOT
+  pretend to bundle a font; an unknown/commercial family (e.g. `Signifier`) gets a
+  `// TODO: bundle this font or map it` comment, never a silent fallback. Omitted `--font-*` →
+  default to the platform family (report it, §7 graceful-default policy).
 - **`tracking`:** from `--tracking-normal`, read from **`:root`** (tweakcn puts it only there, not in
-  `.dark`) and applied to **both** light and dark typography. tweakcn expresses it in **em** (this
-  theme: `0em` → `0.0`; e.g. `-0.025em` → `-0.025`); we store the **em value as a `double`** on
-  `FwTypographyTheme.tracking`. Conversion to Flutter's logical-px `letterSpacing` (em × font-size)
-  happens at the text-apply site, **not** in the token. If `--tracking-normal` is absent, default
-  `0`.
+  `.dark`) and applied to **both** light and dark typography. **Normalize the unit to em** (the
+  `FwTypographyTheme.tracking` storage unit): `em` → as-is (`-0.025em` → `-0.025`); the CSS keyword
+  **`normal`** → `0`; **`rem`** → same numeric (1rem≈1em); **`px`** → `px / 16` (em at 16px base,
+  with an emitted comment that it was an absolute value and won't scale with font size — real
+  presets like `notebook` use `0.5px`). `--tracking-normal` is **emitted only when ≠ `0em`**, so it
+  is **absent** for most themes → default `0`. Conversion to Flutter's logical-px `letterSpacing`
+  (em × font-size) happens at the text-apply site, **not** in the token.
 
 > **`--spacing` (knowing drop, §7):** flutterwindcss's spacing scale is a fixed `1 unit = 4px`
 > (`fwSpace`), context-free by design. The drop-comment fires **only when `--spacing` ≠ the 4px
@@ -290,9 +331,9 @@ field; the UI needs the full pipeline).
 |---|---|---|
 | **G0** | Engine: `tracking` field + `FwTypographyTheme.lerp` + `FwTokens.lerp` rewire + drift sweep | Dart analyze/format clean; existing goldens unchanged; new lerp unit test (tracking interpolates, families crossover) green |
 | **G1** | `color/`: 4 format parsers (alpha + both L forms) + OKLCH→sRGB convert + faithful-clip + opt-in chroma-reduction gamut-map | Vector fixtures pass (incl. **real OKLCH-source → baked-hex**, B1); alpha + percent-L cases covered |
-| **G2** | `parse/`: tolerant `:root`/`.dark` tokenizer → `RawTheme`; records unknown vars; ignores per-axis `--shadow-*` primitives; flags missing required tokens | Parser fixtures pass (messy whitespace, comments, all 4 formats, missing-token, alpha syntax) |
-| **G3** | `emit/`: `ResolvedTheme → ThemeJson → theme.dart`; additive radius, shadow transform, font-stack extraction, font stub, `tracking`, `--spacing` drop-comment; **verify `_claudeShadows` matches the transform** (it does — §4.2) | ThemeJson schema snapshot + `emitDart` totality test (S3) + non-10 radius guard (S4); **e2e golden (full bundle) vs `themes.dart`** green |
-| **G4** | Route + UI: paste → auto-detect → **hard-gate 32 colors** → preview (swatch/radius/shadow, light+dark) → download both + faithful/perceptual toggle | Manual run renders the Claude theme; missing-token gate refuses download with a listed error |
+| **G2** | `parse/`: tolerant `:root`/`.dark` tokenizer → `RawTheme`; records unknown vars; ignores per-axis `--shadow-*` primitives; **rejects Tailwind-v3 input**; records which tokens were absent (for graceful-default reporting) | Parser fixtures pass (messy whitespace, comments, all 4 formats, missing-token, alpha syntax, v3-reject, inner-quoted fonts) |
+| **G3** | `emit/`: `ResolvedTheme → ThemeJson → theme.dart`; additive radius (clamped ≥0), 7 named shadow slots (DEFAULT dropped), font-stack extraction, font stub, `tracking` (unit-normalized), `--spacing` drop-comment, **non-color graceful defaults + report**; **verify `_claudeShadows` matches the transform** (it does — §4.2) | ThemeJson schema snapshot + `emitDart` totality test (S3) + non-10/zero radius guards (S4) + universality fixtures (§8) |
+| **G4** | Route + UI: paste → **reject v3** → auto-detect → **hard-gate 32 colors** + **default-and-report** non-color tokens → preview (swatch/radius/shadow, light+dark) → download both + faithful/perceptual toggle | Manual run renders the Claude theme; color gate refuses download with a listed error; defaulted tokens are reported |
 | **G5** | Docs MDX page (usage, limitations, the `--spacing`/font caveats) + full drift sweep of §7/README/roadmap | Docs accurate; no doc contradicts code |
 
 ---
@@ -300,17 +341,22 @@ field; the UI needs the full pipeline).
 ## 7. Web UI (G4)
 
 Single route. Behavior:
-1. **Paste** a `:root` + `.dark` block into a textarea.
-2. **Auto-detect** each value's format per declaration (formats can mix within a theme).
-3. **Hard-validate** all 32 colors per block. Missing any → **block download**, show the exact list
-   of missing tokens. Rationale (S6): `FwColors` has no defaults, so a partial `theme.dart` won't
-   compile — but a web user has no compiler, so we refuse at generate-time with a clear message
-   rather than hand them a broken file.
-4. **Preview** (read-only, light + dark side-by-side): a swatch grid of the 32 colors, the four
+1. **Paste** the full tweakcn v4 CSS into a textarea.
+2. **Reject Tailwind v3 input** up front (bare `H S% L%` colors / `@tailwind base`) with a clear
+   "re-export as Tailwind v4" message (§1) — never misparse it.
+3. **Auto-detect** each value's format per declaration (formats can mix within a theme).
+4. **Hard-validate the 32 colors** per block (excluding `--sidebar-ring`, which defaults to `ring`).
+   Missing any of the 32 → **block download**, show the exact list. Rationale (S6): `FwColors` has
+   no defaults, so a partial `theme.dart` won't compile, and a web user has no compiler. **Non-color
+   tokens default gracefully + are reported:** omitted `--font-*` → platform family; omitted
+   shadow → engine default scale; absent `--tracking-normal` → 0; non-default/absent `--spacing`
+   → dropped. The UI lists every token it **defaulted** so nothing is silent (§12). Real presets
+   need this — e.g. *T3-Chat*, *Caffeine*, *Claude* define only colors + radius.
+5. **Preview** (read-only, light + dark side-by-side): a swatch grid of the 32 colors, the four
    radius samples, and the 7 shadow samples. (No mock-component preview — an HTML approximation of
    Flutter rendering would mislead.)
-5. **Conversion toggle:** faithful-clip (default) ↔ perceptual gamut-map.
-6. **Download** `theme.dart` and `theme.json`.
+6. **Conversion toggle:** faithful-clip (default) ↔ perceptual gamut-map.
+7. **Download** `theme.dart` and `theme.json`.
 
 ---
 
@@ -339,7 +385,16 @@ hand-produced without the generator's math. Layers:
   wins), the full at-rule preamble (`@import`/`@custom-variant`/`@theme inline`/`@layer` → ignored),
   and the **`@custom-variant dark (…)` false-match guard** (must not be parsed as the `.dark` block).
   Font-stack extraction cases: `Outfit, sans-serif`→`Outfit`, `ui-serif, Georgia, …`→`Georgia`
-  (generic skipped), `"Times New Roman", …`→`Times New Roman` (quotes stripped).
+  (generic skipped), `"Times New Roman", …`→`Times New Roman` (outer quotes), `'"Oxanium", …'`
+  →`Oxanium` (inner quotes), `Merriweather, serif` in the `sans` slot (cross-category, by name).
+- **Universality (G2/G3) — the variety the research surfaced:** a **colored-shadow** fixture
+  (`hsl(255 86% 66%)` / `rgba(...)` shadow base → correct `BoxShadow` color via the composed string);
+  the **`--shadow` DEFAULT ≠ `--shadow-md`** guard (assert `md` reads `--shadow-md`, and the DEFAULT
+  `--shadow` is dropped); **radius zero** (`--radius: 0px` → `FwRadii(0,0,0,0,4)`, clamped, not
+  negative); **tracking units** (`normal`→0, `0.5px`→`0.03125` with comment, `0rem`→0); **missing
+  non-color tokens** (a colors+radius-only theme → fonts/shadow/tracking default, all *reported*);
+  **missing `--sidebar-ring`** → defaults to `ring`; and a **Tailwind-v3 input → rejected** with the
+  clear error (not misparsed).
 - **Emitter (G3):** `ThemeJson` schema snapshot; `emitDart(themeJson)` totality (every field
   consumed, S3); non-10 radius guard (S4).
 - **End-to-end golden (G3):** **each** of the four `__fixtures__/claude.{hex,rgb,hsl,oklch}.css` →
@@ -378,3 +433,36 @@ hand-produced without the generator's math. Layers:
 
 Nothing here is refused on cost grounds; every domain (color, radius, shadow, type) is emitted in
 full per §7.
+
+---
+
+## 10. Universality evaluation (2026-06-09 — audited against the live tweakcn source)
+
+A three-pass adversarial study of `jnsahaj/tweakcn` (its theme **schema**, all **42 preset
+themes**, and its **CSS export code**) answered: *can we realistically build a universal generator
+that converts ANY tweakcn theme?* **Verdict: yes** — the token model is complete and the variation
+is bounded. Findings, and how this spec now covers them:
+
+**De-risking confirmations**
+- **No surprise token categories.** tweakcn's stored schema is exactly 32 colors + 3 font stacks +
+  `letter-spacing` + `radius` + 6 shadow-builder inputs + optional `spacing`. No font-size,
+  line-height, font-weight, border-width, z-index, or opacity tokens. Our §5 model is a superset.
+- **All 42 presets define all 32 colors** → the colors-only hard-gate is safe against real themes.
+- **Reading the *composed* `--shadow-*` strings makes colored/odd shadows free** (§4.2) — colored
+  bases, hard offsets, `1.0` opacity, `+4px` spread all bake into the strings; we never reproduce
+  tweakcn's builder formula.
+
+**Gaps the study found, now specced (decisions: v4-only; colors-only gate + graceful defaults)**
+
+| # | Gap | Where fixed |
+|---|-----|-------------|
+| 1 | Tailwind **v3** export (bare `H S% L%`, `:root`/`.dark` nested in `@layer base`) | **Descoped** — detect & reject with a clear message (§1, §7.2). Feasible, recorded, not built. |
+| 2 | **`--shadow` DEFAULT ≠ `--shadow-md`** (mapping DEFAULT→md emitted a wrong `md`) | Correctness fix: map 7 named slots, drop DEFAULT (§4.2 + AGENTS.md §7). |
+| 3 | Non-color tokens routinely **omitted** (fonts/shadow/tracking/spacing; e.g. T3-Chat/Caffeine/Claude) | Graceful default + report; gate colors only (§3, §7.4). |
+| 4 | `letter-spacing` not always em: `normal`, `0.5px`, `0rem` | Unit-normalize to em (§4.3). |
+| 5 | Radius `0`/negative-clamp; rem/px/bare-0 units | Parse units, clamp ≥0 (§4.1). |
+| 6 | Font inner-quotes, cross-category slots, commercial fonts | Strip inner+outer quotes, look up by name regardless of slot (§4.3). |
+| 7 | `--sidebar-ring` absent from tweakcn's Zod schema | Default to `ring` if missing (§3). |
+
+None is a wall; each has a small concrete fix, all folded above. "Universal" (within the v4-only
+decision) is a set of bounded parser hardenings, not a redesign.
