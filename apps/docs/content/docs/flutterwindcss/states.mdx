@@ -4,8 +4,10 @@ description: Apply styles only in a state — hover, focus, pressed, disabled �
 ---
 
 The accumulator resolves lazily against the active interaction states, so state variants are
-first-class. Each variant takes a builder that receives the current style and returns a modified one
-— it layers **over** the base (and still follows [last-wins](/docs/flutterwindcss/styling#the-accumulator-model)).
+first-class — the same idea as Tailwind's
+[hover, focus & other states](https://tailwindcss.com/docs/hover-focus-and-other-states). Each
+variant takes a builder that receives the current style and returns a modified one — it layers
+**over** the base (and still follows [last-wins](/docs/flutterwindcss/styling#the-accumulator-model)).
 
 ## Interaction states
 

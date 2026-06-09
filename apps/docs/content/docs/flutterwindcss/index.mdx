@@ -3,9 +3,10 @@ title: Introduction
 description: flutterwindcss is Tailwind CSS's design system and styling vocabulary for Flutter — design tokens and a utility authoring API over Flutter's primitive widgets.
 ---
 
-**flutterwindcss** brings Tailwind CSS's *design system and styling vocabulary* to Flutter. It
-gives you design tokens (spacing, radius, semantic colors, shadows, type) and a chainable utility
-API — `.tw` — over Flutter's **primitive** widgets. It's the "Tailwind layer" of the project.
+**flutterwindcss** brings [Tailwind CSS](https://tailwindcss.com)'s *design system and styling
+vocabulary* to Flutter. It gives you design tokens (spacing, radius, semantic colors, shadows, type)
+and a chainable utility API — `.tw` — over Flutter's **primitive** widgets. It's the "Tailwind layer"
+of the project.
 
 ```dart
 import 'package:flutter/widgets.dart';
@@ -37,8 +38,8 @@ Read this once and internalize it — flutterwindcss is **not** a CSS engine.
 - **Flutter has no structure/style split.** The widget tree *is* the styling; there is no CSS
   cascade. flutterwindcss re-creates Tailwind's *vocabulary and token discipline*, not CSS
   semantics.
-- **Theming works by semantic indirection** — exactly like shadcn/ui. Components reference
-  **semantic tokens** (`primary`, `muted`, `border`), never raw palette swatches. Swap the theme
+- **Theming works by semantic indirection** — exactly like [shadcn/ui](https://ui.shadcn.com).
+  Components reference **semantic tokens** (`primary`, `muted`, `border`), never raw palette swatches. Swap the theme
   and everything reskins, because of that indirection. (See [Semantic tokens & theming](/docs/flutterwindcss/theming).)
 - **"Material-free" means no Material *components or visuals*.** flutterwindcss never imports
   `package:flutter/material.dart`; it builds on the generic widgets layer (`package:flutter/widgets.dart`).

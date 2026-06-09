@@ -1,6 +1,6 @@
 ---
 title: Theme generator
-description: Paste a tweakcn/shadcn theme and download a working Flutter theme.dart for flutterwindcss — colors, radius, shadows, and fonts, with nothing dropped.
+description: Paste a tweakcn/shadcn theme and copy a working Flutter theme.dart for flutterwindcss — colors, radius, shadows, and fonts, with nothing dropped.
 ---
 
 The **theme generator** turns any [tweakcn](https://tweakcn.com) / shadcn theme into a
@@ -37,7 +37,7 @@ widget reskins from that single swap:
 ```dart
 import 'package:flutter/widgets.dart';
 import 'package:flutterwindcss/flutterwindcss.dart';
-import 'theme.dart'; // the file you just downloaded
+import 'theme.dart'; // the theme.dart you copied in
 
 class App extends StatelessWidget {
   const App({super.key, required this.isDark});
@@ -99,15 +99,15 @@ an omitted shadow scale falls back to the engine default, a missing `--sidebar-r
 
 <Callout type="warn" title="All 32 colors are required">
   `FwColors` has no defaults, so a `theme.dart` missing any color wouldn't compile — and a web
-  user has no compiler. If a pasted theme is missing one of the 32, the generator lists the
-  missing tokens and blocks the download. (Non-color tokens — fonts, shadows, radius, tracking —
-  default gracefully and are reported.)
+  user has no compiler. If a pasted theme is missing one of the 32, the generator shows an error
+  listing the missing tokens and produces no output. (Non-color tokens — fonts, shadows, radius,
+  tracking — default gracefully and are reported.)
 </Callout>
 
 <Callout type="info" title="Fonts are named, not bundled">
   flutterwindcss ships no fonts. The generator emits the family **name** (so it round-trips) plus
-  a clearly-commented `google_fonts` wiring stub. Until you wire the font, Flutter falls back to
-  the platform family — it never pretends a font is present.
+  a clearly-commented [`google_fonts`](https://pub.dev/packages/google_fonts) wiring stub. Until you
+  wire the font, Flutter falls back to the platform family — it never pretends a font is present.
 </Callout>
 
 A few smaller, deliberate notes:

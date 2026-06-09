@@ -6,13 +6,24 @@ description: Add flutterwindcss, provide a theme, and style your first widget �
 ## Requirements
 
 flutterwindcss targets **Flutter ≥ 3.29 / Dart ≥ 3.7** (it uses the wide-gamut `Color` API and the
-`Row`/`Column` `spacing` parameter). Older toolchains won't compile.
+`Row`/`Column` `spacing` parameter). Older toolchains won't compile. If you don't have Flutter yet,
+follow the [official install guide](https://docs.flutter.dev/get-started/install).
 
 ## Add the dependency
 
+<Callout title="Not on pub.dev yet">
+  flutterwindcss is early and lives in the project monorepo — it isn't published to
+  [pub.dev](https://pub.dev) yet. For now, depend on it straight from Git (pub
+  [supports this](https://dart.dev/tools/pub/dependencies#git-packages)); a `pub add flutterwindcss`
+  will follow once it's published.
+</Callout>
+
 ```yaml title="pubspec.yaml"
 dependencies:
-  flutterwindcss: ^0.1.0
+  flutterwindcss:
+    git:
+      url: https://github.com/SiphoChris/flutterbits.git
+      path: packages/flutterwindcss
 ```
 
 ```bash

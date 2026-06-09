@@ -34,15 +34,16 @@ full vocabulary is the **32 shadcn tokens**: the 19 core roles…
 `sidebarAccentForeground`, `sidebarBorder`, `sidebarRing`).
 
 <Callout title="Coming from Tailwind / shadcn">
-  These are the same semantic CSS variables shadcn uses — `t.colors.primary` is `bg-primary` /
-  `var(--primary)`, `t.colors.mutedForeground` is `text-muted-foreground`. A pasted tweakcn theme
-  maps onto them one-to-one.
+  These are the same semantic CSS variables [shadcn uses](https://ui.shadcn.com/docs/theming) —
+  `t.colors.primary` is `bg-primary` / `var(--primary)`, `t.colors.mutedForeground` is
+  `text-muted-foreground`. A pasted tweakcn theme maps onto them one-to-one.
 </Callout>
 
 ## The raw Tailwind palette (`FwPalette`)
 
-The complete Tailwind v4 palette is baked in as `const` values (22 hues × 11 shades, plus
-`white`/`black`) — no runtime color math. It's **theme-independent**:
+The complete [Tailwind v4 palette](https://tailwindcss.com/docs/colors) is baked in as `const`
+values (22 hues × 11 shades, plus `white`/`black`) — no runtime color math. It's
+**theme-independent**:
 
 ```dart
 const SizedBox()

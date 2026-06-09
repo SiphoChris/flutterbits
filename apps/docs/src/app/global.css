@@ -2,6 +2,39 @@
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
 
+/* flutterbits brand — the logo's teal → blue, on dark slate. Retint Fumadocs'
+   neutral primary/ring so links, active nav items, focus rings and toggles pick
+   up the brand colour. The `--brand-*` stops drive the gradient accents. */
+:root {
+  --color-fd-primary: #2563eb; /* blue-600 */
+  --color-fd-primary-foreground: #ffffff;
+  --color-fd-ring: #2563eb;
+  --brand-from: #22d3ee; /* teal / cyan-400 */
+  --brand-to: #2563eb; /* blue-600 */
+  --brand-slate: #1e2530; /* the logo's dark ground */
+}
+
+.dark {
+  --color-fd-primary: #60a5fa; /* blue-400 — brighter on dark */
+  --color-fd-primary-foreground: #0a0a0a;
+  --color-fd-ring: #60a5fa;
+}
+
+/* Gradient text for hero/section headlines (teal → blue). */
+.brand-gradient-text {
+  background-image: linear-gradient(90deg, var(--brand-from), var(--brand-to));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* The dark hero band — the logo lives on its native slate ground. */
+.brand-hero {
+  background:
+    radial-gradient(60% 120% at 50% -10%, rgb(37 99 235 / 0.35), transparent 70%),
+    linear-gradient(180deg, #11151c, var(--brand-slate));
+}
+
 html {
   scrollbar-gutter: stable;
 }
