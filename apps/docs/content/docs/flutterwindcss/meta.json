@@ -1,0 +1,17 @@
+{
+  "root": true,
+  "title": "flutterwindcss",
+  "description": "Tailwind's styling vocabulary for Flutter",
+  "icon": "Wind",
+  "pages": [
+    "index",
+    "installation",
+    "styling",
+    "colors",
+    "theming",
+    "states",
+    "breakpoints",
+    "layout",
+    "theme-generator"
+  ]
+}

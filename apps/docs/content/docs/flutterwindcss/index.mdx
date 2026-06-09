@@ -1,0 +1,75 @@
+---
+title: Introduction
+description: flutterwindcss is Tailwind CSS's design system and styling vocabulary for Flutter — design tokens and a utility authoring API over Flutter's primitive widgets.
+---
+
+**flutterwindcss** brings Tailwind CSS's *design system and styling vocabulary* to Flutter. It
+gives you design tokens (spacing, radius, semantic colors, shadows, type) and a chainable utility
+API — `.tw` — over Flutter's **primitive** widgets. It's the "Tailwind layer" of the project.
+
+```dart
+import 'package:flutter/widgets.dart';
+import 'package:flutterwindcss/flutterwindcss.dart';
+
+class Badge extends StatelessWidget {
+  const Badge(this.label, {super.key});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.fw; // the active theme's tokens
+    return Text(label)
+        .tw
+        .px(3)
+        .py(1)
+        .bg(t.colors.primary)
+        .text(t.colors.primaryForeground)
+        .rounded(t.radii.full)
+        .textSize(FwFontSize.sm.px);
+  }
+}
+```
+
+## The mental model
+
+Read this once and internalize it — flutterwindcss is **not** a CSS engine.
+
+- **Flutter has no structure/style split.** The widget tree *is* the styling; there is no CSS
+  cascade. flutterwindcss re-creates Tailwind's *vocabulary and token discipline*, not CSS
+  semantics.
+- **Theming works by semantic indirection** — exactly like shadcn/ui. Components reference
+  **semantic tokens** (`primary`, `muted`, `border`), never raw palette swatches. Swap the theme
+  and everything reskins, because of that indirection. (See [Semantic tokens & theming](/docs/flutterwindcss/theming).)
+- **"Material-free" means no Material *components or visuals*.** flutterwindcss never imports
+  `package:flutter/material.dart`; it builds on the generic widgets layer (`package:flutter/widgets.dart`).
+  You get Tailwind's look and your own design system — not Material's.
+
+<Callout title="Coming from Tailwind?">
+  Utilities are typed method calls, resolved at compile time — there's no `"p-4 bg-primary"` string
+  to parse. Each concept page shows the Tailwind class it corresponds to. As a taste: `p(4)` is
+  `p-4`, `bg(...)` is `bg-*`, `rounded(...)` is `rounded-*`, and `hover((s) => …)` is `hover:`.
+</Callout>
+
+## Where it fits
+
+This project ships two complementary products:
+
+<Cards>
+  <Card title="flutterwindcss — the styling engine" href="/docs/flutterwindcss/installation">
+    Tailwind's tokens + the `.tw` utility API. You are here.
+  </Card>
+  <Card title="flutterbits — the component registry" href="/docs/flutterbits">
+    shadcn/ui-style copy-paste components, styled through these tokens.
+  </Card>
+  <Card title="Theme generator" href="/theme-generator">
+    Paste a tweakcn/shadcn theme → copy a working `theme.dart`.
+  </Card>
+</Cards>
+
+## Next steps
+
+<Cards>
+  <Card title="Installation" href="/docs/flutterwindcss/installation" />
+  <Card title="Styling with .tw" href="/docs/flutterwindcss/styling" />
+  <Card title="Semantic tokens & theming" href="/docs/flutterwindcss/theming" />
+</Cards>

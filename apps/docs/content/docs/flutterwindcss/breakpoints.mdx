@@ -1,0 +1,60 @@
+---
+title: Breakpoints & responsive
+description: Mobile-first responsive variants by screen width (sm/md/lg/xl) and by container width (containerSm…) — two distinct axes.
+---
+
+Responsive variants work like Tailwind's: **mobile-first**. The base chain applies everywhere, and a
+breakpoint variant layers on **at that width and up**.
+
+## Viewport breakpoints
+
+Each takes a builder, applied when the **screen** is at least that wide:
+
+```dart
+final t = context.fw;
+const SizedBox()
+    .tw
+    .wFull               // full width by default (small screens)
+    .h(40)
+    .bg(t.colors.muted)
+    .md((s) => s.wFraction(0.5)); // half width at md (≥ 768 px) and up
+```
+
+The breakpoints mirror Tailwind's defaults:
+
+| flutterwindcss | Tailwind | Min width |
+| --- | --- | --- |
+| `sm((s) => …)` | `sm:` | 640 px |
+| `md((s) => …)` | `md:` | 768 px |
+| `lg((s) => …)` | `lg:` | 1024 px |
+| `xl((s) => …)` | `xl:` | 1280 px |
+
+## Container queries
+
+Sometimes you want to respond to the **nearest container's** width, not the whole screen — a card
+that lays out differently in a narrow sidebar vs. a wide main column. `containerSm` … `containerXl`
+do exactly that, against the same breakpoint scale:
+
+```dart
+const SomeCard()
+    .tw
+    .p(3)
+    .containerMd((s) => s.p(6)); // more padding once the container is ≥ 768 px wide
+```
+
+<Callout title="Two distinct axes">
+  Viewport variants (`sm`/`md`/…) resolve against the **screen** size; container variants
+  (`containerSm`/…) resolve against the enclosing **container**. They're kept separate on purpose —
+  the same component can be screen-responsive and container-responsive at once. Tailwind's equivalent
+  is `@container` + `@md:`.
+</Callout>
+
+Layout widgets are responsive too — for example `FwGrid` can change its **column count** by
+breakpoint. See [Layout](/docs/flutterwindcss/layout).
+
+## Next steps
+
+<Cards>
+  <Card title="Layout" href="/docs/flutterwindcss/layout" />
+  <Card title="Conditional styling (states)" href="/docs/flutterwindcss/states" />
+</Cards>

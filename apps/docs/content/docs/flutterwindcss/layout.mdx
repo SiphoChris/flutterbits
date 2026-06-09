@@ -1,0 +1,86 @@
+---
+title: Layout
+description: Multi-child layout widgets — FwRow/FwColumn, FwWrap, FwStack/FwPositioned, and a real CSS-grid FwGrid. Directional by default, chainable with .tw.
+---
+
+A single-child `.tw` chain can't express **multi-child** layout — flex direction, `gap`, positioning,
+`z`-order. Those live in dedicated widgets. Each is **directional by default** (RTL-free) and is still
+chainable with `.tw` for box styling (`FwRow(...).tw.p(4).bg(c)`).
+
+## Flex — `FwRow` / `FwColumn`
+
+Like a Flutter `Row`/`Column`, but with a typed `gap` (Tailwind's `gap-*`) and directional alignment:
+
+```dart
+final t = context.fw;
+FwRow(
+  gap: 2, // 2 units = 8 px between children
+  children: [
+    const Text('Cancel').tw.px(3).py(2).rounded(t.radii.md).bg(t.colors.secondary),
+    const Text('Save').tw.px(3).py(2).rounded(t.radii.md).bg(t.colors.primary).text(t.colors.primaryForeground),
+  ],
+);
+```
+
+`FwWrap` is the wrapping variant (Tailwind `flex-wrap`).
+
+## Stacking — `FwStack` / `FwPositioned`
+
+`FwStack` overlays children; `FwPositioned` places one with **directional** insets (`start`/`end`/
+`top`/`bottom`, RTL-aware) and a `z` order:
+
+```dart
+FwStack(
+  children: [
+    const SizedBox().tw.size(20).bg(t.colors.muted).rounded(t.radii.lg),
+    FwPositioned(
+      top: 1,
+      end: 1,
+      child: const Text('3').tw.px(2).bg(t.colors.primary).text(t.colors.primaryForeground).roundedFull,
+    ),
+  ],
+);
+```
+
+## Real CSS Grid — `FwGrid`
+
+`FwGrid` is a true grid (a custom render object, not a flex stand-in): `fr` / `px` / `auto` / `minmax`
+tracks, row tracks, cell/row spanning and placement, auto-placement, and alignment.
+
+```dart
+FwGrid(
+  columnGap: 2,
+  rowGap: 2,
+  columns: const <FwGridTrack>[FwPx(60), FwFr(), FwFr(2), FwAuto()], // 60px · 1fr · 2fr · auto
+  children: const [/* cells */],
+);
+
+// repeat(3, 1fr) — three equal columns
+FwGrid(columns: FwTrack.repeat(3, const FwFr()), children: const [/* … */]);
+```
+
+Place and span cells with `FwGridItem` (`columnSpan` / `rowSpan` / 1-based `columnStart` / `rowStart`).
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `FwRow(gap: 2)` / `FwColumn(gap: 2)` | `flex gap-2` / `flex flex-col gap-2` |
+| `FwGrid(columns: FwTrack.repeat(3, FwFr()))` | `grid grid-cols-3` |
+| `FwGridItem(columnSpan: 2)` | `col-span-2` |
+| `FwPositioned(top: 1, end: 1)` | `absolute top-1 end-1` |
+
+<Callout title="Responsive layout">
+  Grid column counts and flex `gap`/alignment respond to breakpoints — e.g. one column on mobile,
+  three at `md` (`grid-cols-1 md:grid-cols-3`). See [Breakpoints](/docs/flutterwindcss/breakpoints).
+</Callout>
+
+<Callout title="Known limitation">
+  CSS Grid `subgrid` is intentionally not implemented (negligible real-world use); everything else in
+  CSS Grid is. It's a documented de-scope, not a Flutter limitation.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Styling with .tw" href="/docs/flutterwindcss/styling" />
+  <Card title="Theme generator" href="/docs/flutterwindcss/theme-generator" />
+</Cards>

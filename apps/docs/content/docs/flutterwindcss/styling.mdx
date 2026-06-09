@@ -1,0 +1,109 @@
+---
+title: Styling with .tw
+description: The accumulator model — chain typed utilities onto any widget; they collect into one immutable style with last-wins conflict resolution.
+---
+
+`.tw` begins a style chain on **any** widget. Each call adds a typed utility; the chain
+accumulates into one immutable `FwStyle` and renders as a **single** styled node.
+
+```dart
+final t = context.fw;
+Text('Save').tw.px(4).py(2).bg(t.colors.primary).text(t.colors.primaryForeground).rounded(t.radii.md);
+```
+
+## The accumulator model
+
+A `.tw` chain isn't a stack of wrappers — the utilities merge into one style that resolves lazily.
+Two things follow from that:
+
+- **Last-wins conflict resolution.** If you set the same property twice, the last call wins. `.px(4).px(2)`
+  resolves to horizontal padding of **2 units (8 px)**, not 6 — and emits no duplicate wrapper.
+- **Lazy resolution.** The style resolves against the active interaction states and the
+  viewport/container size at build time, which is what makes [states](/docs/flutterwindcss/states)
+  (`hover:`/`focus:`/…) and [breakpoints](/docs/flutterwindcss/breakpoints) (`sm:`/`md:`/…)
+  first-class rather than bolted on.
+
+<Callout title="Units">
+  Spacing and sizing are in **utility units of 4 logical pixels**, exactly like Tailwind's default
+  scale. `p(4)` → `p-4` → 16 px. `w(10)` → 40 px.
+</Callout>
+
+## Single-box utilities
+
+These all live on `.tw`. (Multi-child layout — direction, `gap`, positioning — is **not** `.tw`; see
+[Layout](/docs/flutterwindcss/layout).)
+
+### Spacing
+
+| flutterwindcss | Tailwind | Notes |
+| --- | --- | --- |
+| `p(4)` `px(4)` `py(4)` | `p-4` `px-4` `py-4` | all / horizontal / vertical |
+| `ps(4)` `pe(4)` `pt(4)` `pb(4)` | `ps-4` `pe-4` `pt-4` `pb-4` | start / end / top / bottom (RTL-aware) |
+| `m(4)` `mx(4)` `ms(4)` … | `m-4` `mx-4` `ms-4` … | same shape as padding |
+
+### Sizing
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `w(10)` `h(10)` | `w-10` `h-10` |
+| `minW(10)` `maxW(40)` `minH` `maxH` | `min-w-*` `max-w-*` `min-h-*` `max-h-*` |
+| `wFull` `hFull` | `w-full` `h-full` |
+| `wFraction(0.5)` | `w-1/2` |
+| `size(10)` `aspect(16 / 9)` | `size-10` `aspect-[16/9]` |
+
+### Color, border & radius
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `bg(t.colors.card)` | `bg-card` |
+| `text(t.colors.foreground)` | `text-foreground` |
+| `border(1, color: t.colors.border)` | `border border-border` |
+| `borderS(width: 2, color: c)` `borderT(...)` | `border-s-2` `border-t-*` |
+| `rounded(t.radii.md)` `roundedFull` | `rounded-md` `rounded-full` |
+| `roundedT(r)` `roundedS(r)` | `rounded-t-*` `rounded-s-*` |
+
+### Typography
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `textSize(FwFontSize.sm.px)` | `text-sm` |
+| `weight(600)` | `font-semibold` |
+| `leading(1.5)` | `leading-relaxed` |
+| `tracking(-0.4)` | `tracking-tight` (logical px) |
+| `underline` `lineThrough` | `underline` `line-through` |
+
+### Effects
+
+| flutterwindcss | Tailwind |
+| --- | --- |
+| `shadow(t.shadows.md)` | `shadow-md` |
+| `opacity(0.5)` | `opacity-50` |
+| `blur(8)` | `blur-*` (content) |
+| `backdropBlur(8)` | `backdrop-blur-*` |
+
+## Composing it
+
+```dart
+final t = context.fw;
+Text('Card title')
+    .tw
+    .textSize(FwFontSize.lg.px)
+    .weight(600)
+    .text(t.colors.cardForeground); // a styled Text
+
+const SizedBox()
+    .tw
+    .w(64)
+    .h(40)
+    .bg(t.colors.muted)
+    .rounded(t.radii.lg)
+    .shadow(t.shadows.sm); // a styled box
+```
+
+## Next steps
+
+<Cards>
+  <Card title="Colors" href="/docs/flutterwindcss/colors" />
+  <Card title="Conditional styling (states)" href="/docs/flutterwindcss/states" />
+  <Card title="Breakpoints & responsive" href="/docs/flutterwindcss/breakpoints" />
+</Cards>

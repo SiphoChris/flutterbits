@@ -1,0 +1,111 @@
+---
+title: Installation
+description: Add flutterwindcss, provide a theme, and style your first widget — on a bare WidgetsApp or inside a MaterialApp.
+---
+
+## Requirements
+
+flutterwindcss targets **Flutter ≥ 3.29 / Dart ≥ 3.7** (it uses the wide-gamut `Color` API and the
+`Row`/`Column` `spacing` parameter). Older toolchains won't compile.
+
+## Add the dependency
+
+```yaml title="pubspec.yaml"
+dependencies:
+  flutterwindcss: ^0.1.0
+```
+
+```bash
+flutter pub get
+```
+
+There is a single import — the package barrel. Importing from `package:flutterwindcss/src/...` is
+unsupported.
+
+```dart
+import 'package:flutterwindcss/flutterwindcss.dart';
+```
+
+## Provide a theme
+
+Components read design tokens through `context.fw`, which resolves the active [`FwTokens`](/docs/flutterwindcss/theming).
+You provide them once near the root of your app — flutterwindcss works on a **pure** Material-free
+app *or* inside a `MaterialApp`.
+
+### Pure path (Material-free)
+
+Wrap your app in `FwTheme` (or [`FwAnimatedTheme`](/docs/flutterwindcss/theming) to crossfade theme
+changes):
+
+```dart
+import 'package:flutter/widgets.dart';
+import 'package:flutterwindcss/flutterwindcss.dart';
+
+void main() {
+  runApp(
+    WidgetsApp(
+      color: const Color(0xFF000000),
+      builder: (context, _) => const FwTheme(
+        tokens: FwTokens.light,
+        child: HomeScreen(),
+      ),
+    ),
+  );
+}
+```
+
+### Inside a MaterialApp (interop)
+
+Register the tokens as a `ThemeData` extension. `context.fw` resolves the Material-free `FwTheme`
+first and falls back to this bridge, so the same widgets work in either host.
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutterwindcss/flutterwindcss.dart';
+
+MaterialApp(
+  theme: ThemeData(
+    extensions: const [FwThemeExtension(tokens: FwTokens.light)],
+  ),
+  darkTheme: ThemeData(
+    extensions: const [FwThemeExtension(tokens: FwTokens.dark)],
+  ),
+  home: const HomeScreen(),
+);
+```
+
+<Callout>
+  `FwTokens.light` / `FwTokens.dark` are the built-in stock shadcn-neutral themes. To use a pasted
+  tweakcn/shadcn theme instead, generate a `theme.dart` with the [Theme generator](/theme-generator)
+  and pass its `lightTheme` / `darkTheme`.
+</Callout>
+
+## Style your first widget
+
+`.tw` starts a style chain on any widget; `context.fw` reads the theme's tokens.
+
+```dart
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.fw;
+    return const Text('Hello, flutterwindcss')
+        .tw
+        .p(6)
+        .bg(t.colors.card)
+        .text(t.colors.cardForeground)
+        .rounded(t.radii.lg)
+        .border(1, color: t.colors.border);
+  }
+}
+```
+
+## Next steps
+
+<Cards>
+  <Card title="Styling with .tw" href="/docs/flutterwindcss/styling" />
+  <Card title="Colors" href="/docs/flutterwindcss/colors" />
+  <Card title="Layout" href="/docs/flutterwindcss/layout" />
+</Cards>

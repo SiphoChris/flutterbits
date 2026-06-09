@@ -1,0 +1,7 @@
+{
+  "root": true,
+  "title": "flutterbits",
+  "description": "shadcn/ui for Flutter — copy-paste components",
+  "icon": "Blocks",
+  "pages": ["index"]
+}
