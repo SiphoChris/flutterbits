@@ -1,6 +1,5 @@
 import { generateTheme } from './emit';
 import { COLOR_FIELD_NAMES, SHADOW_SLOTS } from './types';
-import type { ConversionMode } from './color/types';
 import type { GenerateResult, ThemeJson, ThemeJsonShadow } from './types';
 
 /// Presentation helpers for the G4 web UI (spec §7). Pure, framework-free, and
@@ -89,10 +88,14 @@ export type GeneratorResult =
 
 /// Run the generator, mapping a blank textarea to `empty` and any thrown error to
 /// a clean `error` message — so the route never needs its own try/catch (spec §7).
-export function runGenerator(css: string, mode: ConversionMode): GeneratorResult {
+/// The web UI always uses the **faithful** conversion (it matches the Tailwind/
+/// shadcn hex, which is what every real tweakcn export wants); the perceptual
+/// gamut-map remains available on the `generateTheme`/`parseCssColor` library API
+/// but is not surfaced as a UI toggle (UX decision 2026-06-09).
+export function runGenerator(css: string): GeneratorResult {
   if (css.trim() === '') return { status: 'empty' };
   try {
-    return { status: 'ok', result: generateTheme(css, mode) };
+    return { status: 'ok', result: generateTheme(css) };
   } catch (e) {
     return { status: 'error', message: e instanceof Error ? e.message : String(e) };
   }

@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { ConversionMode } from '@/lib/generator/color/types';
 import type { ThemeJson } from '@/lib/generator/types';
 import {
   argbToCss,
@@ -13,13 +12,13 @@ import {
 import { SAMPLE_THEME } from './sample';
 
 /// G4 — the tweakcn → Flutter theme generator route (spec §7). Paste a tweakcn
-/// Tailwind-v4 export; the generator runs live (auto-detecting each color format),
-/// rejects v3, hard-gates the 32 colors, reports any defaulted/dropped tokens, and
-/// previews swatches + radius + shadow samples (light & dark) before download.
+/// Tailwind-v4 export; the generator runs live (auto-detecting each color format,
+/// always faithful-clip), rejects v3, hard-gates the 32 colors, reports any
+/// defaulted/dropped tokens, previews swatches + radius + shadow samples (light &
+/// dark), and presents the generated `theme.dart` to copy.
 export default function ThemeGeneratorPage() {
   const [css, setCss] = useState('');
-  const [mode, setMode] = useState<ConversionMode>('faithful');
-  const gen = useMemo(() => runGenerator(css, mode), [css, mode]);
+  const gen = useMemo(() => runGenerator(css), [css]);
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-10">
@@ -30,7 +29,7 @@ export default function ThemeGeneratorPage() {
           <a className="underline" href="https://tweakcn.com" target="_blank" rel="noreferrer">
             tweakcn
           </a>{' '}
-          / shadcn theme (the full CSS export, Tailwind&nbsp;v4) and download a ready-to-use{' '}
+          / shadcn theme (the full CSS export, Tailwind&nbsp;v4) and copy a ready-to-use{' '}
           <code className="font-mono">theme.dart</code> for{' '}
           <code className="font-mono">flutterwindcss</code> — colors, radius, shadows and fonts,
           with nothing dropped.
@@ -68,13 +67,12 @@ export default function ThemeGeneratorPage() {
             placeholder={':root {\n  --background: oklch(1 0 0);\n  ...\n}\n.dark { ... }'}
             className="h-[28rem] w-full resize-y rounded-lg border border-fd-border bg-fd-card p-3 font-mono text-xs leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-fd-ring"
           />
-          <ConversionToggle mode={mode} onChange={setMode} />
         </div>
 
         <div className="flex flex-col gap-4">
           {gen.status === 'empty' && (
             <Placeholder>
-              Paste a theme on the left to see a live preview and download your{' '}
+              Paste a theme on the left to preview it and copy your{' '}
               <code className="font-mono">theme.dart</code>.
             </Placeholder>
           )}
@@ -82,52 +80,11 @@ export default function ThemeGeneratorPage() {
           {gen.status === 'error' && <ErrorBanner message={gen.message} />}
 
           {gen.status === 'ok' && (
-            <Result
-              themeJson={gen.result.themeJson}
-              dartSource={gen.result.dartSource}
-            />
+            <Result themeJson={gen.result.themeJson} dartSource={gen.result.dartSource} />
           )}
         </div>
       </section>
     </main>
-  );
-}
-
-function ConversionToggle({
-  mode,
-  onChange,
-}: {
-  mode: ConversionMode;
-  onChange: (m: ConversionMode) => void;
-}) {
-  const opts: { value: ConversionMode; label: string; hint: string }[] = [
-    { value: 'faithful', label: 'Faithful', hint: 'Match the Tailwind/shadcn hex (clip)' },
-    { value: 'perceptual', label: 'Perceptual', hint: 'Gamut-map out-of-range colors' },
-  ];
-  return (
-    <fieldset className="rounded-lg border border-fd-border p-3">
-      <legend className="px-1 text-xs font-medium text-fd-muted-foreground">
-        OKLCH conversion
-      </legend>
-      <div className="flex gap-2">
-        {opts.map((o) => (
-          <button
-            key={o.value}
-            type="button"
-            aria-pressed={mode === o.value}
-            onClick={() => onChange(o.value)}
-            title={o.hint}
-            className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              mode === o.value
-                ? 'bg-fd-primary text-fd-primary-foreground'
-                : 'border border-fd-border hover:bg-fd-accent'
-            }`}
-          >
-            {o.label}
-          </button>
-        ))}
-      </div>
-    </fieldset>
   );
 }
 
@@ -158,22 +115,6 @@ function Result({ themeJson, dartSource }: { themeJson: ThemeJson; dartSource: s
   }
   return (
     <>
-      <div className="flex flex-wrap gap-2">
-        <DownloadButton
-          filename="theme.dart"
-          content={dartSource}
-          mime="text/plain"
-          primary
-          label="Download theme.dart"
-        />
-        <DownloadButton
-          filename="theme.json"
-          content={`${JSON.stringify(themeJson, null, 2)}\n`}
-          mime="application/json"
-          label="theme.json"
-        />
-      </div>
-
       {notes.length > 0 && (
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200">
           <p className="font-semibold">Defaulted / dropped tokens</p>
@@ -185,47 +126,42 @@ function Result({ themeJson, dartSource }: { themeJson: ThemeJson; dartSource: s
         </div>
       )}
 
+      <DartSource source={dartSource} />
+
       <PreviewPanel themeJson={themeJson} brightness="light" />
       <PreviewPanel themeJson={themeJson} brightness="dark" />
     </>
   );
 }
 
-function DownloadButton({
-  filename,
-  content,
-  mime,
-  label,
-  primary = false,
-}: {
-  filename: string;
-  content: string;
-  mime: string;
-  label: string;
-  primary?: boolean;
-}) {
-  const onClick = () => {
-    const url = URL.createObjectURL(new Blob([content], { type: mime }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+function DartSource({ source }: { source: string }) {
+  const [copied, setCopied] = useState(false);
+  const onCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(source);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard API unavailable (e.g. insecure context) — leave the source
+      // visible so the user can select and copy it manually.
+    }
   };
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-        primary
-          ? 'bg-fd-primary text-fd-primary-foreground hover:opacity-90'
-          : 'border border-fd-border hover:bg-fd-accent'
-      }`}
-    >
-      {label}
-    </button>
+    <figure className="overflow-hidden rounded-lg border border-fd-border bg-fd-card">
+      <figcaption className="flex items-center justify-between border-b border-fd-border px-3 py-2">
+        <span className="font-mono text-xs text-fd-muted-foreground">theme.dart</span>
+        <button
+          type="button"
+          onClick={onCopy}
+          className="rounded-md bg-fd-primary px-3 py-1 text-xs font-medium text-fd-primary-foreground transition-opacity hover:opacity-90"
+        >
+          {copied ? 'Copied!' : 'Copy'}
+        </button>
+      </figcaption>
+      <pre className="max-h-[28rem] overflow-auto p-3 text-xs leading-relaxed">
+        <code className="font-mono">{source}</code>
+      </pre>
+    </figure>
   );
 }
 

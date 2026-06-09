@@ -70,10 +70,10 @@ describe('preview models (from the Claude theme)', () => {
 
 describe('runGenerator — UI result mapping', () => {
   it('returns `empty` for blank/whitespace input (not an error)', () => {
-    expect(runGenerator('   \n  ', 'faithful').status).toBe('empty');
+    expect(runGenerator('   \n  ').status).toBe('empty');
   });
   it('returns `ok` with both artifacts for a valid theme', () => {
-    const r = runGenerator(claudeCss(), 'faithful');
+    const r = runGenerator(claudeCss());
     expect(r.status).toBe('ok');
     if (r.status === 'ok') {
       expect(r.result.themeJson.radiusBase).toBe(16);
@@ -81,12 +81,12 @@ describe('runGenerator — UI result mapping', () => {
     }
   });
   it('returns `error` with the v3 message for a Tailwind-v3 paste', () => {
-    const r = runGenerator('@tailwind base;\n:root{--background:0 0% 100%;}', 'faithful');
+    const r = runGenerator('@tailwind base;\n:root{--background:0 0% 100%;}');
     expect(r.status).toBe('error');
     if (r.status === 'error') expect(r.message).toMatch(/Tailwind v3/);
   });
   it('returns `error` listing missing colors when the 32-color gate fails', () => {
-    const r = runGenerator(':root{--background:#fff;} .dark{--background:#000;}', 'faithful');
+    const r = runGenerator(':root{--background:#fff;} .dark{--background:#000;}');
     expect(r.status).toBe('error');
     if (r.status === 'error') expect(r.message).toMatch(/Missing required color/);
   });

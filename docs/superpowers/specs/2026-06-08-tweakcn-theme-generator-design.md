@@ -32,16 +32,19 @@ values / `@tailwind base`) and **reject it with a clear "Tailwind v3 export not 
 as Tailwind v4" error**, never silently misparse. URL input (paste a tweakcn share link, fetch the
 CSS) is likewise a recorded possible enhancement, not v1.
 
-**Output:** two downloadable files:
-- `theme.json` — the **source of truth**. Its schema mirrors the `FwTokens` shape (32 colors +
-  `radiusBase` + radii + 7 shadows + 3 font families + `tracking`). Fixed at build time.
-- `theme.dart` — the **emitted artifact**: two `const FwTokens` (light + dark) against the §5
-  contract, a drop-in file requiring **no edits** to component code, plus a clearly-commented
-  `google_fonts` wiring stub for any named font.
+**Output:** the dev copies a **`theme.dart`** — two `const FwTokens` (light + dark) against the §5
+contract, a drop-in file requiring **no edits** to component code, plus a clearly-commented
+`google_fonts` wiring stub for any named font.
+
+- `theme.json` (the `FwTokens` schema — 32 colors + `radiusBase` + radii + 7 shadows + 3 font
+  families + `tracking`) remains the **internal source of truth** the Dart is emitted from, and
+  still drives the live preview. **UX decision (2026-06-09):** it is *not* surfaced as a download —
+  devs consume the `theme.dart` (shadcn-style copy-paste); the JSON isn't something they need.
 
 The web UI (§7 below) is paste → auto-detect format → **hard-validate all 32 colors** → live
-preview (swatches + radius + shadow samples, light & dark) → download both files, with a
-faithful/perceptual conversion toggle.
+preview (swatches + radius + shadow samples, light & dark) → **copy the `theme.dart` source**.
+Conversion is always **faithful-clip** (no UI toggle — see §7); the perceptual gamut-map stays on
+the library API.
 
 **Out of scope for this feature (recorded, not silently dropped):** the §2 "registry endpoint"
 that will also live in `apps/docs`. It pairs with the not-yet-built `flutterbits_cli`/`registry`
@@ -367,7 +370,7 @@ Ordered **G0 ✅ → G1 ✅ → G2 ✅ → G3 ✅ → G4 ✅ → G5 ✅** (all m
 | **G1** ✅ | `color/`: 4 format parsers (alpha + both L forms) + OKLCH→sRGB convert + faithful-clip + opt-in chroma-reduction gamut-map + `requireFinite` NaN-guards | **Merged PR #23.** 46 vitest tests; four-format convergence byte-exact (Δ0); malformed-input guards; lint + scoped tsc clean; covered by the `docs-generator` CI job |
 | **G2** ✅ | `parse/`: tolerant brace-balanced `:root`/`.dark` tokenizer → `RawTheme`; records unknown vars (`RawTheme.unknownVars`); retains per-axis `--shadow-*` primitives + the DEFAULT `--shadow` verbatim (classified "known", ignored by emit); token **absence recorded by omission** from `RawBlock.vars` (for graceful-default reporting); **rejects Tailwind-v3 input** (`@tailwind` directive *or* bare `H S% L%` colors); `@custom-variant dark` false-match guard. Font-stack extraction is G3 (it reads `RawBlock.vars`), not G2. | **Merged PR #25.** 43 vitest tests across all 4 real fixtures (preamble ignored, false-match guard, messy whitespace/comments, alpha pass-through, per-axis retain, missing-token omission, unknown-var recording, v3-reject, missing-block errors); lint + scoped tsc clean |
 | **G3** ✅ | `emit/`: `RawTheme → ResolvedTheme → ThemeJson → theme.dart` (`resolve.ts` + `theme-json.ts` + `dart.ts`); additive radius (clamped ≥0), 7 named shadow slots (paren-aware layer split so `rgba(…)`/`hsl(…)` colors survive; DEFAULT `--shadow` + per-axis primitives ignored), font-stack extraction, google_fonts stub, `tracking` (unit-normalized), `--spacing` drop-note, **non-color graceful defaults + `meta.notes` report** (per-slot shadow fallback, radius→10, fonts→platform, `--sidebar-ring`→`ring`). `_claudeShadows` matches the transform (verified — golden is byte-exact). | **Merged PR #26.** 67 vitest tests: 4-fixture end-to-end golden (32×2 colors converge to `themes.dart` — hex/rgb/hsl byte-exact, oklch ±1; radii/shadows/typography byte-exact), ThemeJson schema, `emitDart` totality (S3), non-10/zero radius (S4), tracking units, font cases, colored-shadow, DEFAULT≠md, missing-color gate, sidebar-ring default. Lint + scoped tsc clean. |
-| **G4** ✅ | Route `src/app/(home)/theme-generator/page.tsx` (client) + nav link: paste → live `runGenerator` (auto-detect per value) → **reject v3** → **hard-gate 32 colors** + **default-and-report** (`meta.notes` + dropped vars banner) → preview (swatch grid + radius + shadow samples, light+dark, in the theme's own colors) → download `theme.dart` + `theme.json` + faithful/perceptual toggle. Real logic lives in the pure, tested `lib/generator/preview.ts`; `page.tsx` is a thin shell. | **Merged PR #27.** Dev-server verified (Playwright): renders the Claude theme (32×2 swatches = `themes.dart`, radius 12/14/16/20, 7 shadows), downloads `theme.dart`, v3 paste → error banner + downloads removed. 11 `preview.test.ts` tests (suite 167); route type-checked in CI (added to `tsconfig.generator.json`); lint clean. |
+| **G4** ✅ | Route `src/app/(home)/theme-generator/page.tsx` (client) + nav link: paste → live `runGenerator` (auto-detect per value, always faithful) → **reject v3** → **hard-gate 32 colors** + **default-and-report** (`meta.notes` + dropped vars banner) → preview (swatch grid + radius + shadow samples, light+dark, in the theme's own colors) → **copy the `theme.dart` source** (read-only block + Copy button; no downloads, no `theme.json`, no conversion toggle — UX decision 2026-06-09, §7). Real logic lives in the pure, tested `lib/generator/preview.ts`; `page.tsx` is a thin shell. | **Merged PR #27**, refined in **PR #29** (copy-not-download per owner feedback). Dev-server verified (Playwright): renders the Claude theme (32×2 swatches = `themes.dart`, radius 12/14/16/20, 7 shadows), v3 paste → error banner + no output. `preview.test.ts` (suite 167); route type-checked in CI; lint clean. |
 | **G5** ✅ | Docs MDX page (`content/docs/theme-generator.mdx`): usage, wiring `theme.dart` into `FwAnimatedTheme`, what-converts, faithful-vs-perceptual, and a Limitations section (v3-only, 32-color gate, fonts-not-bundled, `--spacing`/`tracking`/DEFAULT-`--shadow` caveats) + nav `meta.json`; full drift sweep of §7/README. | **Merged PR #28.** Renders on the dev server (Callouts/Cards/code block verified via Playwright); root README "shipped/next" + `apps/docs` layout note updated; no doc contradicts code. |
 
 ---
@@ -382,17 +385,22 @@ Behavior:
    "re-export as Tailwind v4" message (§1) — never misparse it.
 3. **Auto-detect** each value's format per declaration (formats can mix within a theme).
 4. **Hard-validate the 32 colors** per block (excluding `--sidebar-ring`, which defaults to `ring`).
-   Missing any of the 32 → **block download**, show the exact list. Rationale (S6): `FwColors` has
-   no defaults, so a partial `theme.dart` won't compile, and a web user has no compiler. **Non-color
-   tokens default gracefully + are reported:** omitted `--font-*` → platform family; omitted
-   shadow → engine default scale; absent `--tracking-normal` → 0; non-default/absent `--spacing`
-   → dropped. The UI lists every token it **defaulted** so nothing is silent (§12). Real presets
-   need this — e.g. *T3-Chat*, *Caffeine*, *Claude* define only colors + radius.
+   Missing any of the 32 → **show an error and present no output**, listing the exact missing
+   tokens. Rationale (S6): `FwColors` has no defaults, so a partial `theme.dart` won't compile, and
+   a web user has no compiler. **Non-color tokens default gracefully + are reported:** omitted
+   `--font-*` → platform family; omitted shadow → engine default scale; absent `--tracking-normal`
+   → 0; non-default/absent `--spacing` → dropped. The UI lists every token it **defaulted** so
+   nothing is silent (§12). Real presets need this — e.g. *T3-Chat*, *Caffeine*, *Claude* define
+   only colors + radius.
 5. **Preview** (read-only, light + dark side-by-side): a swatch grid of the 32 colors, the four
    radius samples, and the 7 shadow samples. (No mock-component preview — an HTML approximation of
    Flutter rendering would mislead.)
-6. **Conversion toggle:** faithful-clip (default) ↔ perceptual gamut-map.
-7. **Download** `theme.dart` and `theme.json`.
+6. **Copy the `theme.dart`** — the generated source is shown in a read-only block with a **Copy**
+   button (shadcn-style; the dev owns the source). No `theme.json` download and no download buttons.
+7. **Conversion is always faithful-clip — no UI toggle (UX decision 2026-06-09):** devs didn't
+   understand "faithful vs perceptual", and every real tweakcn export is in-gamut, so the toggle
+   only risked confusion. The perceptual gamut-map remains on the `generateTheme`/`parseCssColor`
+   library API (`mode: 'perceptual'`) for a future need — see §2.1.
 
 ---
 
