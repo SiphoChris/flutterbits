@@ -1,7 +1,11 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "noEmit": true
+    "noEmit": true,
+    // The parser's Vitest tests read the committed .css fixtures via `node:fs`
+    // (G2). The full-app tsconfig gets Node types implicitly from Next's typegen;
+    // this scoped config (which CI type-checks in isolation) must name them.
+    "types": ["node"]
   },
   "include": ["src/lib/generator/**/*.ts"],
   "exclude": ["node_modules"]

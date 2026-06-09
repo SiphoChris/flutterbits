@@ -1,8 +1,9 @@
 # tweakcn → `theme.dart` generator — design
 
-**Status:** approved design · **G0 + G1 shipped (PR #22, #23); G2–G5 remain** · **Date:** 2026-06-08
+**Status:** approved design · **G0 + G1 + G2 shipped (PR #22, #23, #25); G3–G5 remain** · **Date:** 2026-06-08
 (status updated 2026-06-09) · **Home:** `apps/docs` (Next.js / TypeScript) ·
-**Audience:** engineers building the generator (the G0 engine prereq and the G1 color core are merged).
+**Audience:** engineers building the generator (the G0 engine prereq, the G1 color core, and the
+G2 CSS parser are merged).
 
 This spec implements **AGENTS.md §7**. §7 is the contract; this document is the *how*. Where §7
 and this spec ever disagree, §7 wins and this file is the drift (fix it). The headline product
@@ -346,14 +347,14 @@ any statement the new field falsifies.
 
 ## 6. Module decomposition (one branch → PR → `gh` merge each)
 
-Ordered **G0 ✅ → G1 ✅ → G2 → G3 → G4 → G5** (G0 and G1 are merged; the emitter (G3) needs the color
-core *and* the `tracking` field; the UI needs the full pipeline).
+Ordered **G0 ✅ → G1 ✅ → G2 ✅ → G3 → G4 → G5** (G0, G1, and G2 are merged; the emitter (G3) needs the
+color core *and* the `tracking` field; the UI needs the full pipeline).
 
 | Module | Scope | Done when |
 |---|---|---|
 | **G0** ✅ | Engine: `tracking` field + `FwTypographyTheme.lerp` + `FwTokens.lerp` rewire + drift sweep | **Merged PR #22.** Dart analyze/format clean; existing goldens unchanged; new lerp unit test (tracking interpolates, families crossover) green |
 | **G1** ✅ | `color/`: 4 format parsers (alpha + both L forms) + OKLCH→sRGB convert + faithful-clip + opt-in chroma-reduction gamut-map + `requireFinite` NaN-guards | **Merged PR #23.** 46 vitest tests; four-format convergence byte-exact (Δ0); malformed-input guards; lint + scoped tsc clean; covered by the `docs-generator` CI job |
-| **G2** | `parse/`: tolerant `:root`/`.dark` tokenizer → `RawTheme`; records unknown vars; ignores per-axis `--shadow-*` primitives; **rejects Tailwind-v3 input**; records which tokens were absent (for graceful-default reporting) | Parser fixtures pass (messy whitespace, comments, all 4 formats, missing-token, alpha syntax, v3-reject, inner-quoted fonts) |
+| **G2** ✅ | `parse/`: tolerant brace-balanced `:root`/`.dark` tokenizer → `RawTheme`; records unknown vars (`RawTheme.unknownVars`); retains per-axis `--shadow-*` primitives + the DEFAULT `--shadow` verbatim (classified "known", ignored by emit); token **absence recorded by omission** from `RawBlock.vars` (for graceful-default reporting); **rejects Tailwind-v3 input** (`@tailwind` directive *or* bare `H S% L%` colors); `@custom-variant dark` false-match guard. Font-stack extraction is G3 (it reads `RawBlock.vars`), not G2. | **Merged PR #25.** 43 vitest tests across all 4 real fixtures (preamble ignored, false-match guard, messy whitespace/comments, alpha pass-through, per-axis retain, missing-token omission, unknown-var recording, v3-reject, missing-block errors); lint + scoped tsc clean |
 | **G3** | `emit/`: `ResolvedTheme → ThemeJson → theme.dart`; additive radius (clamped ≥0), 7 named shadow slots (DEFAULT dropped), font-stack extraction, font stub, `tracking` (unit-normalized), `--spacing` drop-comment, **non-color graceful defaults + report**; **verify `_claudeShadows` matches the transform** (it does — §4.2) | ThemeJson schema snapshot + `emitDart` totality test (S3) + non-10/zero radius guards (S4) + universality fixtures (§8) |
 | **G4** | Route + UI: paste → **reject v3** → auto-detect → **hard-gate 32 colors** + **default-and-report** non-color tokens → preview (swatch/radius/shadow, light+dark) → download both + faithful/perceptual toggle | Manual run renders the Claude theme; color gate refuses download with a listed error; defaulted tokens are reported |
 | **G5** | Docs MDX page (usage, limitations, the `--spacing`/font caveats) + full drift sweep of §7/README/roadmap | Docs accurate; no doc contradicts code |
@@ -407,13 +408,14 @@ hand-produced without the generator's math. Layers:
     byte-exact by the four-format convergence, which covers the in-gamut path real exports use.)
   - Per-channel matrix vectors (math internal-consistency), alpha-syntax cases (`hsl(… / 0.10)`,
     `oklch(… / 0.1)`), and percent-vs-unit OKLCH lightness.
-- **Parser (G2):** fixtures for messy whitespace/comments, all four formats, alpha syntax, missing
-  tokens (→ recorded), presence of per-axis `--shadow-*` primitives (→ ignored, composed string
-  wins), the full at-rule preamble (`@import`/`@custom-variant`/`@theme inline`/`@layer` → ignored),
-  and the **`@custom-variant dark (…)` false-match guard** (must not be parsed as the `.dark` block).
-  Font-stack extraction cases: `Outfit, sans-serif`→`Outfit`, `ui-serif, Georgia, …`→`Georgia`
-  (generic skipped), `"Times New Roman", …`→`Times New Roman` (outer quotes), `'"Oxanium", …'`
-  →`Oxanium` (inner quotes), `Merriweather, serif` in the `sans` slot (cross-category, by name).
+- **Parser (G2) ✅:** fixtures for messy whitespace/comments, all four formats, alpha syntax (kept
+  verbatim), missing tokens (→ recorded by omission), presence of per-axis `--shadow-*` primitives
+  (→ retained verbatim, classified "known"; the composed string is what emit reads), the full at-rule
+  preamble (`@import`/`@custom-variant`/`@theme inline`/`@layer` → ignored via brace-balanced
+  top-level extraction), and the **`@custom-variant dark (…)` false-match guard** (must not be parsed
+  as the `.dark` block). **Font-stack *extraction* is an emit transform (G3)** — G2 captures the full
+  verbatim stack (`--font-serif: ui-serif, Georgia, …`) because the parse stage is verbatim-only per
+  the §2 architecture; the extraction cases below live with G3.
 - **Universality (G2/G3) — the variety the research surfaced:** a **colored-shadow** fixture
   (`hsl(255 86% 66%)` / `rgba(...)` shadow base → correct `BoxShadow` color via the composed string);
   the **`--shadow` DEFAULT ≠ `--shadow-md`** guard (assert `md` reads `--shadow-md`, and the DEFAULT
@@ -423,7 +425,11 @@ hand-produced without the generator's math. Layers:
   **missing `--sidebar-ring`** → defaults to `ring`; and a **Tailwind-v3 input → rejected** with the
   clear error (not misparsed).
 - **Emitter (G3):** `ThemeJson` schema snapshot; `emitDart(themeJson)` totality (every field
-  consumed, S3); non-10 radius guard (S4).
+  consumed, S3); non-10 radius guard (S4). **Font-stack extraction cases** (read from the verbatim
+  `RawBlock.vars` the parser produced): `Outfit, sans-serif`→`Outfit`, `ui-serif, Georgia, …`→
+  `Georgia` (generic skipped), `"Times New Roman", …`→`Times New Roman` (outer quotes),
+  `'"Oxanium", …'`→`Oxanium` (inner quotes), `Merriweather, serif` in the `sans` slot
+  (cross-category, by name).
 - **End-to-end golden (G3):** **each** of the four `__fixtures__/claude.{hex,rgb,hsl,oklch}.css` →
   emit → assert the **full bundle** — 32 colors *and* radii *and* shadows *and* typography — equals
   `themes.dart`'s `_claudeLight`/`_claudeDark`/`_claudeRadii`/`_claudeShadows`/`_claudeType` (oklch
