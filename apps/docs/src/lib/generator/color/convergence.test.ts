@@ -40,12 +40,16 @@ function within1(a: Rgba8, hex: string): void {
 
 describe('four-format convergence (B1 keystone)', () => {
   for (const q of QUADS) {
-    it(`${q.name}: hex & rgb are byte-exact ground truth`, () => {
+    it(`${q.name}: hex, rgb & hsl are byte-exact ground truth`, () => {
+      // hex/rgb/hsl are deterministic (no transcendental math), so they must
+      // reproduce the ground-truth ARGB exactly — not merely within ±1.
       expect(rgba8ToArgbHex(parseCssColor(q.hex, 'faithful'))).toBe(q.argb);
       expect(rgba8ToArgbHex(parseCssColor(q.rgb, 'faithful'))).toBe(q.argb);
+      expect(rgba8ToArgbHex(parseCssColor(q.hsl, 'faithful'))).toBe(q.argb);
     });
-    it(`${q.name}: hsl & oklch converge within ±1`, () => {
-      within1(parseCssColor(q.hsl, 'faithful'), q.hex);
+    it(`${q.name}: oklch converges within ±1`, () => {
+      // oklch goes through libm pow/cos/sin, which can differ ~1 ULP across
+      // platforms and flip a rounding boundary — hence ±1, not byte-exact.
       within1(parseCssColor(q.oklch, 'faithful'), q.hex);
     });
   }

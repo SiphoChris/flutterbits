@@ -38,8 +38,9 @@ function inGamut(lin: { r: number; g: number; b: number }): boolean {
 }
 
 /// Largest chroma ≤ the input chroma whose color is in sRGB gamut, found by
-/// bisection (hue + lightness preserved). Used by the perceptual mode.
-export function maxInGamutChroma(L: number, C: number, h: number): number {
+/// bisection (hue + lightness preserved). Module-private helper of the
+/// perceptual path in [oklchToRgb01]; exercised indirectly via its tests.
+function maxInGamutChroma(L: number, C: number, h: number): number {
   if (inGamut(oklchToLinearSrgb(L, C, h))) return C;
   let lo = 0;
   let hi = C;

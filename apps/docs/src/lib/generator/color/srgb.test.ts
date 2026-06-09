@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { clamp01, linearToSrgb, channelTo8, alphaTo8, rgba8ToArgbHex } from './srgb';
+import {
+  clamp01,
+  linearToSrgb,
+  channelTo8,
+  alphaTo8,
+  rgba8ToArgbHex,
+  requireFinite,
+} from './srgb';
 
 describe('srgb helpers', () => {
   it('clamp01 clamps to [0,1]', () => {
@@ -29,6 +36,13 @@ describe('srgb helpers', () => {
     expect(alphaTo8(0.25)).toBe(64);
     expect(alphaTo8(0.15)).toBe(38);
     expect(alphaTo8(1)).toBe(255);
+  });
+
+  it('requireFinite passes finite numbers and throws on NaN/Infinity', () => {
+    expect(requireFinite(0.5, 'x', 'src')).toBe(0.5);
+    expect(requireFinite(0, 'x', 'src')).toBe(0);
+    expect(() => requireFinite(NaN, 'channel', 'rgb(foo 0 0)')).toThrow(/Invalid channel/);
+    expect(() => requireFinite(Infinity, 'channel', 'src')).toThrow(/Invalid channel/);
   });
 
   it('rgba8ToArgbHex formats AARRGGBB uppercase', () => {

@@ -1,5 +1,19 @@
 import type { Rgba8 } from './types';
 
+/// Assert a parsed numeric component is finite, throwing a clear error otherwise.
+/// `parseFloat`/`parseInt` return `NaN` for non-numeric tokens (e.g. `foo`,
+/// `b%`, a non-hex digit), and `NaN` silently survives `clamp01`/`Math.round`
+/// to poison a channel — yielding garbage like `"FFNANNANNAN"` from
+/// [rgba8ToArgbHex]. Every parser routes its parsed components through this so a
+/// malformed token fails loudly at the lowest layer (AGENTS.md §3.9), rather
+/// than leaking a `NaN`-channeled color downstream to G2/G3.
+export function requireFinite(n: number, label: string, source: string): number {
+  if (!Number.isFinite(n)) {
+    throw new Error(`Invalid ${label} in color: ${source}`);
+  }
+  return n;
+}
+
 /// Clamp a number to the [0,1] range.
 export function clamp01(x: number): number {
   if (x < 0) return 0;

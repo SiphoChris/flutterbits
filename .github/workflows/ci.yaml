@@ -77,6 +77,35 @@ jobs:
       - name: Unit tests on floor (goldens excluded)
         run: flutter test test/tokens
 
+  docs-generator:
+    # Lints, type-checks, and tests the generator TypeScript in apps/docs (the
+    # tweakcn→theme.dart generator — color core G1, parse/emit/UI to follow).
+    # apps/docs was previously uncovered by CI; this protects the generator's
+    # correctness kernel. The type-check is SCOPED to src/lib/generator via
+    # tsconfig.generator.json so it doesn't fail on the pre-existing Fumadocs
+    # scaffold type errors under src/app (full app typegen is deferred).
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/docs
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11 # match the pnpm that wrote pnpm-lock.yaml (lockfileVersion 9.0)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/docs/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Lint (eslint)
+        run: pnpm run lint
+      - name: Type-check the generator (scoped — excludes pre-existing scaffold errors)
+        run: pnpm exec tsc -p tsconfig.generator.json
+      - name: Test (vitest)
+        run: pnpm test
+
   arch-guard:
     # Mechanically enforces the AGENTS.md §3 rules that are otherwise review-only,
     # so a violation fails the build instead of depending on a human catching it.
