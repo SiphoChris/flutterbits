@@ -31,7 +31,8 @@ class FwTokens {
   /// Box-shadow scale.
   final FwShadows shadows;
 
-  /// Typography marker (scales are static; present for future per-theme type).
+  /// Per-theme typography: the `sans`/`serif`/`mono` family names and `tracking`
+  /// (em base letter-spacing). The static type *scales* live on their own types.
   final FwTypographyTheme typography;
 
   /// The shadcn `--radius` this theme was built from (logical px).

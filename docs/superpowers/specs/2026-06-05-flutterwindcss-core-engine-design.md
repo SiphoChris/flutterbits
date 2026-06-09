@@ -107,7 +107,7 @@ The **theme-independent** scales are separate `const` types in `tokens/typograph
 - **Leading** (line-height) `FwLeading` `tight…loose`.
 - **Font-family generics** `FwFontFamily` (`sans`/`serif`/`mono` → platform generic names).
 
-The **per-theme** typography is `FwTypographyTheme` (in `tokens/tokens.dart`, carried on `FwTokens` and lerp-crossfaded): it holds the theme's `sans`/`serif`/`mono` family **names** (with `family` aliasing `sans`). The engine never bundles fonts; `google_fonts` wiring is the host app's concern, and the generator emits a wiring stub (§7) rather than a silent substitution. (A theme-level base `--tracking-normal` is a known generator-phase addition — see §7.)
+The **per-theme** typography is `FwTypographyTheme` (in `tokens/tokens.dart`, carried on `FwTokens` and lerp-crossfaded): it holds the theme's `sans`/`serif`/`mono` family **names** (with `family` aliasing `sans`) and `tracking` — em base letter-spacing (shadcn `--tracking-normal`, default `0`, `lerp`-able; family names hard-crossover at `t=0.5` while `tracking` interpolates linearly). The engine never bundles fonts; `google_fonts` wiring is the host app's concern, and the generator emits a wiring stub (§7) rather than a silent substitution.
 
 ### 4.6 Scalar scales (`tokens/scales.dart`)
 - **Spacing:** base `0.25rem` → `fwSpace(double units) => units * 4.0` logical px (1 unit = 4 px). Fractional units supported (`fwSpace(0.5)` = 2 px).

@@ -10,8 +10,9 @@ class FwRadii {
   /// Use this when the steps are **not** the stock ×-factor ratios — e.g. a
   /// generated theme using shadcn's *additive* derivation (`sm = base−4`,
   /// `md = base−2`, `lg = base`, `xl = base+4`), which coincides with
-  /// [FwRadii.fromBase] only at the 10px default and diverges otherwise. For
-  /// stock ×-factor themes, prefer [FwRadii.fromBase].
+  /// [FwRadii.fromBase] only at the 10px default and diverges otherwise. Use
+  /// [FwRadii.fromBase] *only* for stock ×-factor themes; generated/additive
+  /// themes MUST use this explicit constructor.
   const FwRadii({
     required this.base,
     required this.sm,
