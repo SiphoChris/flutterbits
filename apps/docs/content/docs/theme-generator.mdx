@@ -1,0 +1,129 @@
+---
+title: Theme generator
+description: Paste a tweakcn/shadcn theme and download a working Flutter theme.dart for flutterwindcss — colors, radius, shadows, and fonts, with nothing dropped.
+---
+
+The **theme generator** turns any [tweakcn](https://tweakcn.com) / shadcn theme into a
+ready-to-use `theme.dart` for `flutterwindcss`. Paste the CSS you export from tweakcn and
+download two files: a `theme.dart` (two `const FwTokens`, light + dark) and a `theme.json`
+(the source of truth). No other Flutter UI library does this — it's the headline feature.
+
+<Cards>
+  <Card title="Open the generator →" href="/theme-generator" />
+  <Card title="Browse themes on tweakcn" href="https://tweakcn.com" />
+</Cards>
+
+## How to use it
+
+1. On [tweakcn](https://tweakcn.com), design or pick a theme and **export** it as CSS.
+   Choose the **Tailwind v4** format (the default) — see [Limitations](#limitations).
+2. Open the [generator](/theme-generator) and **paste** the entire CSS export into the box
+   (the full file — `@import`, `@theme inline`, `@layer` and all; only the `:root` and `.dark`
+   blocks are read).
+3. The preview updates live: a swatch grid of all 32 colors, the four radius samples, and the
+   seven shadow samples, shown in both light and dark.
+4. **Download `theme.dart`** (and optionally `theme.json`), then drop it into your app.
+
+You don't pick the input format — each color value is auto-detected, so `oklch()`, `hsl()`,
+`rgb()`, and hex can even be mixed within one theme.
+
+## Wiring the output into your app
+
+The generated file exports two `const FwTokens` — `lightTheme` and `darkTheme`. Hand the right
+one to `FwAnimatedTheme` (or `FwTheme`) for the current brightness; every `context.fw`-styled
+widget reskins from that single swap:
+
+```dart
+import 'package:flutter/widgets.dart';
+import 'package:flutterwindcss/flutterwindcss.dart';
+import 'theme.dart'; // the file you just downloaded
+
+class App extends StatelessWidget {
+  const App({super.key, required this.isDark});
+
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return WidgetsApp(
+      color: const Color(0xFF000000),
+      home: FwAnimatedTheme(
+        tokens: isDark ? darkTheme : lightTheme,
+        child: const HomeScreen(),
+      ),
+    );
+  }
+}
+```
+
+It also works inside a `MaterialApp` — `context.fw` resolves the Material-free `FwTheme` first
+and falls back to the `FwThemeExtension` bridge, so the same components theme in either host.
+
+## What gets converted
+
+Everything a shadcn theme carries, not just color:
+
+- **Colors — all 32.** The 19 core roles plus `chart-1…5` and the 8 `sidebar-*` tokens, mapped
+  straight onto `FwColors`. Nothing is dropped; a partial theme can't even compile, so the
+  generator **refuses to download** until all 32 are present (see below).
+- **Radius.** Derived from `--radius` using shadcn's **additive** steps
+  (`sm = r−4`, `md = r−2`, `lg = r`, `xl = r+4`, clamped at ≥ 0).
+- **Shadows — 7 named levels.** `--shadow-2xs … --shadow-2xl` become `FwShadows`, including
+  colored and hard-offset shadows (the composed CSS strings are read verbatim).
+- **Typography.** The first concrete family from each `--font-*` stack (`sans`/`serif`/`mono`)
+  plus `--tracking-normal` (letter-spacing, normalized to em).
+
+### Faithful vs. perceptual conversion
+
+OKLCH colors are converted with one of two policies, toggled in the UI:
+
+- **Faithful (default).** Gamut-*clips* so the output matches Tailwind/shadcn's published hex by
+  construction. For the realistic, in-gamut shadcn range this is exact — a pasted shadcn theme
+  *is* the shadcn colors.
+- **Perceptual.** Hue-preserving chroma reduction for genuinely out-of-gamut colors (or a
+  wide-gamut target). Leave it off unless you're pasting vivid, hand-authored OKLCH values.
+
+### Reporting — nothing is silent
+
+Whenever the generator **defaults** or **drops** a token, it tells you: the UI shows a notice and
+the emitted `theme.dart` carries header comments. Omitted fonts fall back to the platform family,
+an omitted shadow scale falls back to the engine default, a missing `--sidebar-ring` falls back to
+`--ring`, and any unrecognized `--var` is listed as dropped.
+
+## Limitations
+
+<Callout type="warn" title="Tailwind v4 exports only">
+  tweakcn can also export **Tailwind v3** CSS (bare `H S% L%` colors under `@layer base` with
+  `@tailwind` directives). That format is **not supported** — the generator detects it and asks
+  you to re-export as Tailwind v4 rather than silently misparsing it.
+</Callout>
+
+<Callout type="warn" title="All 32 colors are required">
+  `FwColors` has no defaults, so a `theme.dart` missing any color wouldn't compile — and a web
+  user has no compiler. If a pasted theme is missing one of the 32, the generator lists the
+  missing tokens and blocks the download. (Non-color tokens — fonts, shadows, radius, tracking —
+  default gracefully and are reported.)
+</Callout>
+
+<Callout type="info" title="Fonts are named, not bundled">
+  flutterwindcss ships no fonts. The generator emits the family **name** (so it round-trips) plus
+  a clearly-commented `google_fonts` wiring stub. Until you wire the font, Flutter falls back to
+  the platform family — it never pretends a font is present.
+</Callout>
+
+A few smaller, deliberate notes:
+
+- **`--spacing`** is dropped (with a comment) when it isn't the default `0.25rem`. flutterwindcss
+  uses a fixed spacing scale of `1 unit = 4px`, context-free by design.
+- **`--tracking-normal`** round-trips and interpolates as a token, but applying it to rendered
+  text on the engine's default text path is a separate, not-yet-wired enhancement.
+- The unprefixed **`--shadow`** (Tailwind's DEFAULT level) is dropped — `FwShadows` has seven
+  named slots and no DEFAULT level. It is *not* the same value as `--shadow-md`.
+
+## How it works
+
+The generator is a small, pure TypeScript pipeline (`parse → color → emit`) that runs entirely in
+your browser — nothing is uploaded. The color math is a hand-rolled, vector-tested
+`OKLCH → OKLab → linear sRGB → sRGB` conversion, and the whole pipeline is checked end-to-end
+against a real tweakcn theme exported in all four color formats, so the four converge on the same
+result.
