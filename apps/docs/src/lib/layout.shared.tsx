@@ -12,10 +12,14 @@ export function baseOptions(): BaseLayoutProps {
         </span>
       ),
     },
-    // The flutterwindcss / flutterbits products are switched via the sidebar tab
-    // switcher inside /docs, so they're intentionally NOT duplicated here. Only
-    // the Theme generator (a standalone route) gets a top-nav link.
-    links: [{ text: 'Theme generator', url: '/theme-generator' }],
+    // Top-navbar links. `on: 'nav'` keeps them in the navbar ONLY — not the
+    // sidebar menu, where the product (flutterwindcss/flutterbits) tab switcher
+    // already does the switching (that was the redundancy to remove).
+    links: [
+      { text: 'flutterwindcss', url: '/docs/flutterwindcss', on: 'nav' },
+      { text: 'flutterbits', url: '/docs/flutterbits', on: 'nav' },
+      { text: 'Theme generator', url: '/theme-generator', on: 'nav' },
+    ],
     githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
   };
 }

@@ -35,6 +35,19 @@
     linear-gradient(180deg, #11151c, var(--brand-slate));
 }
 
+/* Center the primary nav links in the home navbar. The row is
+   [logo] [links] [actions(flex-1, right)]; absolutely centering the links list
+   keeps the logo left and the actions right while the links sit dead-center.
+   (Scoped to #nd-nav — the HomeLayout navbar; docs pages use the sidebar.) */
+#nd-nav nav.flex {
+  position: relative;
+}
+#nd-nav nav.flex > ul {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 html {
   scrollbar-gutter: stable;
 }

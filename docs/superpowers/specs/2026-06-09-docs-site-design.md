@@ -11,11 +11,16 @@ information architecture and the content of the first substantive pass.
 > 148-setter API, so the **"no exhaustive reference" non-goal below was lifted**: a **Utility
 > reference** section was added — five family pages (spacing/sizing; backgrounds, borders & radius;
 > typography; effects & filters; transforms & interactivity) covering the full `.tw` surface, with
-> the `styling` page slimmed to the accumulator model + a family map. Same pass: the redundant
-> flutterwindcss/flutterbits **top-nav links were removed** (the sidebar tab switcher already
-> handles product switching; only Theme generator remains in the nav); the home hero uses the
-> **transparent no-bg logo**; and, with flutterwindcss published to pub.dev v1.0.0, **installation
-> now uses `flutter pub add flutterwindcss`** (was a Git dependency).
+> the `styling` page slimmed to the accumulator model + a family map. Same pass: the home hero uses
+> the **transparent no-bg logo**; and, with flutterwindcss published to pub.dev v1.0.0,
+> **installation now uses `flutter pub add flutterwindcss`** (was a Git dependency).
+>
+> **Nav correction (PR #34).** The redundancy was in the **sidebar**, not the top navbar: the
+> nav links duplicated the sidebar's product **tab switcher**. Fix — the flutterwindcss / flutterbits
+> / Theme generator links use `on: 'nav'` so they render in the **top navbar only** (not the sidebar
+> menu), and they're **centered** in the navbar (CSS on `#nd-nav` in `global.css`: the links `<ul>`
+> is absolutely centered, logo left / actions right). (Supersedes the earlier note that said the
+> top-nav links were removed.)
 
 ---
 
