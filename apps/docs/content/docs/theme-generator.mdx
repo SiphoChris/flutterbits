@@ -5,8 +5,8 @@ description: Paste a tweakcn/shadcn theme and download a working Flutter theme.d
 
 The **theme generator** turns any [tweakcn](https://tweakcn.com) / shadcn theme into a
 ready-to-use `theme.dart` for `flutterwindcss`. Paste the CSS you export from tweakcn and
-download two files: a `theme.dart` (two `const FwTokens`, light + dark) and a `theme.json`
-(the source of truth). No other Flutter UI library does this — it's the headline feature.
+copy a `theme.dart` — two `const FwTokens` (light + dark) you own and drop into your project,
+shadcn-style. No other Flutter UI library does this — it's the headline feature.
 
 <Cards>
   <Card title="Open the generator →" href="/theme-generator" />
@@ -22,7 +22,8 @@ download two files: a `theme.dart` (two `const FwTokens`, light + dark) and a `t
    blocks are read).
 3. The preview updates live: a swatch grid of all 32 colors, the four radius samples, and the
    seven shadow samples, shown in both light and dark.
-4. **Download `theme.dart`** (and optionally `theme.json`), then drop it into your app.
+4. **Copy the generated `theme.dart`** (the "Copy" button above the source) and paste it into
+   your app.
 
 You don't pick the input format — each color value is auto-detected, so `oklch()`, `hsl()`,
 `rgb()`, and hex can even be mixed within one theme.
@@ -73,15 +74,13 @@ Everything a shadcn theme carries, not just color:
 - **Typography.** The first concrete family from each `--font-*` stack (`sans`/`serif`/`mono`)
   plus `--tracking-normal` (letter-spacing, normalized to em).
 
-### Faithful vs. perceptual conversion
+### Color accuracy
 
-OKLCH colors are converted with one of two policies, toggled in the UI:
-
-- **Faithful (default).** Gamut-*clips* so the output matches Tailwind/shadcn's published hex by
-  construction. For the realistic, in-gamut shadcn range this is exact — a pasted shadcn theme
-  *is* the shadcn colors.
-- **Perceptual.** Hue-preserving chroma reduction for genuinely out-of-gamut colors (or a
-  wide-gamut target). Leave it off unless you're pasting vivid, hand-authored OKLCH values.
+OKLCH colors are converted to **match Tailwind/shadcn's published hex** (a gamut-*clip*), so a
+pasted shadcn theme *is* the shadcn colors — and the generated theme stays coherent with the
+baked Tailwind palette `flutterwindcss` ships. For the realistic, in-gamut shadcn range this is
+exact. (A perceptual gamut-map for vivid, genuinely out-of-gamut OKLCH exists in the library API
+but isn't a UI option — real tweakcn exports are already in-gamut.)
 
 ### Reporting — nothing is silent
 
