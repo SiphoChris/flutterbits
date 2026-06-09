@@ -44,7 +44,7 @@ Flutter has no structure/style split and no CSS cascade — the widget tree *is*
 
 ## Project status
 
-> **Engine complete; monorepo early.** The **`flutterwindcss` styling engine is complete through module 17** — the core (modules 0–10: tokens, theme access, the `FwStyle` resolver + `.tw` surface, layout widgets, a real CSS-grid render object, transforms, and animated theming) plus utility-coverage modules 11–17 (text completeness; filters + object-fit; transform extras + interactivity; `group-*`/`peer-*` state propagation; the ergonomics layer — gradient sugar, `ring`, named-scale sugar, `FwScroll`, dashed borders; `divide` + scroll-snap; and `bg-image` + 3D transforms + `mix-blend-mode` + `text-shadow`). Verified against the full Tailwind v4 catalog: **~96% of daily-driver Tailwind** is covered; the rest is the flutterbits component layer or genuinely impossible. The wider monorepo is still early: the `flutterbits` components, the registry + CLI, and the tweakcn→`theme.dart` generator are next. Everything ships fully implemented, tested, and reviewed — no stubs, no "TODO: productionize later."
+> **Engine complete; monorepo early.** The **`flutterwindcss` styling engine is complete through module 17** — the core (modules 0–10: tokens, theme access, the `FwStyle` resolver + `.tw` surface, layout widgets, a real CSS-grid render object, transforms, and animated theming) plus utility-coverage modules 11–17 (text completeness; filters + object-fit; transform extras + interactivity; `group-*`/`peer-*` state propagation; the ergonomics layer — gradient sugar, `ring`, named-scale sugar, `FwScroll`, dashed borders; `divide` + scroll-snap; and `bg-image` + 3D transforms + `mix-blend-mode` + `text-shadow`). Verified against the full Tailwind v4 catalog: **~96% of daily-driver Tailwind** is covered; the rest is the flutterbits component layer or genuinely impossible. The **tweakcn → `theme.dart` generator is now shipped** (in `apps/docs`); the `flutterbits` components and the registry + CLI are next. Everything ships fully implemented, tested, and reviewed — no stubs, no "TODO: productionize later."
 
 **✅ Shipped (`flutterwindcss`):**
 
@@ -67,9 +67,13 @@ Flutter has no structure/style split and no CSS cascade — the widget tree *is*
 
 - **Final Tailwind completeness (modules 16–17)** — `divide` (border between flex children, `FwRow`/`FwColumn`) and **scroll-snap** (`FwScroll.snapExtent`/`snapAlign`) in module 16; **`bgImage`** (background-image), **3D transforms** (`rotateX`/`rotateY` + `perspective`), **`blendMode`** (`mix-blend-*`, via the `FwBlendMode` render object), and **`textShadow`** (v4) in module 17. Cross-checked against the complete Tailwind v4 utility catalog. Unit + render + visually-validated; example demos for `divide`, scroll-snap, 3D transforms, `mix-blend`, and `text-shadow` (`bgImage` is unit/render-tested — a live demo needs a bundled image asset, slated for the docs phase).
 
+**✅ Shipped (theme generator — `apps/docs`):**
+
+- **tweakcn → `theme.dart` generator** — paste any tweakcn/shadcn theme (Tailwind v4, any of `oklch`/`hsl`/`rgb`/hex), get a working Flutter `theme.dart` + `theme.json`. A pure-TS `parse → color → emit` pipeline: a hand-rolled, vector-tested OKLCH→sRGB core (faithful-clip default + opt-in perceptual gamut-map), a tolerant `:root`/`.dark` parser (rejects Tailwind v3), and an emitter for all 32 colors + additive radius + 7 shadow slots + fonts + tracking — **nothing dropped, everything reported**. End-to-end golden-verified against the engine's reference theme across all four input formats. Ships with a live web UI ([`/theme-generator`](apps/docs/src/app/(home)/theme-generator)) — paste → preview (swatches/radius/shadows, light+dark) → download — and a [docs page](apps/docs/content/docs/theme-generator.mdx).
+
 **🚧 Next on the roadmap:**
 
-1. **`flutterbits` components**, the **registry + CLI** (`flutterbits add` / `diff`), and the **tweakcn → `theme.dart` generator**. *(The engine is ready — ~96% of daily-driver Tailwind is covered and a full-catalog audit found no engine blocker.)*
+1. **`flutterbits` components** and the **registry + CLI** (`flutterbits add` / `diff`). *(The engine is ready — ~96% of daily-driver Tailwind is covered and a full-catalog audit found no engine blocker.)*
 2. **Remaining engine long-tail (by demand only)** — niche/feasible items (`inset-shadow`, `mask-*`, backdrop color filters, `columns`, negative margins, `scroll-margin/padding`, decoration styling) built when a real component needs one; the rest is the [coverage & roadmap](docs/superpowers/specs/2026-06-07-flutterwindcss-coverage-and-roadmap.md)'s delegated (animation → [`flutter_animate`](https://pub.dev/packages/flutter_animate); forms/prose/tables/SVG → flutterbits) / impossible sets.
 
 See [`docs/superpowers/specs`](docs/superpowers/specs) for the full engine design and [`docs/superpowers/plans`](docs/superpowers/plans) for the implementation plans.
@@ -81,7 +85,7 @@ packages/
   flutterwindcss/        # pub package: tokens, FwTheme, FwStyle accumulator, .tw utilities
 apps/
   example/               # flutterwindcss engine showcase (pure path, runnable); component golden target (planned)
-  docs/                  # Fumadocs site; tweakcn→theme.dart generator in progress — color core (G1) shipped; parse/emit/UI/docs (G2-G5) to come
+  docs/                  # Fumadocs site + the tweakcn→theme.dart generator (shipped: parse→color→emit pipeline, web UI at /theme-generator, docs)
 registry/                # (planned) source-of-truth copy-paste components
 tooling/                 # registry builder + the Tailwind palette baker
 docs/superpowers/        # design specs and implementation plans
