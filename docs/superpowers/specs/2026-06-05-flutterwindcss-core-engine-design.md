@@ -93,11 +93,11 @@ The **32** shadcn semantic tokens (the full vocabulary — the contract the gene
 ### 4.3 `FwRadii` (`tokens/radii.dart`)
 Built two ways:
 - `FwRadii.fromBase(double base)` — derives the shadcn-style set used by components: `sm = base×0.6, md = base×0.8, lg = base×1.0, xl = base×1.4`, plus `none = 0` and `full = Radius.circular(9999)`.
-- The full Tailwind v4 named scale (`xs .125rem, sm .25rem, md .375rem, lg .5rem, xl .75rem, 2xl 1rem, 3xl 1.5rem, 4xl 2rem`) is available on `FwRadii` for utility use.
+- The full Tailwind v4 named scale (`xs .125rem, sm .25rem, md .375rem, lg .5rem, xl .75rem, 2xl 1rem, 3xl 1.5rem, 4xl 2rem`) lives on the separate `FwRadiusScale` (an `abstract final class`) for utility use — **not** on `FwRadii` itself.
 Values are `Radius`/`double`; `lerp` provided.
 
 ### 4.4 `FwShadows` (`tokens/shadows.dart`)
-The Tailwind v4 box-shadow scale (`2xs, xs, sm, md, lg, xl, 2xl`) and inset variants, each a `List<BoxShadow>`. Verified values, e.g. `sm = [0 1px 3px rgb(0 0 0 /.1), 0 1px 2px -1px rgb(0 0 0 /.1)]`. `lerp` lerps shadow lists element-wise.
+The Tailwind v4 box-shadow scale — 7 named slots (`xs2, xs, sm, md, lg, xl, xl2`), each a `List<BoxShadow>`. Verified values, e.g. `sm = [0 1px 3px rgb(0 0 0 /.1), 0 1px 2px -1px rgb(0 0 0 /.1)]`. `lerp` lerps shadow lists element-wise. (Inset shadow variants are **not yet built** — by-demand, via a custom painter; see the coverage roadmap. The unprefixed Tailwind DEFAULT `shadow` level is intentionally absent — the generator maps the 7 named tweakcn slots and drops DEFAULT, see the generator spec §4.2.)
 
 ### 4.5 Typography — static scales (`tokens/typography.dart`) + per-theme families (`FwTypographyTheme`, `tokens/tokens.dart`)
 The **theme-independent** scales are separate `const` types in `tokens/typography.dart`:

@@ -1,7 +1,8 @@
 # tweakcn → `theme.dart` generator — design
 
-**Status:** approved design · **Date:** 2026-06-08 · **Home:** `apps/docs` (Next.js / TypeScript) ·
-**Audience:** engineers building the generator and the G0 engine prereq.
+**Status:** approved design · **G0 + G1 shipped (PR #22, #23); G2–G5 remain** · **Date:** 2026-06-08
+(status updated 2026-06-09) · **Home:** `apps/docs` (Next.js / TypeScript) ·
+**Audience:** engineers building the generator (the G0 engine prereq and the G1 color core are merged).
 
 This spec implements **AGENTS.md §7**. §7 is the contract; this document is the *how*. Where §7
 and this spec ever disagree, §7 wins and this file is the drift (fix it). The headline product
@@ -131,6 +132,20 @@ Alpha → byte is **round-to-nearest** (verified against `_claudeShadows`: `0.05
 `0.10·255=25.5→0x1A`, `0.25·255=63.75→0x40`). Hex without an alpha pair is fully opaque (`#rrggbb`
 → `0xFFrrggbb`).
 
+**Parse robustness — fail loudly, never leak `NaN` (G1, hardened per §3.9).** `parseFloat`/`parseInt`
+return `NaN` for non-numeric tokens, and `NaN` silently survives `clamp01`/`Math.round` to poison a
+channel (yielding garbage hex like `"FFNANNANNAN"`). So every parser routes its components through a
+shared `requireFinite(n, label, source)` choke-point that **throws** `Invalid <label> in color:
+<value>` on a malformed token; `parseHex` additionally rejects non-hex digits before `parseInt`
+(which would otherwise truncate `1g`→`1`); and `parseRgb` clamps numeric 0–255 channels into range
+(`rgb(300 -5 0)` → `(255, 0, 0)`, not a 3-char garbage byte). Valid CSS — percentages, `none`,
+scientific notation, slash/comma alpha, extra whitespace — still parses. This matters because G2 will
+feed raw token strings straight into this layer.
+
+> **Doc-comment convention:** the generator's TypeScript uses `///` line comments (not `/** */`
+> JSDoc) **intentionally**, to match the Dart layer's house style across the repo. Tooling (tsc,
+> ESLint, Vitest) is unaffected; if TypeDoc/JSDoc-lint is ever added, this is the one migration point.
+
 ### 2.2 Input structure — what the parser reads and ignores (G2)
 
 The tweakcn export is a full CSS file. The parser MUST be robust to all of it:
@@ -167,7 +182,7 @@ Two `const FwTokens`. Field-for-field against the engine types
   derivation from `--radius` (§4.1). **Never** `FwRadii.fromBase`.
 - **`shadows: FwShadows(xs2:, xs:, sm:, md:, lg:, xl:, xl2:)`** — 7 slots from `--shadow-*` (§4.2).
 - **`typography: FwTypographyTheme(sans:, serif:, mono:, tracking:)`** — family names + `tracking`
-  (§4.3, requires the G0 engine change).
+  (§4.3; the G0 engine change is shipped).
 
 `theme.json` carries the same data in a fixed JSON schema (§4.4).
 
@@ -241,7 +256,7 @@ theme's color format), so the shadow-color parser MUST accept `hsl(... / alpha)`
 > diverge from a hand-authored oracle, the rule stands: fix the oracle to the transform's output,
 > in-PR, with a `// corrected — generator` note (§12).
 
-### 4.3 Typography — families + `tracking` (requires G0)
+### 4.3 Typography — families + `tracking` (G0 shipped — `FwTypographyTheme.tracking` exists)
 
 Emit `FwTypographyTheme(sans:, serif:, mono:, tracking:)`:
 - **Families — extract one name from a CSS font *stack*.** The values are stacks, not single names:
@@ -300,7 +315,10 @@ consumes **every** schema field (S3) — so "json is source of truth" is structu
 
 ---
 
-## 5. G0 — engine prereq: `tracking` on `FwTypographyTheme`
+## 5. G0 ✅ (merged — PR #22) — engine prereq: `tracking` on `FwTypographyTheme`
+
+> **Status: shipped.** Everything below is done and merged; this section is the authoritative
+> record of what was built and why.
 
 A small, coordinated Dart change so the emit target exists. `FwTypographyTheme`
 lives in `packages/flutterwindcss/lib/src/tokens/tokens.dart` (not `typography.dart`,
@@ -328,13 +346,13 @@ any statement the new field falsifies.
 
 ## 6. Module decomposition (one branch → PR → `gh` merge each)
 
-Ordered **G0 → G1 → G2 → G3 → G4 → G5** (the emitter needs the color core *and* the `tracking`
-field; the UI needs the full pipeline).
+Ordered **G0 ✅ → G1 ✅ → G2 → G3 → G4 → G5** (G0 and G1 are merged; the emitter (G3) needs the color
+core *and* the `tracking` field; the UI needs the full pipeline).
 
 | Module | Scope | Done when |
 |---|---|---|
-| **G0** | Engine: `tracking` field + `FwTypographyTheme.lerp` + `FwTokens.lerp` rewire + drift sweep | Dart analyze/format clean; existing goldens unchanged; new lerp unit test (tracking interpolates, families crossover) green |
-| **G1** | `color/`: 4 format parsers (alpha + both L forms) + OKLCH→sRGB convert + faithful-clip + opt-in chroma-reduction gamut-map | Vector fixtures pass (incl. **real OKLCH-source → baked-hex**, B1); alpha + percent-L cases covered |
+| **G0** ✅ | Engine: `tracking` field + `FwTypographyTheme.lerp` + `FwTokens.lerp` rewire + drift sweep | **Merged PR #22.** Dart analyze/format clean; existing goldens unchanged; new lerp unit test (tracking interpolates, families crossover) green |
+| **G1** ✅ | `color/`: 4 format parsers (alpha + both L forms) + OKLCH→sRGB convert + faithful-clip + opt-in chroma-reduction gamut-map + `requireFinite` NaN-guards | **Merged PR #23.** 46 vitest tests; four-format convergence byte-exact (Δ0); malformed-input guards; lint + scoped tsc clean; covered by the `docs-generator` CI job |
 | **G2** | `parse/`: tolerant `:root`/`.dark` tokenizer → `RawTheme`; records unknown vars; ignores per-axis `--shadow-*` primitives; **rejects Tailwind-v3 input**; records which tokens were absent (for graceful-default reporting) | Parser fixtures pass (messy whitespace, comments, all 4 formats, missing-token, alpha syntax, v3-reject, inner-quoted fonts) |
 | **G3** | `emit/`: `ResolvedTheme → ThemeJson → theme.dart`; additive radius (clamped ≥0), 7 named shadow slots (DEFAULT dropped), font-stack extraction, font stub, `tracking` (unit-normalized), `--spacing` drop-comment, **non-color graceful defaults + report**; **verify `_claudeShadows` matches the transform** (it does — §4.2) | ThemeJson schema snapshot + `emitDart` totality test (S3) + non-10/zero radius guards (S4) + universality fixtures (§8) |
 | **G4** | Route + UI: paste → **reject v3** → auto-detect → **hard-gate 32 colors** + **default-and-report** non-color tokens → preview (swatch/radius/shadow, light+dark) → download both + faithful/perceptual toggle | Manual run renders the Claude theme; color gate refuses download with a listed error; defaulted tokens are reported |
