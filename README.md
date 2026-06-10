@@ -26,7 +26,7 @@
 Two products in one monorepo, built so that **any [tweakcn](https://tweakcn.com)/shadcn theme you paste into a web generator becomes a working Flutter `theme.dart`** — theme portability no other Flutter UI library offers.
 
 - **`flutterwindcss`** — Tailwind CSS v4's *design system and styling vocabulary* for Flutter. Design tokens (spacing, radius, semantic colors, typography, shadows) and a typed, compile‑time utility API (`.tw`) over Flutter's primitive widgets. This is the **Tailwind** layer.
-- **`flutterbits`** — shadcn/ui for Flutter. **Copy‑paste** components you own, fetched via a CLI from a registry, styled entirely through `flutterwindcss` and semantic tokens. This is the **shadcn/ui** layer.
+- **`flutterbits`** — shadcn/ui for Flutter. **Copy‑paste** components you own, fetched via a CLI from a registry, styled entirely through `flutterwindcss` and semantic tokens — **plus** an opinionated, intention‑revealing **structure layer** (`Layout`, `Screen`, typed routing) that models app‑building the Next.js/Expo way. Mobile‑first, portable. This is the **shadcn/ui** layer (and a bit more).
 
 ## Install & docs
 
@@ -88,7 +88,7 @@ Flutter has no structure/style split and no CSS cascade — the widget tree *is*
 
 **🚧 Next on the roadmap:**
 
-1. **`flutterbits` components** and the **registry + CLI** (`flutterbits add` / `diff`). *(The engine is ready — ~96% of daily-driver Tailwind is covered and a full-catalog audit found no engine blocker.)*
+1. **`flutterbits` components** and the **registry + CLI** (`flutterbits init` / `add` / `diff`) — primitives (shadcn parity), the **structure layer** (`Layout`/`Screen`/routing over `go_router`), blocks, and templates. Design specs: [`flutterbits-charter`](docs/superpowers/specs/2026-06-10-flutterbits-charter.md), [structure + routing](docs/superpowers/specs/2026-06-10-flutterbits-structure-and-routing-design.md), [registry + CLI](docs/superpowers/specs/2026-06-10-flutterbits-registry-cli-design.md). *(The engine is ready — ~96% of daily-driver Tailwind is covered and a full-catalog audit found no engine blocker.)*
 2. **Remaining engine long-tail (by demand only)** — niche/feasible items (`inset-shadow`, `mask-*`, backdrop color filters, `columns`, negative margins, `scroll-margin/padding`, decoration styling) built when a real component needs one; the rest is the [coverage & roadmap](docs/superpowers/specs/2026-06-07-flutterwindcss-coverage-and-roadmap.md)'s delegated (animation → [`flutter_animate`](https://pub.dev/packages/flutter_animate); forms/prose/tables/SVG → flutterbits) / impossible sets.
 
 See [`docs/superpowers/specs`](docs/superpowers/specs) for the full engine design and [`docs/superpowers/plans`](docs/superpowers/plans) for the implementation plans.

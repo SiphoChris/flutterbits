@@ -28,7 +28,7 @@ Flutter has no structure/style split and no CSS cascade — the widget tree *is*
 
 These are **separate products** in the monorepo, each with its own spec → plan → build cycle. They are not part of the styling engine and their absence here is a scope boundary, not a stub:
 
-- **flutterbits components** (`registry/`) — `FwButton` et al. The engine is their dependency; they are authored against it later.
+- **flutterbits components** (`registry/`) — `Button` et al. (flutterbits components are **unprefixed** — copy-paste source the dev owns; the `Fw` prefix is for engine types only, see AGENTS.md §4 and the flutterbits charter §5.) The engine is their dependency; they are authored against it later.
 - **The theme generator** (`apps/docs`, TypeScript) — the tweakcn→`theme.dart` OKLCH pipeline. Per AGENTS.md §7, color math lives **only** there. This engine consumes `FwTokens`; it never parses or converts CSS color strings.
 - **The registry builder + CLI** (`flutterbits_cli`, `tooling/`).
 - **The docs site + example showcase app** beyond the minimal golden-test harness this engine needs.
