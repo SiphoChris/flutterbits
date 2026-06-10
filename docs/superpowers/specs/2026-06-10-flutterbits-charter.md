@@ -29,7 +29,7 @@ flutterbits' structure layer plays the **role** Material plays — the batteries
 
 Every flutterbits artifact is held to the author's three rules, in order of weight:
 
-1. **Works good** — complete, correct, accessible, tested (goldens + the `apps/example` compile target). No demoware.
+1. **Works good** — complete, correct, accessible, tested (goldens + the `apps/gallery` compile target — the flutterbits component app, separate from the engine's `apps/example`). No demoware.
 2. **Looks good** — semantic-token styled so it reskins with any pasted theme; polished defaults.
 3. **Feels good (most important)** — the API is a joy to write. Minimal concepts, call sites that read like sentences, one idea expressed one way.
 
@@ -165,7 +165,7 @@ This charter is the umbrella. Implementation is decomposed into specs, each its 
 3. **`2026-06-10-flutterbits-registry-cli-design.md`** — manifest schema, install-types, `init`/`add`/`diff`, barrel regen, `flutterbits.json`, hosting.
 4. **Per-component specs** — small, one component (or tight group) each, with `button` as the canonical template.
 
-**First vertical slice (proves the whole stack end-to-end):** `Layout` + `Screen` + routing + `Button` + `ThemeToggle`, rendered in `apps/example`. `ThemeToggle` is the chosen first concrete component — tiny, pure "feel good," and it forces every layer to play together (`Layout` owning theme → the `Switch` primitive → semantic-token reskin → the engine's `FwAnimatedTheme` transition).
+**First vertical slice (proves the whole stack end-to-end):** `Layout` + `Screen` + routing + `Button` + `ThemeToggle`, rendered in **`apps/gallery`** — a **new** flutterbits component showcase + golden/compile target, created with this slice and kept separate from the engine's `apps/example` (decision 2026-06-10). `ThemeToggle` is the chosen first concrete component — tiny, pure "feel good," and it forces every layer to play together (`Layout` owning theme → the `Switch` primitive → semantic-token reskin → the engine's `FwAnimatedTheme` transition).
 
 ---
 

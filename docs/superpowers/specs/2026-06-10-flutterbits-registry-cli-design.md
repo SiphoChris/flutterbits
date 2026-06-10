@@ -145,7 +145,7 @@ shadcn shows *live* previews because its components **are** the web; flutterbits
 
 ## 8. Build/verify discipline (inherited)
 
-- A component is "done" per AGENTS.md §6: styled through `.tw` with semantic tokens, typed-enum variants with exhaustive `switch`, Material-free interaction states, keyboard + focus ring, `Semantics`, directional layout, a manifest entry (§3), goldens for every variant × size × brightness in `apps/example`, and rendered there so CI compiles it.
+- A component is "done" per AGENTS.md §6: styled through `.tw` with semantic tokens, typed-enum variants with exhaustive `switch`, Material-free interaction states, keyboard + focus ring, `Semantics`, directional layout, a manifest entry (§3), goldens for every variant × size × brightness in `apps/gallery` (the flutterbits component target — not the engine's `apps/example`), and rendered there so CI compiles it.
 - `diff` correctness depends on the canonical `registry/*.dart` source staying authoritative; the manifest's `content` is always regenerated, never edited (§3).
 
 ---
@@ -154,5 +154,5 @@ shadcn shows *live* previews because its components **are** the web; flutterbits
 
 1. **Registry plumbing first** — `tooling/build_registry.dart`, the manifest schema (§3), `flutterbits.json` (§4), and the `apps/docs` registry endpoint.
 2. **CLI** — `init`, `add` (with recursive `registryDeps` + barrel regen), `diff`. `remove` by-demand.
-3. **First vertical slice** (charter §8) — `Layout` + `Screen` + routing + `Button` + `ThemeToggle`, installed via the real CLI into `apps/example`, proving manifest → fetch → place → barrel → compile → golden end-to-end. (`apps/example` is today the *engine* showcase, AGENTS.md §2; this slice is where it **gains a `flutterbits.json` and becomes the component compile + golden target** alongside that role — a real transition, not an assumed-done state.)
+3. **First vertical slice** (charter §8) — `Layout` + `Screen` + routing + `Button` + `ThemeToggle`, installed via the real CLI into **`apps/gallery`**, proving manifest → fetch → place → barrel → compile → golden end-to-end. (`apps/gallery` is a **new** flutterbits component app — created with this work, carrying its own `flutterbits.json` — kept separate from the engine's `apps/example`, decision 2026-06-10. The very first component, however, may be authored + golden-tested in `apps/gallery` directly before the CLI exists; the CLI then proves the install path.)
 4. **The overlay `anchor` util** before any overlay component (Popover/Dropdown/Tooltip/Select/Combobox/ContextMenu).

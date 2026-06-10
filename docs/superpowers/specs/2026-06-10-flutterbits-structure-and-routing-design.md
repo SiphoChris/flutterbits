@@ -326,4 +326,4 @@ TabsLayout(
 
 ## 8. Done criteria (this layer)
 
-A structure component is done only when: composed (not inherited); slots/props are intention-revealing; routing is typed with a readable table; presentations work including deep-link + back-to-dismiss; accessible per §6; goldens cover the relevant states/brightness; and it is rendered in `apps/example` so CI compiles it. First slice: `Layout` + `Screen` + routing + `Button` + `ThemeToggle` (charter §8).
+A structure component is done only when: composed (not inherited); slots/props are intention-revealing; routing is typed with a readable table; presentations work including deep-link + back-to-dismiss; accessible per §6; goldens cover the relevant states/brightness; and it is rendered in `apps/gallery` (the flutterbits component target — separate from the engine's `apps/example`) so CI compiles it. First slice: `Layout` + `Screen` + routing + `Button` + `ThemeToggle` (charter §8).

@@ -99,7 +99,8 @@ See [`docs/superpowers/specs`](docs/superpowers/specs) for the full engine desig
 packages/
   flutterwindcss/        # pub package: tokens, FwTheme, FwStyle accumulator, .tw utilities
 apps/
-  example/               # flutterwindcss engine showcase (pure path, runnable); component golden target (planned)
+  example/               # flutterwindcss ENGINE showcase (pure path, runnable) + engine golden/smoke target
+  gallery/               # flutterbits COMPONENT showcase + golden/compile target (planned)
   docs/                  # Fumadocs site + the tweakcn→theme.dart generator (shipped: parse→color→emit pipeline, web UI at /theme-generator, docs)
 registry/                # (planned) source-of-truth copy-paste components
 tooling/                 # registry builder + the Tailwind palette baker

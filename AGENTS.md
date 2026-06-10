@@ -32,11 +32,12 @@ packages/
 registry/                # SOURCE OF TRUTH for components: .dart files + JSON manifests
 apps/
   docs/                  # Fumadocs (Next.js) site: docs + the tweakcn -> theme.dart generator + registry endpoint
-  example/               # Flutter showcase app; ALSO the golden-test + compile target for the registry
+  example/               # flutterwindcss ENGINE showcase (pure-path WidgetsApp + FwAnimatedTheme) + engine golden/smoke target
+  gallery/               # flutterbits COMPONENT showcase; the golden-test + compile target for the registry (planned)
 tooling/                 # registry builder, melos config, CI scripts
 ```
 
-> **This is the *target* layout.** Today `packages/flutterwindcss/`, `tooling/bake_palette.dart`, `apps/example/`, and `apps/docs/` exist — `apps/example` is a runnable, pure-path **engine** showcase (`WidgetsApp` + `FwAnimatedTheme`), not yet the **component** golden target (no `flutterbits` components yet); `apps/docs` is a **Fumadocs (Next.js/TS)** site whose tweakcn→`theme.dart` generator is **complete (G0–G5 all shipped)** — the color core (`src/lib/generator/color/`, G1), the CSS parser (`src/lib/generator/parse/`, G2 — `:root`/`.dark` → `RawTheme`), the emitter (`src/lib/generator/emit/`, G3 — `RawTheme` → `ResolvedTheme` → `theme.json` → `theme.dart`, end-to-end golden vs `themes.dart`), the web UI (`src/app/(home)/theme-generator/`, G4 — paste → preview → copy, logic in the tested `src/lib/generator/preview.ts`), and the docs page (`content/docs/theme-generator.mdx`, G5). `flutterbits_cli/`, `registry/`, and the melos config are still planned. CI covers `packages/flutterwindcss` (analyze + format + tests + floor-compat + arch-guard), `apps/example` (analyze + format + widget smoke tests), **and** `apps/docs` (the `docs-generator` job: eslint + scoped `tsc` on `src/lib/generator` *and* the `theme-generator` route + Vitest). Don't go looking for dirs that aren't there yet.
+> **This is the *target* layout.** Today `packages/flutterwindcss/`, `tooling/bake_palette.dart`, `apps/example/`, and `apps/docs/` exist — `apps/example` is a runnable, pure-path **engine** showcase (`WidgetsApp` + `FwAnimatedTheme`) and stays **engine-only**; the **component** golden + compile target is a **separate `apps/gallery`** app (planned — does not exist yet, created with the first component slice), NOT `apps/example` (decision 2026-06-10: the engine showcase and the component showcase are distinct apps); `apps/docs` is a **Fumadocs (Next.js/TS)** site whose tweakcn→`theme.dart` generator is **complete (G0–G5 all shipped)** — the color core (`src/lib/generator/color/`, G1), the CSS parser (`src/lib/generator/parse/`, G2 — `:root`/`.dark` → `RawTheme`), the emitter (`src/lib/generator/emit/`, G3 — `RawTheme` → `ResolvedTheme` → `theme.json` → `theme.dart`, end-to-end golden vs `themes.dart`), the web UI (`src/app/(home)/theme-generator/`, G4 — paste → preview → copy, logic in the tested `src/lib/generator/preview.ts`), and the docs page (`content/docs/theme-generator.mdx`, G5). `flutterbits_cli/`, `registry/`, and the melos config are still planned. CI covers `packages/flutterwindcss` (analyze + format + tests + floor-compat + arch-guard), `apps/example` (analyze + format + widget smoke tests), **and** `apps/docs` (the `docs-generator` job: eslint + scoped `tsc` on `src/lib/generator` *and* the `theme-generator` route + Vitest). Don't go looking for dirs that aren't there yet.
 
 - **Toolchain floor (hard): Flutter ≥ 3.29 / Dart ≥ 3.7.** The wide-gamut `Color` API (`Color.withValues` per §3.8, and the `Color.a/.r/.g/.b` accessors), the `Row`/`Column`/`Flex` `spacing` parameter, and pub workspaces require 3.27/3.6 — below that, the code will not compile. We floor one minor higher at **Dart 3.7** so `dart format` uses the modern "tall" style (Dart 3.7+) rather than the legacy short style; mixing the two fails the format check. This floor is set in every `pubspec.yaml` `environment:` and **verified by a CI job pinned to it** (separate from the golden job, which pins a newer version for determinism). Keep the floor identical in the pubspecs and the README.
 - Dependency resolution: **pub workspaces** (`resolution: workspace` in each `pubspec.yaml`). Task running / versioning / publishing: **Melos** — the intended cross-package runner, adopted once the workspace holds multiple packages. While `flutterwindcss` is the only package, use plain `flutter`/`dart` per-package (see §10).
@@ -109,7 +110,7 @@ Until the first component lands, follow the component checklist below and the en
 - [ ] Directional layout throughout (§3.3).
 - [ ] A registry manifest entry (§8) listing pub deps and `registryDeps`.
 - [ ] Golden tests for **every variant × size × brightness** (§9).
-- [ ] Imported and rendered in `apps/example` so CI compiles it.
+- [ ] Imported and rendered in `apps/gallery` (the flutterbits component target — **not** `apps/example`, which is the engine showcase) so CI compiles it.
 
 If a desired behavior genuinely cannot be done in Flutter, do not fake it — add it to the **Won't-do list** (§11) and note it in the component's docs.
 
@@ -150,11 +151,11 @@ If a desired behavior genuinely cannot be done in Flutter, do not fake it — ad
 
 This is the safety net that makes a solo, wave-by-wave rollout survivable.
 
-- **Golden tests** use `matchesGoldenFile`. **`flutterwindcss` engine goldens live in-package** (`packages/flutterwindcss/test/golden/`) — a library tests its own widgets. **Component goldens** (every variant × size × brightness) live in `apps/example`, which is also the registry compile target.
+- **Golden tests** use `matchesGoldenFile`. **`flutterwindcss` engine goldens live in-package** (`packages/flutterwindcss/test/golden/`) — a library tests its own widgets. **Component goldens** (every variant × size × brightness) live in **`apps/gallery`**, which is also the registry compile target. (`apps/example` is the *engine* showcase and hosts only engine smoke tests — the two apps are deliberately separate, decision 2026-06-10.)
 - CI pins a **fixed font** and platform so goldens are deterministic across machines, and **CI (Linux) is the authoritative golden platform** — goldens are generated/verified there, and a local `--update-goldens` on a dev box is *not* authoritative. A golden diff on CI is a failing build, not a nuisance.
 - Update goldens only intentionally: `flutter test --update-goldens`, and review the image diff before committing.
 - `flutterwindcss` gets unit tests for `FwStyle` resolution — especially **last-wins conflict behavior** and that chaining produces a single resolved widget.
-- Before marking any task done: `flutter analyze` (zero warnings) AND `flutter test` (green) AND the registry compiles in `apps/example`.
+- Before marking any task done: `flutter analyze` (zero warnings) AND `flutter test` (green) AND the registry compiles in `apps/gallery`.
 
 ---
 
@@ -180,6 +181,8 @@ Adjust paths if the layout drifts; keep this section current.
 | Task | Command |
 |---|---|
 | Build registry manifests | `dart run tooling/build_registry.dart` |
+| Run the flutterbits component gallery | `cd apps/gallery && flutter run` (any device; e.g. `-d chrome`) |
+| Test/golden the gallery | `cd apps/gallery && flutter test` (`--update-goldens` locally is non-authoritative; CI Linux is the source of truth) |
 | Run docs site / generator | `cd apps/docs && pnpm dev` |
 
 Once the workspace holds multiple packages, **Melos** wraps the per-package commands (`melos bootstrap`, `melos run analyze`, `melos run test`); adopt it then, not before.
