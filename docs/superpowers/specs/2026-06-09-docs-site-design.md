@@ -12,7 +12,7 @@ information architecture and the content of the first substantive pass.
 > reference** section was added — five family pages (spacing/sizing; backgrounds, borders & radius;
 > typography; effects & filters; transforms & interactivity) covering the full `.tw` surface, with
 > the `styling` page slimmed to the accumulator model + a family map. Same pass: the home hero uses
-> the **transparent no-bg logo**; and, with flutterwindcss published to pub.dev v1.0.0,
+> the **transparent no-bg logo**; and, with flutterwindcss published to pub.dev,
 > **installation now uses `flutter pub add flutterwindcss`** (was a Git dependency).
 >
 > **Nav correction (PR #34).** The redundancy was in the **sidebar**, not the top navbar: the
