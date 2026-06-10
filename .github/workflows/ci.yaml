@@ -55,6 +55,36 @@ jobs:
       - name: Smoke tests (every section, light/dark, LTR/RTL)
         run: flutter test
 
+  gallery:
+    # The flutterbits COMPONENT target (apps/gallery, AGENTS.md §9): analyze,
+    # format-check, and run its widget + golden tests, so a change that breaks a
+    # component — or the engine API it consumes — fails CI. Goldens are baselined on
+    # the pinned Flutter version; CI (Linux) is the authoritative golden platform (§9).
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/gallery
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.41.9
+      - run: flutter pub get
+      - name: Analyze (zero warnings)
+        run: flutter analyze --fatal-infos --fatal-warnings
+      - name: Format check
+        run: dart format --output=none --set-exit-if-changed --line-length 100 .
+      - name: Test (incl. goldens)
+        run: flutter test
+      - name: Upload golden failures
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gallery-golden-failures
+          path: apps/gallery/test/**/failures/
+          if-no-files-found: ignore
+
   floor-compat:
     # Verifies the toolchain floor (AGENTS.md §2): the package must compile and
     # its unit tests must pass on the MINIMUM supported Flutter/Dart. Goldens are
@@ -153,5 +183,22 @@ jobs:
             echo "::error::Use EdgeInsetsDirectional / AlignmentDirectional (AGENTS.md §3.3)."
             exit 1
           fi
-      # NOTE: §3.1 (no hardcoded Color(0x...) in components) and §3.7 (no className
-      # string parsing) get a guard against registry/ once the first component lands.
+      - name: No Material import in flutterbits components (§3.5)
+        run: |
+          if grep -rnF --include='*.dart' 'package:flutter/material.dart' apps/gallery/lib/components 2>/dev/null; then
+            echo "::error::flutterbits components must not import Material (AGENTS.md §3.5)."
+            exit 1
+          fi
+      - name: No hardcoded Color in components except transparent (§3.1)
+        run: |
+          # Components style via semantic tokens (context.fw.colors.*); the ONLY
+          # allowed color literal is fully-transparent Color(0x00000000) ("no fill").
+          if grep -rnE --include='*.dart' 'Color\(0x' apps/gallery/lib/components 2>/dev/null \
+             | grep -vF 'Color(0x00000000)'; then
+            echo "::error::Components must use semantic tokens; only Color(0x00000000) is allowed (AGENTS.md §3.1)."
+            exit 1
+          fi
+      # NOTE: these component guards target apps/gallery/lib/components (the first
+      # component home); extend the path to registry/ when the registry/CLI lands.
+      # §3.7 (no className string parsing) stays review-only — there is no faithful
+      # grep for it, and the typed `.tw` API makes a string parser structurally absent.
