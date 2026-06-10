@@ -10,6 +10,8 @@
 
 **Scope note (no silent reduction):** This plan delivers `Button` + `apps/gallery` end-to-end. The **registry source-of-truth file (`registry/button.dart`), the manifest JSON, and `tooling/build_registry.dart` are deliberately moved to the next plan** (the registry + CLI slice), because the manifest's metadata-source (where `description`/`pubDeps`/`registryDeps` come from when "generated from the .dart") is a registry-spec decision best made alongside the CLI — not invented here. For this plan, `Button` is authored at its consumer-shaped home `apps/gallery/lib/components/ui/button.dart`; the registry/CLI plan promotes it to `registry/` and adds the install path. This is an explicit, recorded adjustment to the original "manifest in plan 1" scope.
 
+**Gallery root is TEMPORARY (becomes `Layout`):** the gallery's job is to showcase flutterbits, and `Layout` (the structure layer) is the flagship — so the gallery's real root **will be `Layout`**. `Layout` is the (larger) structure+routing plan, and Button is built first to de-risk the component pattern and give `Layout` something real to host. Therefore the `WidgetsApp` host in Tasks 0/6 is an **explicitly-temporary bootstrap** (commented as such), and the structure plan **replaces it with `Layout` and makes the gallery the `Layout` demo**. The `WidgetsApp` here is throwaway dev scaffolding for an internal app, not shipped product code — it must be clearly labeled so it is never mistaken for the intended root.
+
 **Reconciliation this plan performs (no-drift):** `default` is a Dart reserved word and cannot be an enum constant, so the shadcn `default` variant/size map to `primary` (variant) and `md` (size). Task 7 updates the charter §3.2 + AGENTS.md §where-named to record this. Every other shadcn variant/size name is used verbatim.
 
 ---
@@ -103,7 +105,9 @@ import 'package:flutterwindcss/flutterwindcss.dart';
 
 void main() => runApp(const GalleryApp());
 
-/// Material-free root for the flutterbits component gallery.
+/// TEMPORARY bootstrap root for the gallery. The structure plan REPLACES this
+/// raw `WidgetsApp` with the flutterbits `Layout` (the gallery's intended root,
+/// which it then demos). Do not entrench this — it is throwaway dev scaffolding.
 class GalleryApp extends StatelessWidget {
   const GalleryApp({super.key});
 
@@ -724,6 +728,8 @@ void main() {
 
 Run: `cd apps/gallery && flutter test test/gallery_smoke_test.dart`
 Expected: FAIL — the placeholder home shows no buttons (`find.text('primary')` finds nothing).
+
+> **Note:** this keeps the **temporary** `WidgetsApp` bootstrap (Task 0) — the structure plan swaps the whole root to `Layout` and turns this into the `Layout` demo. Here we only fill its `home` with the Button gallery.
 
 - [ ] **Step 3: Replace `main.dart`'s `home` with a real Button gallery**
 
