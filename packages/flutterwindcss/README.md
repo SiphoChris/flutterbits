@@ -35,9 +35,8 @@ class Badge extends StatelessWidget {
 
 ## Install
 
-```yaml
-dependencies:
-  flutterwindcss: ^1.0.0
+```bash
+flutter pub add flutterwindcss
 ```
 
 ## Provide a theme

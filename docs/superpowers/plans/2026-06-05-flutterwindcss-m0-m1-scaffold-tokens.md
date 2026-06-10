@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-06-05-flutterwindcss-core-engine-design.md` (§4 tokens, §10 testing, §12 modules 0–1).
 
-> **Correction (post-execution):** the `environment:` constraints shown below (`sdk: ^3.11.0`, `flutter: '>=3.24.0'`) were the wrong floor — the code requires the wide-gamut `Color` API (Flutter 3.27) and the project floors at **Dart 3.7 / Flutter 3.29** to keep the modern `dart format` style. The live `pubspec.yaml` files and AGENTS.md §2 carry the corrected floor, verified by the CI `floor-compat` job. This plan is left otherwise as-written for historical accuracy.
+> **Correction (post-execution):** the `environment:` constraints shown below (`sdk: ^3.11.0`, `flutter: '>=3.24.0'`) were the wrong floor — the code requires the wide-gamut `Color` API (Flutter 3.27) and the project floors at **Dart 3.7 / Flutter 3.29** to keep the modern `dart format` style. The live `pubspec.yaml` files and AGENTS.md §2 carry the corrected floor, verified by the CI `floor-compat` job. **Also:** this plan's "19 shadcn semantic tokens" was later expanded to the **full 32** (19 core + `chart-1…5` + 8 `sidebar-*`, PR #19, AGENTS.md §5) — `FwColors` carries all 32. This plan is left otherwise as-written for historical accuracy.
 
 ---
 

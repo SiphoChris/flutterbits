@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.2
+
+- **Docs** — the install instructions are now version-agnostic (`flutter pub add flutterwindcss`)
+  so the README never disagrees with the version pub.dev shows. No API or behaviour change.
+
 ## 1.0.1
 
 - **Docs** — the documentation site is live at
