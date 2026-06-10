@@ -42,6 +42,7 @@ Widget _grid() {
   );
 
   return RepaintBoundary(
+    key: const ValueKey('button_grid'),
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -90,7 +91,7 @@ void main() {
     addTearDown(() => t.binding.setSurfaceSize(null));
     await t.pumpWidget(_frame(FwTokens.light, TextDirection.ltr, _grid()));
     await expectLater(
-      find.byType(RepaintBoundary).first,
+      find.byKey(const ValueKey('button_grid')),
       matchesGoldenFile('goldens/button_grid_light.png'),
     );
   });
@@ -100,7 +101,7 @@ void main() {
     addTearDown(() => t.binding.setSurfaceSize(null));
     await t.pumpWidget(_frame(FwTokens.dark, TextDirection.ltr, _grid()));
     await expectLater(
-      find.byType(RepaintBoundary).first,
+      find.byKey(const ValueKey('button_grid')),
       matchesGoldenFile('goldens/button_grid_dark.png'),
     );
   });
@@ -110,7 +111,7 @@ void main() {
     addTearDown(() => t.binding.setSurfaceSize(null));
     await t.pumpWidget(_frame(FwTokens.light, TextDirection.rtl, _grid()));
     await expectLater(
-      find.byType(RepaintBoundary).first,
+      find.byKey(const ValueKey('button_grid')),
       matchesGoldenFile('goldens/button_grid_rtl.png'),
     );
   });
