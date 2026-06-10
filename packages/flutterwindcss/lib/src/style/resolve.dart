@@ -45,6 +45,24 @@ extension FwStyleTokenResolve on FwStyle {
   }
 }
 
+/// Whether [style] (or any nested layer) still carries an *unresolved* radius or
+/// shadow token step — used by [FwStyleResolve.resolve]'s debug guard to catch a
+/// caller that skipped [FwStyleTokenResolve.resolveTokenSteps].
+///
+/// [FwStyleTokenResolve.resolveTokenSteps] populates `borderRadius`/`boxShadow`
+/// from the step but cannot null the step field (copyWith treats null as "keep"),
+/// so a *resolved* style legitimately still holds the step alongside its concrete
+/// value. The unresolved state is therefore "step set **without** its concrete
+/// field" — the pre-resolution invariant the mixing assert guarantees.
+bool _hasUnresolvedTokenSteps(FwStyle style) {
+  if (style.radiusStep != null && style.borderRadius == null) return true;
+  if (style.shadowStep != null && style.boxShadow == null) return true;
+  for (final (_, nested) in style.layers) {
+    if (_hasUnresolvedTokenSteps(nested)) return true;
+  }
+  return false;
+}
+
 /// Drops hover/focus/pressed from [states] when `disabled` is present (spec §6.3
 /// Finding #7); otherwise returns [states] unchanged.
 Set<WidgetState> _suppressDisabled(Set<WidgetState> states) {
@@ -78,6 +96,19 @@ extension FwStyleResolve on FwStyle {
     Map<String?, Set<WidgetState>>? groupStates,
     Map<String?, Set<WidgetState>>? peerStates,
   }) {
+    // Guard the resolution contract: named-scale sugar (`roundedMd`/`shadowSm`)
+    // is stored as a token *step* that must be resolved against the theme by
+    // resolveTokenSteps() BEFORE resolve() runs. ResolvedStyle carries no step,
+    // and the layer overlay drops steps, so calling resolve() on a style that
+    // still holds steps would silently lose them. FwStyled does this for you;
+    // any direct caller must too (§12 "guard what the dev shouldn't do").
+    assert(
+      !_hasUnresolvedTokenSteps(this),
+      'flutterwindcss: resolve() was called on a style that still has unresolved '
+      'radiusStep/shadowStep (roundedMd/shadowSm sugar). Call '
+      'style.resolveTokenSteps(tokens) first — FwStyled does this automatically.',
+    );
+
     // 1. Disabled suppression first (Finding #7): disabled removes the other
     //    three from the working set before any matching, so it always wins. The
     //    same rule is applied per-channel to the group/peer maps (module 14): a

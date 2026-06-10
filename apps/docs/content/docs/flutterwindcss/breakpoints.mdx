@@ -29,12 +29,14 @@ The breakpoints mirror Tailwind's defaults:
 | `md((s) => …)` | `md:` | 768 px |
 | `lg((s) => …)` | `lg:` | 1024 px |
 | `xl((s) => …)` | `xl:` | 1280 px |
+| `xl2((s) => …)` | `2xl:` | 1536 px |
 
 ## Container queries
 
 Sometimes you want to respond to the **nearest container's** width, not the whole screen — a card
-that lays out differently in a narrow sidebar vs. a wide main column. `containerSm` … `containerXl`
-do exactly that, against the same breakpoint scale:
+that lays out differently in a narrow sidebar vs. a wide main column. `containerSm`, `containerMd`,
+`containerLg`, `containerXl`, and `container2xl` do exactly that, against the same breakpoint scale
+(640 / 768 / 1024 / 1280 / 1536 px):
 
 ```dart
 const SomeCard()

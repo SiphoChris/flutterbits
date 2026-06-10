@@ -18,6 +18,17 @@ typedef FwLayer = (FwCondition condition, FwStyle style);
 /// utilities) live in [FwStyleOps] and produce new styles via [copyWith] (base,
 /// replacement = last-wins) or [addLayer] (variants, append). Resolution against
 /// interaction states + widths happens in `resolve.dart`.
+///
+/// **Variant layers are override-only.** Resolution overlays a layer's *non-null*
+/// fields onto the base (null = "keep"), so a `hover:`/`sm:`/`group-*` layer can
+/// only *set or change* a field — it cannot reset one back to "unset". Fields with
+/// an explicit inverse setter can be re-set in a layer (`notItalic`, `visible`,
+/// `wrap`, `borderSolid`, `shadowNone`, `roundedNone`); fields without one
+/// (`maxLines`/`lineClamp`, `aspectRatio`, `fit`, `blendMode`, the color filters,
+/// `mouseCursor`, the transform fields, fractional `align`) can be *overridden* in
+/// a layer but not *cleared*. Set the desired base value on the base style instead.
+/// (This is why Tailwind's `line-clamp-none` has no layer-level equivalent — it is
+/// one instance of this general rule, not a special case.)
 @immutable
 class FwStyle with FwStyleOps<FwStyle> {
   /// Creates a style. Prefer `const FwStyle()` then chained utilities.

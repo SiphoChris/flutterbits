@@ -56,6 +56,32 @@ void main() {
     expect(find.text('Dark'), findsOneWidget);
   });
 
+  testWidgets('Material host (interop path) renders every category', (tester) async {
+    await pumpApp(tester);
+    // Default host is the pure FwTheme path.
+    expect(find.text('Host: Pure'), findsOneWidget);
+
+    // Swap to the Material host: tokens now come from FwThemeExtension on
+    // ThemeData, with NO FwTheme ancestor — so every context.fw read resolves
+    // via the interop fallback. The whole showcase must still render.
+    await tester.tap(find.text('Host: Pure'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Host: Material'), findsOneWidget);
+
+    for (final category in ShowcaseCategory.values) {
+      await tester.tap(find.text(category.label).first);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull, reason: 'Material host "${category.label}" threw');
+    }
+
+    // And in Material + dark, to prove the extension resolves dark tokens too.
+    await tester.tap(find.text('Light'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Dark'), findsOneWidget);
+  });
+
   testWidgets('dark + RTL toggles animate cleanly across every category', (tester) async {
     await pumpApp(tester);
 

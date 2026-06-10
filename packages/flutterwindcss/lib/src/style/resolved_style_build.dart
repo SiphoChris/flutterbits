@@ -16,9 +16,10 @@ extension ResolvedStyleBuild on ResolvedStyle {
   /// it; do not reorder without updating `render_chain_test.dart`.
   ///
   /// Outer→inner: `margin → cursor → ignore-pointer → visibility → constraints →
-  /// aspect → fractional → transform → color-filter → content-blur → opacity →
-  /// shadow(unclipped) → surface(backdrop?+decoration) → content-clip → padding →
-  /// object-fit → text/icon defaults → child`.
+  /// aspect → fractional → mix-blend-mode → transform(2D/3D/skew) → color-filter →
+  /// content-blur → opacity → shadow(unclipped) → dashed-border → surface(backdrop?
+  /// +decoration) → content-clip → padding → object-fit → text/icon defaults →
+  /// child`.
   Widget build(Widget child) {
     // Flutter paints a rounded border only when every edge shares one color and
     // width (a uniform `Border`); a per-side `BorderDirectional` + `borderRadius`
@@ -114,7 +115,7 @@ extension ResolvedStyleBuild on ResolvedStyle {
         background != null || gradient != null || backgroundImage != null || decoBorder != null;
     if (backdropBlur != null) {
       current = ClipRRect(
-        borderRadius: borderRadius ?? BorderRadius.zero,
+        borderRadius: borderRadius ?? BorderRadiusDirectional.zero,
         child: BackdropFilter(
           filter: ui.ImageFilter.blur(sigmaX: backdropBlur!, sigmaY: backdropBlur!),
           child: hasDecoration ? _decorate(current, decoBorder) : current,

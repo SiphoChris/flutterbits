@@ -138,6 +138,26 @@ class TypographySection extends StatelessWidget {
               ),
             ),
             DemoTile(
+              label: 'maxLines(2) + overflow(fade)',
+              child: SizedBox(
+                width: 220,
+                child: const Text(
+                  'maxLines caps the line count; overflow picks how the cut edge looks — here '
+                  'a soft fade rather than an ellipsis, after two full lines of text.',
+                ).tw.maxLines(2).overflow(TextOverflow.fade),
+              ),
+            ),
+            DemoTile(
+              label: 'nowrap (whitespace-nowrap, one line)',
+              child: SizedBox(
+                width: 220,
+                child:
+                    const Text(
+                      'nowrap keeps this on a single line even though it is far too long to fit.',
+                    ).tw.nowrap,
+              ),
+            ),
+            DemoTile(
               label: 'font family: sans · serif · mono',
               child: FwColumn(
                 crossAxisAlignment: CrossAxisAlignment.start,

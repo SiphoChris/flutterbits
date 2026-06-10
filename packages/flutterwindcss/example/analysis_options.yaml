@@ -1,0 +1,5 @@
+# The example uses the standard Flutter lint set — it is illustrative code, so it
+# is intentionally not held to the package's stricter bar (e.g. doc comments on
+# every public member). The package itself (../analysis_options.yaml) keeps the
+# zero-warning, fully-documented bar.
+include: package:flutter_lints/flutter.yaml

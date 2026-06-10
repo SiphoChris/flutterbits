@@ -268,6 +268,26 @@ class LayoutSection extends StatelessWidget {
           label: 'alignItems: end · justifyItems: end',
           child: grid(FwGridAlign.end, FwGridAlign.end),
         ),
+        DemoTile(
+          label: 'per-item alignSelf / justifySelf override the container',
+          child: FwGrid(
+            columnGap: 2,
+            rowGap: 2,
+            autoRows: const FwPx(56),
+            alignItems: FwGridAlign.start, // container default: top + start
+            justifyItems: FwGridAlign.start,
+            columns: FwTrack.repeat(3, const FwFr()),
+            children: const <Widget>[
+              Block(label: 'a', tone: BlockTone.primary, height: 6, width: 10),
+              FwGridItem(
+                alignSelf: FwGridAlign.center, // this item: vertically centered…
+                justifySelf: FwGridAlign.end, // …and pushed to the inline end
+                child: Block(label: 'self', tone: BlockTone.accent, height: 6, width: 10),
+              ),
+              Block(label: 'c', tone: BlockTone.secondary, height: 6, width: 10),
+            ],
+          ),
+        ),
       ],
     );
   }

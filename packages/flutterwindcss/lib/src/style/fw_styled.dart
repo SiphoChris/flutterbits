@@ -31,7 +31,8 @@ extension TwExtension on Widget {
 /// `FwStyled` is semantics-transparent: it wraps, never replaces, the child's
 /// `Semantics` (spec §7).
 class FwStyled extends StatelessWidget with FwStyleOps<FwStyled> {
-  /// Creates a styled box. Prefer [Widget.tw] over calling this directly.
+  /// Creates a styled box. Prefer the `.tw` getter ([TwExtension.tw]) over
+  /// calling this directly.
   const FwStyled({required this.child, required this.style, this.states, super.key});
 
   /// The single child being styled.

@@ -11,6 +11,34 @@ final t = context.fw;
 Text('Save').tw.px(4).py(2).bg(t.colors.primary).text(t.colors.primaryForeground).rounded(t.radii.md);
 ```
 
+## Declarative styling
+
+In plain Flutter, styling is **imperative** — you assemble the widget tree by hand, choosing each
+wrapper and its nesting order:
+
+```dart
+// Imperative — you build the structure.
+Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  child: DecoratedBox(
+    decoration: BoxDecoration(color: t.colors.primary, borderRadius: BorderRadius.circular(6)),
+    child: child,
+  ),
+);
+```
+
+`.tw` makes styling **declarative**: you declare *what* you want and the engine resolves *how* —
+which primitives to emit, in what order, and how to handle conflicts. The chain above is just:
+
+```dart
+// Declarative — you declare intent.
+child.tw.px(4).py(2).bg(t.colors.primary).rounded(6);
+```
+
+The chain is only syntax; semantically it's an **unordered set of declarations**. Order doesn't change
+the structure — only conflicts resolve by order (last-wins, below). That's the same shift Tailwind
+made for the web: stop writing the *how* (hand-built rules/wrappers), declare the *what* (utilities).
+
 ## The accumulator model
 
 A `.tw` chain isn't a stack of wrappers — the utilities merge into one style that resolves lazily.

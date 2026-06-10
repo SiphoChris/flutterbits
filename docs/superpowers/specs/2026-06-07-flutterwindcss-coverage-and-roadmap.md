@@ -115,7 +115,7 @@ covered) and **No-analog** (genuinely impossible — §11a bar: no faithful Flut
 | `text-wrap: balance` / `pretty` | **No-analog** | Flutter's line breaker has no balanced/pretty mode; no faithful implementation (§11a bar). | — |
 | `hyphens` (true hyphenation) | **No-analog** | Flutter has no hyphenation dictionary hook; `manual` (soft-hyphen) works via the character itself, but `auto` hyphenation has no analog. | — |
 | `bg-attachment: fixed` | **No-analog** | A viewport-fixed background needs scroll-coupled paint Flutter does not model; `local`/`scroll` are the default behavior. | — |
-| `line-clamp-none` (reset inside a layer) | **Known limitation** | The accumulator can *set* `maxLines` but the whole-field overlay has no "unset" sentinel, so a responsive/state layer cannot clear a clamp — set the unclamped value at the base instead. Documented as a real limitation. | — |
+| `line-clamp-none` (reset inside a layer) | **Known limitation (general)** | One instance of a general rule, not a special case: the whole-field overlay has no "unset" sentinel, so a responsive/state/group layer can *override* but never *clear* a field back to unset. Fields with an inverse setter (`notItalic`/`visible`/`wrap`/`borderSolid`/`shadowNone`/`roundedNone`) can be re-set in a layer; the rest (`maxLines`/`lineClamp`, `aspectRatio`, `fit`, `blendMode`, color filters, `mouseCursor`, transforms, fractional align) are override-only in a layer — set the desired value at the base instead. Documented on `FwStyle`. | — |
 
 This list plus the headline buckets is now **exhaustive against the v4 catalog**: every Tailwind
 v4 utility is either shipped, here with a verdict + mechanism, delegated, or a stated no-analog.

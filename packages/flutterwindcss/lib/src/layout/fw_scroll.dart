@@ -104,12 +104,15 @@ class _FwScrollState extends State<FwScroll> {
   Widget build(BuildContext context) {
     // Scroll-snap composes the snap physics over the caller's physics (or the
     // platform default), so momentum still feels native but settles on items.
+    // The leading padding shifts every item's offset, so it is folded into the
+    // snap math (a padded carousel would otherwise rest a fixed amount off).
     final ScrollPhysics? physics =
         widget.snapExtent == null
             ? widget.physics
             : _FwSnapPhysics(
               itemExtent: widget.snapExtent!,
               align: widget.snapAlign,
+              leadingExtent: _leadingPadding(context),
               parent: widget.physics ?? const AlwaysScrollableScrollPhysics(),
             );
 
@@ -132,20 +135,61 @@ class _FwScrollState extends State<FwScroll> {
     }
     return content;
   }
+
+  /// The padding inset on the *leading* edge of the scroll axis, in logical px.
+  /// Scroll pixels are measured from the [AxisDirection]'s leading edge, so this
+  /// is the one inset that shifts where items rest — resolved via the same
+  /// framework helper [SingleChildScrollView] uses, so `axis`/`reverse`/RTL all
+  /// agree with the actual scroll origin.
+  double _leadingPadding(BuildContext context) {
+    final padding = widget.padding;
+    if (padding == null) return 0;
+    final direction = Directionality.maybeOf(context) ?? TextDirection.ltr;
+    final resolved = padding.resolve(direction);
+    final axisDirection = getAxisDirectionFromAxisReverseAndDirectionality(
+      context,
+      widget.axis,
+      widget.reverse,
+    );
+    return switch (axisDirection) {
+      AxisDirection.down => resolved.top,
+      AxisDirection.up => resolved.bottom,
+      AxisDirection.right => resolved.left,
+      AxisDirection.left => resolved.right,
+    };
+  }
 }
 
 /// Scroll physics that snaps the resting offset to multiples of [itemExtent]
 /// (Tailwind scroll-snap), honouring [align]. Direction of the fling biases which
 /// boundary it lands on. Composed over a parent physics so momentum is native.
+///
+/// All math is in scroll-pixel space (measured from the axis's leading edge), so
+/// `reverse` and RTL are handled by the framework before they reach here;
+/// [leadingExtent] folds in the content's leading padding so a padded carousel
+/// still rests with item edges aligned.
 class _FwSnapPhysics extends ScrollPhysics {
-  const _FwSnapPhysics({required this.itemExtent, required this.align, super.parent});
+  const _FwSnapPhysics({
+    required this.itemExtent,
+    required this.align,
+    this.leadingExtent = 0,
+    super.parent,
+  });
 
   final double itemExtent;
   final FwSnapAlign align;
 
+  /// Leading-edge padding of the scrollable content (logical px); items begin at
+  /// this offset, not at pixel 0.
+  final double leadingExtent;
+
   @override
-  _FwSnapPhysics applyTo(ScrollPhysics? ancestor) =>
-      _FwSnapPhysics(itemExtent: itemExtent, align: align, parent: buildParent(ancestor));
+  _FwSnapPhysics applyTo(ScrollPhysics? ancestor) => _FwSnapPhysics(
+    itemExtent: itemExtent,
+    align: align,
+    leadingExtent: leadingExtent,
+    parent: buildParent(ancestor),
+  );
 
   /// The alignment offset added to an item's leading edge so it lands at the
   /// requested viewport position (0 for start; a fraction of the slack for
@@ -164,7 +208,9 @@ class _FwSnapPhysics extends ScrollPhysics {
 
   double _snapTarget(ScrollMetrics position, double velocity, Tolerance tolerance) {
     final alignOffset = _alignOffset(position);
-    final page = (position.pixels + alignOffset) / itemExtent;
+    // Item k's leading edge sits at `leadingExtent + k*itemExtent`; subtract both
+    // the leading padding and the alignment offset to recover the item index.
+    final page = (position.pixels + alignOffset - leadingExtent) / itemExtent;
     final double target;
     if (velocity < -tolerance.velocity) {
       target = page.floorToDouble();
@@ -173,7 +219,7 @@ class _FwSnapPhysics extends ScrollPhysics {
     } else {
       target = page.roundToDouble();
     }
-    return (target * itemExtent - alignOffset).clamp(
+    return (target * itemExtent + leadingExtent - alignOffset).clamp(
       position.minScrollExtent,
       position.maxScrollExtent,
     );

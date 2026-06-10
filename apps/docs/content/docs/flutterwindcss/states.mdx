@@ -37,6 +37,13 @@ const Text('Hover me')
   [flutterbits](/docs/flutterbits) component layer.
 </Callout>
 
+<Callout title="Component-managed states">
+  For states your *component* owns — `selected`, `error`, a custom toggle — use
+  `whenState(WidgetState.selected, (s) => …)`. It's inert until the state is injected (the styled box
+  takes a `states` set), so a component drives its own styling without faking pointer events. The
+  built-in `hover`/`focus`/`pressed`/`disabled` are just the auto-sourced cases of this.
+</Callout>
+
 ## Groups — react to an ancestor's state
 
 Flutter has no CSS `:hover` that descendants can read, so flutterwindcss makes the scope explicit.

@@ -173,6 +173,35 @@ void main() {
       );
       expect(_rect(t, 'a').left, 60); // third 30px track
     });
+
+    testWidgets('columnStart past the last column asserts in debug', (t) async {
+      // 3 columns, an item pinned to column 5 — a typo that would otherwise be
+      // silently clamped. The layout-time guard surfaces it.
+      await _pump(
+        t,
+        FwGrid(
+          columns: const [FwFr(), FwFr(), FwFr()],
+          children: [
+            const FwGridItem(
+              columnStart: 5,
+              rowStart: 1,
+              child: SizedBox(key: Key('a'), height: 20),
+            ),
+          ],
+        ),
+        width: 90,
+      );
+      // The guard raises during layout (the sibling test above, identical but
+      // for an in-range columnStart, lays out cleanly — so a raised exception
+      // here is specifically the placement guard, not silent clamping). The
+      // framework aggregates the cascade, so assert that one was raised and drain
+      // the rest so the harness doesn't flag them as unhandled.
+      var raised = false;
+      for (Object? e = t.takeException(); e != null; e = t.takeException()) {
+        raised = true;
+      }
+      expect(raised, isTrue, reason: 'out-of-range columnStart must assert, not silently clamp');
+    });
   });
 
   group('alignment (non-stretch keeps the child its own size within the cell)', () {

@@ -24,6 +24,56 @@ FwRow(
 
 `FwWrap` is the wrapping variant (Tailwind `flex-wrap`).
 
+### Dividers between children — `divide`
+
+`FwRow` / `FwColumn` can draw a **directional** border between adjacent children (Tailwind
+`divide-x-*` / `divide-y-*`) — a separator on the trailing edge of every child but the last, RTL-aware
+and composed with `gap`:
+
+```dart
+FwRow(
+  gap: 3,
+  divideWidth: 1,                 // Tailwind divide-x
+  divideColor: t.colors.border,   // required when divideWidth > 0
+  children: const [
+    Text('Home').tw.px(3),
+    Text('Docs').tw.px(3),
+    Text('About').tw.px(3),
+  ],
+);
+```
+
+## Scrolling & overflow — `FwScroll`
+
+`overflow-hidden` is just `.tw.clip()`, but scrolling needs a real scroll widget. `FwScroll` is the
+Material-free mapping of Tailwind `overflow-auto` / `overflow-scroll` — a `SingleChildScrollView`
+under a `RawScrollbar` (never Material's `Scrollbar`):
+
+```dart
+FwScroll(
+  axis: Axis.vertical,            // overflow-y; Axis.horizontal = overflow-x
+  thumbColor: t.colors.border,    // themed scrollbar
+  child: FwColumn(gap: 2, children: const [/* … */]),
+);
+```
+
+- `showScrollbar` (default `true`) and `alwaysShowScrollbar` (`overflow-scroll` vs `overflow-auto`).
+- `padding`, `reverse`, and an external `controller` are all supported.
+
+### Scroll-snap
+
+Pass `snapExtent` (the item size in logical px) to settle on item boundaries — the carousel pattern
+(Tailwind scroll-snap). `snapAlign` chooses `start` / `center` / `end`:
+
+```dart
+FwScroll(
+  axis: Axis.horizontal,
+  snapExtent: 280,                 // settles on multiples of 280px
+  snapAlign: FwSnapAlign.center,   // snap-center
+  child: FwRow(gap: 4, children: const [/* uniform 280px cards */]),
+);
+```
+
 ## Stacking — `FwStack` / `FwPositioned`
 
 `FwStack` overlays children; `FwPositioned` places one with **directional** insets (`start`/`end`/
@@ -68,6 +118,9 @@ Place and span cells with `FwGridItem` (`columnSpan` / `rowSpan` / 1-based `colu
 | `FwGrid(columns: FwTrack.repeat(3, FwFr()))` | `grid grid-cols-3` |
 | `FwGridItem(columnSpan: 2)` | `col-span-2` |
 | `FwPositioned(top: 1, end: 1)` | `absolute top-1 end-1` |
+| `FwRow(divideWidth: 1, divideColor: …)` | `flex divide-x` |
+| `FwScroll(axis: Axis.vertical)` | `overflow-y-auto` |
+| `FwScroll(snapExtent: 280, snapAlign: .center)` | `snap-x snap-mandatory snap-center` |
 
 <Callout title="Responsive layout">
   Grid column counts and flex `gap`/alignment respond to breakpoints — e.g. one column on mobile,
