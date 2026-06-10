@@ -72,7 +72,7 @@ Organised by tier and by "maps cleanly / re-homes / adapt-by-demand." **None of 
 
 Button, Badge, Card, Input, Textarea, Label, Checkbox, RadioGroup, Switch, Slider, Select, Accordion, Alert, Avatar, Progress, Separator, Skeleton, Toggle, ToggleGroup, Tooltip, Popover, DropdownMenu, Tabs (in-page), Collapsible, AspectRatio, Spinner, Pagination, Carousel, Calendar, DatePicker, InputOTP.
 
-- **Variant/size naming mirrors shadcn** for familiarity: variants `default / secondary / destructive / outline / ghost / link`; sizes `sm / default / lg / icon`. Implemented as **typed enums + exhaustive `switch`** (the cva equivalent; AGENTS.md §4).
+- **Variant/size naming mirrors shadcn**, with one forced deviation: `default` is a **Dart reserved word**, so it cannot be an enum constant — the shadcn `default` variant is `primary` and the `default` size is `md`. Full set — variants `primary / secondary / destructive / outline / ghost / link`; sizes `sm / md / lg / icon`. Implemented as **typed enums + exhaustive `switch`** (the cva equivalent; AGENTS.md §4).
 - All require `flutterwindcss` (semantic tokens) — that is the whole styling model.
 
 ### 3.3 App-feel components shadcn lacks (because shadcn is web-only)
