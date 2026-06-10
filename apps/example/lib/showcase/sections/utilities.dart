@@ -190,11 +190,13 @@ class UtilitiesSection extends StatelessWidget {
           ],
         ),
         ShowcaseSection(
-          title: '3D transforms + mix-blend + text-shadow (module 17)',
+          title: 'bgImage + 3D transforms + mix-blend + text-shadow (module 17)',
           description:
-              'mix-blend composites a layer against what is painted BEHIND it. The two tiles '
-              'below are identical except the top square sets blendMode(multiply): yellow × cyan '
-              'multiply = green, so the overlap turns green only on the right. perspective+rotateY '
+              'bgImage paints a bundled asset as the box background (BoxFit.contain). '
+              'mix-blend composites a layer against what is painted BEHIND it: three overlapping '
+              'circles in cyan/magenta/yellow just stack when opaque (the last drawn wins each '
+              'overlap), but with blendMode(multiply) the overlaps multiply — cyan×magenta=blue, '
+              'magenta×yellow=red, cyan×yellow=green, all three=black. perspective+rotateY '
               'foreshortens a card in 3D; textShadow glows descendant text.',
           children: <Widget>[
             FwWrap(
@@ -203,12 +205,26 @@ class UtilitiesSection extends StatelessWidget {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: <Widget>[
                 DemoTile(
-                  label: 'normal (no blend) — opaque overlap',
-                  child: _blendPair(context, blend: false),
+                  label: 'bgImage — bundled asset (contain)',
+                  child: const SizedBox().tw
+                      .w(28)
+                      .h(18)
+                      .bg(t.colors.muted)
+                      .rounded(t.radii.lg)
+                      .border(1, color: t.colors.border)
+                      .clip()
+                      .bgImage(
+                        const AssetImage('assets/flutterwindcss-logo.png'),
+                        fit: BoxFit.contain,
+                      ),
                 ),
                 DemoTile(
-                  label: 'mix-blend multiply — overlap → green',
-                  child: _blendPair(context, blend: true),
+                  label: 'normal (opaque) — overlaps just stack',
+                  child: _cmyCircles(blend: false),
+                ),
+                DemoTile(
+                  label: 'mix-blend multiply — overlaps blend',
+                  child: _cmyCircles(blend: true),
                 ),
                 DemoTile(
                   label: 'perspective + rotateY',
@@ -238,21 +254,36 @@ class UtilitiesSection extends StatelessWidget {
     );
   }
 
-  /// Two overlapping squares — yellow under, cyan over. With [blend] the cyan
-  /// square uses `blendMode(multiply)`, so the overlap multiplies against the
-  /// yellow backdrop (yellow × cyan = green); without it the cyan paints opaque.
-  /// Side-by-side this makes mix-blend unmistakable.
-  Widget _blendPair(BuildContext context, {required bool blend}) {
-    final under = const SizedBox(width: 52, height: 52).tw.bg(FwPalette.yellow.shade400);
-    var over = const SizedBox(width: 52, height: 52).tw.bg(FwPalette.cyan.shade400);
-    if (blend) over = over.blendMode(BlendMode.multiply);
+  /// Three overlapping circles — cyan, magenta, yellow — on a white field. When
+  /// opaque they merely stack (the last drawn wins each overlap). With [blend]
+  /// each circle uses `blendMode(multiply)`, so every overlap multiplies against
+  /// what's painted behind it: cyan × magenta = blue, magenta × yellow = red,
+  /// cyan × yellow = green, and all three = black. The canonical mix-blend demo,
+  /// unmistakable side-by-side.
+  Widget _cmyCircles({required bool blend}) {
+    // Pure CMY primaries (FwPalette's shades aren't pure primaries, so the
+    // multiply result wouldn't land on exact RGB secondaries). Raw colours are
+    // fine in the showcase — it demonstrates the blend math, not theming.
+    const Color cyan = Color(0xFF00FFFF);
+    const Color magenta = Color(0xFFFF00FF);
+    const Color yellow = Color(0xFFFFFF00);
+
+    Widget circle(Color color) {
+      final c = const SizedBox(width: 56, height: 56).tw.bg(color).roundedFull;
+      return blend ? c.blendMode(BlendMode.multiply) : c;
+    }
+
+    // 96 px white field; 56 px circles in a triangle that overlaps in the middle.
+    // FwPositioned insets are utility units (× 4 px), so 96 px = 24, 56 px = 14.
     return SizedBox(
-      width: 84,
-      height: 84,
+      width: 96,
+      height: 96,
       child: FwStack(
         children: <Widget>[
-          FwPositioned(top: 0, start: 0, child: under),
-          FwPositioned(top: 32, start: 32, child: over),
+          const SizedBox(width: 96, height: 96).tw.bg(FwPalette.white),
+          FwPositioned(top: 0, start: 5, child: circle(cyan)), // top-centre
+          FwPositioned(top: 8, start: 1, child: circle(magenta)), // bottom-start
+          FwPositioned(top: 8, start: 9, child: circle(yellow)), // bottom-end
         ],
       ),
     );

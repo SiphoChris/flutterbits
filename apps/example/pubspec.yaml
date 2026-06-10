@@ -32,3 +32,6 @@ flutter:
   # No Material: the showcase runs entirely on the pure path (WidgetsApp +
   # FwTheme), so the Material icon font is not bundled.
   uses-material-design: false
+  # Bundled so the `bgImage` (background-image) demo has a real asset to paint.
+  assets:
+    - assets/flutterwindcss-logo.png
