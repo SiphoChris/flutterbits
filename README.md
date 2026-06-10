@@ -4,12 +4,13 @@
 
 ### Tailwind CSS's styling vocabulary and shadcn/ui's copy‑paste components — for Flutter.
 
+[![pub package](https://img.shields.io/pub/v/flutterwindcss.svg?label=flutterwindcss&color=0175C2)](https://pub.dev/packages/flutterwindcss)
+[![docs](https://img.shields.io/badge/docs-flutterbits.vercel.app-2563eb)](https://flutterbits.vercel.app)
 [![CI](https://github.com/SiphoChris/flutterbits/actions/workflows/ci.yaml/badge.svg)](https://github.com/SiphoChris/flutterbits/actions/workflows/ci.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-%E2%89%A53.29-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%E2%89%A53.7-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Material‑free](https://img.shields.io/badge/Material‑free-yes-success)](#mental-model)
-[![Status](https://img.shields.io/badge/status-early%20development-orange)](#project-status)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
 
 </div>
@@ -26,6 +27,20 @@ Two products in one monorepo, built so that **any [tweakcn](https://tweakcn.com)
 
 - **`flutterwindcss`** — Tailwind CSS v4's *design system and styling vocabulary* for Flutter. Design tokens (spacing, radius, semantic colors, typography, shadows) and a typed, compile‑time utility API (`.tw`) over Flutter's primitive widgets. This is the **Tailwind** layer.
 - **`flutterbits`** — shadcn/ui for Flutter. **Copy‑paste** components you own, fetched via a CLI from a registry, styled entirely through `flutterwindcss` and semantic tokens. This is the **shadcn/ui** layer.
+
+## Install & docs
+
+`flutterwindcss` (the styling engine) is **published on [pub.dev](https://pub.dev/packages/flutterwindcss)**:
+
+```bash
+flutter pub add flutterwindcss
+```
+
+- 📖 **Documentation** — [flutterbits.vercel.app/docs/flutterwindcss](https://flutterbits.vercel.app/docs/flutterwindcss)
+- 🎨 **Theme generator** — [flutterbits.vercel.app/theme-generator](https://flutterbits.vercel.app/theme-generator) (paste a tweakcn/shadcn theme → copy a `theme.dart`)
+- 📊 **Coverage vs Tailwind & shadcn** — [flutterbits.vercel.app/docs/flutterwindcss/coverage](https://flutterbits.vercel.app/docs/flutterwindcss/coverage)
+
+> The `flutterbits` **components** (registry + CLI) are the next layer and are not built yet — see the roadmap below.
 
 ## Why it's different
 
@@ -69,7 +84,7 @@ Flutter has no structure/style split and no CSS cascade — the widget tree *is*
 
 **✅ Shipped (theme generator — `apps/docs`):**
 
-- **tweakcn → `theme.dart` generator** — paste any tweakcn/shadcn theme (Tailwind v4, any of `oklch`/`hsl`/`rgb`/hex), get a working Flutter `theme.dart` + `theme.json`. A pure-TS `parse → color → emit` pipeline: a hand-rolled, vector-tested OKLCH→sRGB core (faithful-clip default + opt-in perceptual gamut-map), a tolerant `:root`/`.dark` parser (rejects Tailwind v3), and an emitter for all 32 colors + additive radius + 7 shadow slots + fonts + tracking — **nothing dropped, everything reported**. End-to-end golden-verified against the engine's reference theme across all four input formats. Ships with a live web UI ([`/theme-generator`](apps/docs/src/app/(home)/theme-generator)) — paste → preview (swatches/radius/shadows, light+dark) → download — and a [docs page](apps/docs/content/docs/theme-generator.mdx).
+- **tweakcn → `theme.dart` generator** — live at **[flutterbits.vercel.app/theme-generator](https://flutterbits.vercel.app/theme-generator)**. Paste any tweakcn/shadcn theme (Tailwind v4, any of `oklch`/`hsl`/`rgb`/hex), get a working Flutter `theme.dart`. A pure-TS `parse → color → emit` pipeline: a hand-rolled, vector-tested OKLCH→sRGB core (faithful-clip default + opt-in perceptual gamut-map), a tolerant `:root`/`.dark` parser (rejects Tailwind v3), and an emitter for all 32 colors + additive radius + 7 shadow slots + fonts + tracking — **nothing dropped, everything reported**. End-to-end golden-verified against the engine's reference theme across all four input formats. The web UI is paste → live preview (swatches/radius/shadows, light+dark) → **copy** (shadcn-style; `theme.json` is the internal source of truth, not surfaced), backed by a [docs page](https://flutterbits.vercel.app/docs/flutterwindcss/theme-generator).
 
 **🚧 Next on the roadmap:**
 

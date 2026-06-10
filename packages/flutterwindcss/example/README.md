@@ -18,6 +18,7 @@ Tapping the button toggles light/dark so you can watch the theme crossfade.
 flutter run        # any device, e.g. -d chrome / -d windows / -d macos
 ```
 
+Full docs: [flutterbits.vercel.app/docs/flutterwindcss](https://flutterbits.vercel.app/docs/flutterwindcss).
 For a much larger tour of the engine — every utility, the layout widgets, grid,
 group/peer, and animated theming — see the **`apps/example`** showcase in the
 [flutterbits monorepo](https://github.com/SiphoChris/flutterbits).

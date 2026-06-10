@@ -66,7 +66,7 @@ Everything a shadcn theme carries, not just color:
 
 - **Colors — all 32.** The 19 core roles plus `chart-1…5` and the 8 `sidebar-*` tokens, mapped
   straight onto `FwColors`. Nothing is dropped; a partial theme can't even compile, so the
-  generator **refuses to download** until all 32 are present (see below).
+  generator **won't produce a `theme.dart`** until all 32 are present (see below).
 - **Radius.** Derived from `--radius` using shadcn's **additive** steps
   (`sm = r−4`, `md = r−2`, `lg = r`, `xl = r+4`, clamped at ≥ 0).
 - **Shadows — 7 named levels.** `--shadow-2xs … --shadow-2xl` become `FwShadows`, including
