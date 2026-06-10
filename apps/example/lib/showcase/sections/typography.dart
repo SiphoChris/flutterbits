@@ -108,7 +108,8 @@ class TypographySection extends StatelessWidget {
                 children: <Widget>[
                   Text('underline').tw.underline.text(t.colors.primary),
                   Text('lineThrough').tw.lineThrough.text(t.colors.mutedForeground),
-                  Text('both at once').tw.underline.lineThrough.text(t.colors.destructive),
+                  Text('overline').tw.overline.text(t.colors.primary),
+                  Text('all three').tw.underline.lineThrough.overline.text(t.colors.destructive),
                 ],
               ),
             ),

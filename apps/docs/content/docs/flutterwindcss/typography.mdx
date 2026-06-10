@@ -23,15 +23,19 @@ not em).
 
 | flutterwindcss | Tailwind |
 | --- | --- |
-| `font('Inter')` | `font-[Inter]` |
+| `font('Inter')` | `font-[Inter]` (literal family) |
 | `fontSans` `fontSerif` `fontMono` | `font-sans` `font-serif` `font-mono` (getters) |
+
+`fontSans` / `fontSerif` / `fontMono` resolve to the **active theme's** families (and `FwTheme`
+applies the theme's `sans` as the default), so a pasted theme's fonts apply once you register them —
+see [Fonts](/docs/flutterwindcss/fonts). `font('Inter')` sets a literal family for one chain.
 
 ## Style & decoration
 
 | flutterwindcss | Tailwind |
 | --- | --- |
 | `italic` `notItalic` | `italic` `not-italic` (getters) |
-| `underline` `lineThrough` | `underline` `line-through` (getters; combine) |
+| `underline` `lineThrough` `overline` | `underline` `line-through` `overline` (getters; combine) |
 | `textShadow([Shadow(...)])` | `text-shadow-*` (v4) |
 
 ## Clamping & wrapping

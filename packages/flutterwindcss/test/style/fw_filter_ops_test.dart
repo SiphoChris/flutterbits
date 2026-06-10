@@ -110,5 +110,13 @@ void main() {
       expect(const FwStyle().fit(BoxFit.cover).boxFit, BoxFit.cover);
       expect(const FwStyle().fit(BoxFit.cover).fit(BoxFit.contain).boxFit, BoxFit.contain);
     });
+
+    test('fit alignment (object-position) defaults null, stores directionally', () {
+      expect(const FwStyle().fit(BoxFit.cover).fitAlignment, isNull);
+      expect(
+        const FwStyle().fit(BoxFit.cover, alignment: AlignmentDirectional.topStart).fitAlignment,
+        AlignmentDirectional.topStart,
+      );
+    });
   });
 }

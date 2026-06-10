@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.3
+
+- **Theme fonts now apply.** `FwTheme` applies the theme's `sans` family as the subtree's default text
+  family, and `fontSans`/`fontSerif`/`fontMono` resolve to the active theme's families (like
+  `roundedMd`/`shadowMd` do for radius/shadow) instead of generic names. A pasted/generated theme's
+  fonts take effect once you register the font (bundle it or wire `google_fonts`). `font('Family')`
+  remains a literal override. See the new **Fonts** docs page.
+- **New utilities:** `overline` (Tailwind `overline` text-decoration), `fit(BoxFit, {alignment})`
+  (Tailwind `object-{position}`), and `FwScroll(trackColor:)` (the scrollbar track colour).
+
 ## 1.0.2
 
 - **Docs** — the install instructions are now version-agnostic (`flutter pub add flutterwindcss`)

@@ -54,6 +54,16 @@ void main() {
     await _pump(t, const ResolvedStyle(fit: BoxFit.cover));
     final box = t.widget<FittedBox>(find.byType(FittedBox));
     expect(box.fit, BoxFit.cover);
+    // Default alignment is center when fitAlignment is unset.
+    expect(box.alignment, Alignment.center);
+  });
+
+  testWidgets('fit alignment (object-position) flows to FittedBox.alignment', (t) async {
+    await _pump(
+      t,
+      const ResolvedStyle(fit: BoxFit.cover, fitAlignment: AlignmentDirectional.topEnd),
+    );
+    expect(t.widget<FittedBox>(find.byType(FittedBox)).alignment, AlignmentDirectional.topEnd);
   });
 
   testWidgets('module 13 wrappers emit only when set', (t) async {

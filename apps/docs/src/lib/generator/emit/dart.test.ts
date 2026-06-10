@@ -26,10 +26,12 @@ describe('emitDart — structure', () => {
     expect(dart).toContain("import 'package:flutterwindcss/flutterwindcss.dart';");
     expect(dart).not.toContain('material.dart');
   });
-  it('emits the font names and a google_fonts wiring stub (never a silent bundle)', () => {
+  it('emits the font names and font-registration guidance (never a silent bundle)', () => {
     expect(dart).toContain('Outfit');
     expect(dart).toContain('Geist Mono');
-    expect(dart).toMatch(/TODO:.*google_fonts/);
+    // The dev must REGISTER the fonts (bundle or google_fonts); the engine applies them.
+    expect(dart).toMatch(/REGISTER the fonts/);
+    expect(dart).toMatch(/google_fonts/);
   });
   it('omits tracking when 0 (FwTypographyTheme default)', () => {
     expect(dart).not.toContain('tracking:');

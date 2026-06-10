@@ -70,6 +70,7 @@ class ResolvedStyle {
     this.colorMatrix,
     this.blendMode,
     this.fit,
+    this.fitAlignment,
     this.mouseCursor,
     this.ignorePointer,
     this.isVisible,
@@ -225,6 +226,10 @@ class ResolvedStyle {
 
   /// Object-fit for the content (→ `FittedBox`).
   final BoxFit? fit;
+
+  /// Alignment of the fitted content within the box (→ `FittedBox.alignment`;
+  /// Tailwind `object-{position}`). Null → center.
+  final AlignmentGeometry? fitAlignment;
 
   /// Mouse cursor over the box (→ `MouseRegion`).
   final MouseCursor? mouseCursor;

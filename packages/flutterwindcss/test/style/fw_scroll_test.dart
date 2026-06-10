@@ -81,6 +81,41 @@ void main() {
     expect(find.byType(SingleChildScrollView), findsOneWidget);
   });
 
+  testWidgets('thumbColor + trackColor flow to RawScrollbar (track shown)', (t) async {
+    await t.pumpWidget(
+      _wrap(
+        FwScroll(
+          thumbColor: const Color(0xFF112233),
+          trackColor: const Color(0xFF445566),
+          child: Column(
+            children: List<Widget>.generate(40, (i) => SizedBox(height: 20, child: Text('$i'))),
+          ),
+        ),
+      ),
+    );
+    final bar = t.widget<RawScrollbar>(find.byType(RawScrollbar));
+    expect(bar.thumbColor, const Color(0xFF112233));
+    expect(bar.trackColor, const Color(0xFF445566));
+    expect(bar.trackVisibility, isTrue);
+    // A visible track implies a visible thumb.
+    expect(bar.thumbVisibility, isTrue);
+  });
+
+  testWidgets('no trackColor leaves the track hidden (auto)', (t) async {
+    await t.pumpWidget(
+      _wrap(
+        FwScroll(
+          child: Column(
+            children: List<Widget>.generate(40, (i) => SizedBox(height: 20, child: Text('$i'))),
+          ),
+        ),
+      ),
+    );
+    final bar = t.widget<RawScrollbar>(find.byType(RawScrollbar));
+    expect(bar.trackColor, isNull);
+    expect(bar.trackVisibility, isNull);
+  });
+
   testWidgets('snapExtent snaps the scroll offset to item boundaries (start align)', (t) async {
     await t.pumpWidget(
       Directionality(

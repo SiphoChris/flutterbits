@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 
 import '../tokens/scales.dart';
-import '../tokens/typography.dart';
 import 'fw_border_spec.dart';
 import 'fw_layer.dart';
 import 'fw_ring.dart';
@@ -590,6 +589,10 @@ mixin FwStyleOps<T> {
   /// (Tailwind `line-through`).
   T get lineThrough => _addDecoration(TextDecoration.lineThrough);
 
+  /// Draws a line over descendant text; combines with any existing decoration
+  /// (Tailwind `overline`).
+  T get overline => _addDecoration(TextDecoration.overline);
+
   /// Text shadow(s) for descendant text (Tailwind `text-shadow-*`, v4). Pass a
   /// `List<Shadow>` (an empty list = none). Flows through `DefaultTextStyle`, so
   /// it inherits into descendant text like the other typography setters. Last-wins.
@@ -601,18 +604,23 @@ mixin FwStyleOps<T> {
   // `maxLines`, `overflow`, `softWrap`), so they inherit into descendant text
   // exactly like the other typography setters.
 
-  /// Default font family for descendant text (Tailwind `font-[family]`); pass a
-  /// token such as `FwFontFamily.sans`. Last-wins.
+  /// Default font family for descendant text as a **literal** name (Tailwind
+  /// `font-[family]`), e.g. `font('Inter')`. For the theme's roles use
+  /// [fontSans]/[fontSerif]/[fontMono]. Last-wins; mutually exclusive with a font
+  /// role in the same node (asserts at resolve).
   T font(String family) => fwRebuild(fwStyle.copyWith(fontFamily: family));
 
-  /// Sans-serif family (Tailwind `font-sans`).
-  T get fontSans => font(FwFontFamily.sans);
+  /// The theme's **sans** family (Tailwind `font-sans`). Resolves to
+  /// `context.fw.typography.sans` at build, so it tracks a pasted theme's font.
+  T get fontSans => fwRebuild(fwStyle.copyWith(fontFamilyStep: FwFontStep.sans));
 
-  /// Serif family (Tailwind `font-serif`).
-  T get fontSerif => font(FwFontFamily.serif);
+  /// The theme's **serif** family (Tailwind `font-serif`). Resolves to
+  /// `context.fw.typography.serif` at build.
+  T get fontSerif => fwRebuild(fwStyle.copyWith(fontFamilyStep: FwFontStep.serif));
 
-  /// Monospace family (Tailwind `font-mono`).
-  T get fontMono => font(FwFontFamily.mono);
+  /// The theme's **mono** family (Tailwind `font-mono`). Resolves to
+  /// `context.fw.typography.mono` at build.
+  T get fontMono => fwRebuild(fwStyle.copyWith(fontFamilyStep: FwFontStep.mono));
 
   /// Italic text (Tailwind `italic`).
   T get italic => fwRebuild(fwStyle.copyWith(fontStyle: FontStyle.italic));
@@ -812,7 +820,12 @@ mixin FwStyleOps<T> {
   /// fit into (set a size, or place it where the parent constrains it); under an
   /// unbounded constraint on the fitted axis it safely degrades to no scaling
   /// (the child renders at its natural size) rather than throwing.
-  T fit(BoxFit fit) => fwRebuild(fwStyle.copyWith(boxFit: fit));
+  ///
+  /// [alignment] positions the fitted child within the box (Tailwind
+  /// `object-{top,left,…}`); defaults to center. Pass an `AlignmentDirectional`
+  /// (e.g. `AlignmentDirectional.topStart`) to stay RTL-aware.
+  T fit(BoxFit fit, {AlignmentGeometry? alignment}) =>
+      fwRebuild(fwStyle.copyWith(boxFit: fit, fitAlignment: alignment));
 
   // ---- Interactivity + visibility (module 13) ----
 

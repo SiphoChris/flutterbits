@@ -103,4 +103,63 @@ void main() {
     );
     expect(t.takeException(), isAssertionError);
   });
+
+  // ---- Font roles (theme-resolved fontSans/Serif/Mono) ----
+
+  // A theme with distinctive families so a resolved role is unambiguous.
+  const customType = FwTypographyTheme(sans: 'Outfit', serif: 'Lora', mono: 'JetBrains Mono');
+  final customTheme = FwTokens(
+    radiusBase: FwTokens.light.radiusBase,
+    radii: FwTokens.light.radii,
+    shadows: FwTokens.light.shadows,
+    typography: customType,
+    colors: FwTokens.light.colors,
+  );
+
+  // The effective default text family at a probe; [style] (if any) is applied via
+  // a styled box wrapping the probe. Captures inside the builder (no `find`, since
+  // DefaultTextStyle.merge also uses a Builder).
+  Future<String?> familyUnder(WidgetTester t, {FwStyle? style}) async {
+    String? captured;
+    Widget probe = Builder(
+      builder: (ctx) {
+        captured = DefaultTextStyle.of(ctx).style.fontFamily;
+        return const SizedBox();
+      },
+    );
+    if (style != null) probe = FwStyled(style: style, child: probe);
+    await t.pumpWidget(
+      FwTheme(
+        tokens: customTheme,
+        child: Directionality(textDirection: TextDirection.ltr, child: probe),
+      ),
+    );
+    return captured;
+  }
+
+  test('fontSans/Serif/Mono store a font role (not a literal family)', () {
+    expect(const FwStyle().fontSans.fontFamilyStep, FwFontStep.sans);
+    expect(const FwStyle().fontSans.fontFamily, isNull);
+    expect(const FwStyle().fontSerif.fontFamilyStep, FwFontStep.serif);
+    expect(const FwStyle().fontMono.fontFamilyStep, FwFontStep.mono);
+  });
+
+  testWidgets('FwTheme applies the theme sans as the default text family', (t) async {
+    // A plain box (no font setter) still inherits the theme's sans family.
+    expect(await familyUnder(t), 'Outfit');
+  });
+
+  testWidgets('fontSerif / fontMono resolve to the theme families at build', (t) async {
+    expect(await familyUnder(t, style: const FwStyle().fontSerif), 'Lora');
+    expect(await familyUnder(t, style: const FwStyle().fontMono), 'JetBrains Mono');
+  });
+
+  testWidgets('fontSans resolves to the theme sans at build', (t) async {
+    expect(await familyUnder(t, style: const FwStyle().fontSans), 'Outfit');
+  });
+
+  testWidgets('mixing a font role with a literal font() in one chain asserts', (t) async {
+    await t.pumpWidget(_themed(const SizedBox(width: 40, height: 40).tw.font('Inter').fontSans));
+    expect(t.takeException(), isAssertionError);
+  });
 }

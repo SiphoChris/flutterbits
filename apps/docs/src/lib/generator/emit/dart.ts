@@ -80,10 +80,11 @@ function header(json: ThemeJson): string {
     `// Conversion: ${json.meta.conversion}.`,
     '//',
     `// Fonts named by this theme: ${t.sans} (sans), ${t.serif} (serif), ${t.mono} (mono).`,
-    '// flutterwindcss bundles no fonts — the names round-trip, but you must wire',
-    '// them yourself (or Flutter falls back to the platform family):',
-    '//   // TODO: add `google_fonts` to your pubspec and apply these families on',
-    '//   // FwTheme, or bundle the font files and declare them in pubspec.yaml.',
+    '// flutterwindcss applies these families for you (FwTheme uses `sans` as the',
+    '// default; .fontSans/.fontSerif/.fontMono resolve to the theme). You only need',
+    '// to REGISTER the fonts so Flutter has them — bundle the .ttf files in',
+    '// pubspec.yaml, or wire `google_fonts`. Custom faces only; system fonts (e.g.',
+    '// Georgia) need nothing. Guide: https://flutterbits.vercel.app/docs/flutterwindcss/fonts',
   ];
   if (json.meta.droppedVars.length > 0) {
     lines.push('//', `// Dropped unknown CSS vars: ${json.meta.droppedVars.join(', ')}.`);

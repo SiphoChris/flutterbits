@@ -124,8 +124,10 @@ abstract final class FwLeading {
 
 /// Font-family *names* only — the engine never bundles fonts (spec §4.5).
 abstract final class FwFontFamily {
-  /// Default UI sans family name. Flutter resolves this generic name to the
-  /// platform UI font; the host overrides it in FwTheme for a custom face.
+  /// The generic fallback family names that [FwTypographyTheme] defaults to.
+  /// Flutter resolves these to the platform faces. A theme supplies custom faces
+  /// via [FwTypographyTheme] (which `FwTheme` applies and `fontSans`/`fontSerif`/
+  /// `fontMono` resolve to); `font('Family')` sets a literal family directly.
   static const String sans = 'sans-serif';
 
   /// Serif family name.
