@@ -1,0 +1,106 @@
+---
+title: Animation
+description: flutterwindcss animates theme transitions; for element animation (Tailwind's transition/animate-*) it composes with flutter_animate — style with .tw, animate with .animate().
+---
+
+flutterwindcss splits animation into two jobs:
+
+- **Theme transitions** are the engine's job — [`FwAnimatedTheme`](/docs/flutterwindcss/theming)
+  crossfades *every* token (colors, radii, shadows, type) on a theme or light/dark change.
+- **Element animation** — fade/slide/scale on enter, spinners, pulses (Tailwind's `transition`,
+  `duration`, `ease`, `delay`, `animate-spin`/`pulse`/`bounce`) — is delegated to
+  [`flutter_animate`](https://pub.dev/packages/flutter_animate).
+
+## Why delegate element animation?
+
+`flutter_animate` is a mature, **Material-free** package with a chaining API that reads exactly like
+`.tw` — so rather than re-implement (and maintain) an animation subsystem, flutterwindcss points you at
+it. The two compose cleanly: **style with `.tw`, animate with `.animate()`**. A `.tw` chain returns a
+normal widget, and `flutter_animate` adds `.animate()` to any widget.
+
+```bash
+flutter pub add flutter_animate
+```
+
+## Style with `.tw`, animate with `.animate()`
+
+```dart
+import 'package:flutter/widgets.dart';
+import 'package:flutterwindcss/flutterwindcss.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
+final t = context.fw;
+
+// Fade + slide in on mount.
+Text('Saved')
+    .tw
+    .px(4)
+    .py(2)
+    .bg(t.colors.primary)
+    .text(t.colors.primaryForeground)
+    .rounded(t.radii.md)
+    .animate()
+    .fadeIn(duration: 200.ms)
+    .slideY(begin: 0.2, end: 0, curve: Curves.easeOut);
+```
+
+The styled box is unchanged — `.animate()` just wraps it. `200.ms` (and `2.seconds`) come from
+`flutter_animate`; `Curves.*` are Flutter's standard easings (the equivalent of CSS
+`ease`/`ease-in-out`).
+
+### A spinner (Tailwind `animate-spin`)
+
+`onPlay` lets an effect loop:
+
+```dart
+const Icon(LucideIcons.loaderCircle)
+    .tw
+    .text(t.colors.mutedForeground)
+    .animate(onPlay: (c) => c.repeat())
+    .rotate(duration: 800.ms); // continuous spin
+```
+
+### Enter / exit driven by component state
+
+For shadcn-style `data-[state=open]` enter/exit, the **component owns the state** and chooses the
+effect — `flutter_animate` plays it when the widget mounts/updates (pair with `AnimatedSwitcher` or a
+key change for exit):
+
+```dart
+if (isOpen)
+  const _Panel()
+      .tw
+      .p(4)
+      .bg(t.colors.popover)
+      .rounded(t.radii.lg)
+      .shadow(t.shadows.md)
+      .animate()
+      .fadeIn(duration: 150.ms)
+      .scaleXY(begin: 0.96, end: 1, curve: Curves.easeOut);
+```
+
+## Tailwind equivalents
+
+| Tailwind | flutter_animate |
+| --- | --- |
+| `transition` + `duration-200` | `.animate()` … `(duration: 200.ms)` |
+| `ease-in-out` / `ease-out` | `curve: Curves.easeInOut` / `Curves.easeOut` |
+| `delay-150` | `.animate(delay: 150.ms)` |
+| `animate-spin` | `.animate(onPlay: (c) => c.repeat()).rotate()` |
+| `animate-pulse` | `.animate(onPlay: (c) => c.repeat(reverse: true)).fade(begin: 1, end: 0.5)` |
+| `animate-bounce` | `.animate(onPlay: (c) => c.repeat(reverse: true)).moveY(begin: 0, end: -8)` |
+| `transition-colors` (theme) | [`FwAnimatedTheme`](/docs/flutterwindcss/theming) — built in |
+
+<Callout title="Reduce motion">
+  Respect the OS "reduce motion" setting before playing decorative animations — check
+  `MediaQuery.disableAnimationsOf(context)` (Flutter's `prefers-reduced-motion`) and skip or shorten
+  the effect when it's `true`.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Transforms & interactivity" href="/docs/flutterwindcss/transforms-interactivity" />
+  <Card title="Semantic tokens & theming" href="/docs/flutterwindcss/theming" />
+  <Card title="Coverage — Tailwind & shadcn" href="/docs/flutterwindcss/coverage" />
+</Cards>
