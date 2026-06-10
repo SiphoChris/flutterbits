@@ -149,6 +149,13 @@ class EffectsSection extends StatelessWidget {
                 _fitDemo(context, 'contain', BoxFit.contain),
                 _fitDemo(context, 'cover', BoxFit.cover),
                 _fitDemo(context, 'fill', BoxFit.fill),
+                // object-position: the fitted content anchored to the top-start.
+                _fitDemo(
+                  context,
+                  'cover · top-start',
+                  BoxFit.cover,
+                  alignment: AlignmentDirectional.topStart,
+                ),
               ],
             ),
           ],
@@ -173,17 +180,19 @@ class EffectsSection extends StatelessWidget {
     return DemoTile(label: label, child: filter(box));
   }
 
-  Widget _fitDemo(BuildContext context, String label, BoxFit fit) {
+  Widget _fitDemo(BuildContext context, String label, BoxFit fit, {AlignmentGeometry? alignment}) {
     final t = context.fw;
     return DemoTile(
       label: label,
-      // A wide label scaled to a fixed box via object-fit.
+      // A wide label scaled to a fixed box via object-fit (+ optional position).
       child: SizedBox(
         width: 80,
         height: 40,
-        child: Text(
-          'FIT',
-        ).tw.fit(fit).bg(t.colors.muted).text(t.colors.mutedForeground).weight(FwFontWeight.black),
+        child: Text('FIT').tw
+            .fit(fit, alignment: alignment)
+            .bg(t.colors.muted)
+            .text(t.colors.mutedForeground)
+            .weight(FwFontWeight.black),
       ),
     );
   }

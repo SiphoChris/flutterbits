@@ -73,6 +73,8 @@ dropped.
   [pub.dev package page](https://pub.dev/documentation/flutterwindcss/latest/).
 - **A runnable example** is in [`example/`](example/) (and a larger showcase in
   [`apps/example`](https://github.com/SiphoChris/flutterbits/tree/main/apps/example)).
+- **Building with an AI agent?** [`SKILLS.md`](SKILLS.md) is a compact guide (rules, patterns,
+  gotchas) that helps coding agents use the `.tw` API and tokens correctly.
 
 ## License
 

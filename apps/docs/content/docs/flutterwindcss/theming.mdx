@@ -80,6 +80,35 @@ FwAnimatedTheme(tokens: isDark ? darkTheme : lightTheme, child: const HomeScreen
   carries all 32 roles. That's why a pasted theme round-trips with nothing dropped.
 </Callout>
 
+## You're not forced into a theme
+
+Semantic tokens (`context.fw.colors.primary`) are *opt-in*. The `.tw` utilities that take **raw
+values** need no theme at all — so you can use flutterwindcss with the raw [palette](/docs/flutterwindcss/colors)
+and your own [fonts](/docs/flutterwindcss/fonts), no `FwTheme` and no generated `theme.dart`:
+
+```dart
+// No FwTheme anywhere — raw palette + a literal font.
+Text('Hi').tw
+    .px(4).py(2)
+    .bg(FwPalette.blue.shade600)
+    .text(FwPalette.slate.shade50)
+    .rounded(8)
+    .font('Inter');
+```
+
+- **Raw palette colours, spacing, sizing, radius, borders, effects, transforms** — all take literal
+  values; no theme required.
+- **`font('Family')`** sets a literal font family; no theme required (see [Fonts](/docs/flutterwindcss/fonts)).
+- The **theme-role sugars** (`fontSans`/`fontSerif`/`fontMono`, `roundedMd`/`shadowMd`) *prefer* a
+  theme, but **fall back to the stock `FwTokens.light` defaults** when none is present — they never
+  force a theme on you.
+- Reading tokens where a theme is *optional*? Use **`context.fwOrNull`** (returns `null` instead of
+  throwing). Only `context.fw` (and semantic tokens) require a theme.
+
+This is also why the engine works under a `MaterialApp` — provide tokens through an
+[`FwThemeExtension`](/docs/flutterwindcss/installation#inside-a-materialapp-interop) and the same
+components resolve through it; bring your own fonts via the Material `textTheme`.
+
 ## Next steps
 
 <Cards>

@@ -9,6 +9,10 @@
   remains a literal override. See the new **Fonts** docs page.
 - **New utilities:** `overline` (Tailwind `overline` text-decoration), `fit(BoxFit, {alignment})`
   (Tailwind `object-{position}`), and `FwScroll(trackColor:)` (the scrollbar track colour).
+- **No theme? No problem.** The theme-role sugars (`fontSans`/`roundedMd`/`shadowMd`) now fall back to
+  the stock `FwTokens.light` defaults when no theme is present instead of throwing — so the raw
+  palette + your own fonts work with no `FwTheme` at all. New `context.fwOrNull` reads tokens without
+  throwing when a theme is optional. Added a `SKILLS.md` guide for agentic development.
 
 ## 1.0.2
 

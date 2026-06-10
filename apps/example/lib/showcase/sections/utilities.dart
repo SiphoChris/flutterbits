@@ -126,7 +126,9 @@ class UtilitiesSection extends StatelessWidget {
             SizedBox(
               height: 120,
               child: FwScroll(
-                thumbColor: t.colors.border,
+                thumbColor: t.colors.mutedForeground,
+                trackColor: t.colors.muted, // Tailwind scrollbar-color (track)
+                alwaysShowScrollbar: true,
                 child: FwColumn(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   gap: 2,

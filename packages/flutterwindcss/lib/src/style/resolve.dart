@@ -54,9 +54,9 @@ extension FwStyleTokenResolve on FwStyle {
   }
 }
 
-/// Whether [style] (or any nested layer) still carries an *unresolved* radius or
-/// shadow token step — used by [FwStyleResolve.resolve]'s debug guard to catch a
-/// caller that skipped [FwStyleTokenResolve.resolveTokenSteps].
+/// Whether [style] (or any nested layer) still carries an *unresolved* radius,
+/// shadow, or font token step — used by [FwStyleResolve.resolve]'s debug guard to
+/// catch a caller that skipped [FwStyleTokenResolve.resolveTokenSteps].
 ///
 /// [FwStyleTokenResolve.resolveTokenSteps] populates `borderRadius`/`boxShadow`
 /// from the step but cannot null the step field (copyWith treats null as "keep"),
@@ -106,16 +106,16 @@ extension FwStyleResolve on FwStyle {
     Map<String?, Set<WidgetState>>? groupStates,
     Map<String?, Set<WidgetState>>? peerStates,
   }) {
-    // Guard the resolution contract: named-scale sugar (`roundedMd`/`shadowSm`)
-    // is stored as a token *step* that must be resolved against the theme by
-    // resolveTokenSteps() BEFORE resolve() runs. ResolvedStyle carries no step,
-    // and the layer overlay drops steps, so calling resolve() on a style that
+    // Guard the resolution contract: named-scale sugar (`roundedMd`/`shadowSm`/
+    // `fontSans`) is stored as a token *step* that must be resolved against the
+    // theme by resolveTokenSteps() BEFORE resolve() runs. ResolvedStyle carries no
+    // step, and the layer overlay drops steps, so calling resolve() on a style that
     // still holds steps would silently lose them. FwStyled does this for you;
     // any direct caller must too (§12 "guard what the dev shouldn't do").
     assert(
       !_hasUnresolvedTokenSteps(this),
-      'flutterwindcss: resolve() was called on a style that still has unresolved '
-      'radiusStep/shadowStep (roundedMd/shadowSm sugar). Call '
+      'flutterwindcss: resolve() was called on a style that still has an unresolved '
+      'radiusStep/shadowStep/fontFamilyStep (roundedMd/shadowSm/fontSans sugar). Call '
       'style.resolveTokenSteps(tokens) first — FwStyled does this automatically.',
     );
 
