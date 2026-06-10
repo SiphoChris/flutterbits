@@ -70,4 +70,11 @@ void main() {
     await t.pump();
     expect(taps, 1, reason: 'Space while focused should fire onPressed exactly once');
   });
+
+  testWidgets('renders a single styled box (FwStyled) per variant', (t) async {
+    for (final v in ButtonVariant.values) {
+      await t.pumpWidget(_host(Button(variant: v, onPressed: () {}, child: const Text('x'))));
+      expect(find.byType(FwStyled), findsOneWidget, reason: 'variant $v');
+    }
+  });
 }

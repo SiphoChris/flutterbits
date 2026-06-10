@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutterwindcss/flutterwindcss.dart';
 
 /// shadcn's button variants. `primary` is shadcn's `default` (`default` is a
 /// Dart reserved word, so it cannot be an enum constant).
@@ -13,8 +14,8 @@ enum ButtonSize { sm, md, lg, icon }
 ///
 /// Sources its own interaction states (hover/focus/pressed/disabled) via a
 /// [FocusableActionDetector] and wires keyboard activation (Enter / Space) to
-/// [ActivateIntent] → [onPressed].  Visual consumption of the state booleans
-/// ([_hovered], [_focused], [_pressed]) is wired in Task 4.
+/// [ActivateIntent] → [onPressed].  Visual styling of all variant/size/state
+/// combinations is applied through a single `.tw` chain in [_ButtonState._styled].
 class Button extends StatefulWidget {
   const Button({
     super.key,
@@ -51,20 +52,92 @@ class Button extends StatefulWidget {
 
 class _ButtonState extends State<Button> {
   // Interaction-state booleans — set by FocusableActionDetector callbacks and
-  // GestureDetector tap events.  Read by Task 4 to drive visual styling.
+  // GestureDetector tap events.  Read by [_styled] to drive visual styling.
   bool _hovered = false;
   bool _focused = false;
   bool _pressed = false;
 
-  /// Pass-through that reads the three state booleans so the analyzer sees them
-  /// as used.  Task 4 replaces this body with `.tw` visual styling.
-  Widget _stateProxy(Widget child) {
-    // All three are read here; the conditional evaluates to `child` in all
-    // branches today — Task 4 will branch on them for real style differences.
-    if (_pressed || _hovered || _focused) {
-      return child;
+  /// The single styled box: resolves (variant, size, states) → one `.tw` chain.
+  Widget _styled(BuildContext context) {
+    final c = context.fw.colors;
+    final enabled = widget.enabled;
+
+    // Base treatment per variant (transparent fill uses the one allowed literal,
+    // Color(0x00000000), per AGENTS.md §3.1).
+    const transparent = Color(0x00000000);
+    late Color baseBg;
+    late Color baseFg;
+    Color? borderColor;
+    var isLink = false;
+    switch (widget.variant) {
+      case ButtonVariant.primary:
+        baseBg = c.primary;
+        baseFg = c.primaryForeground;
+      case ButtonVariant.secondary:
+        baseBg = c.secondary;
+        baseFg = c.secondaryForeground;
+      case ButtonVariant.destructive:
+        baseBg = c.destructive;
+        baseFg = c.destructiveForeground;
+      case ButtonVariant.outline:
+        baseBg = transparent;
+        baseFg = c.foreground;
+        borderColor = c.border;
+      case ButtonVariant.ghost:
+        baseBg = transparent;
+        baseFg = c.foreground;
+      case ButtonVariant.link:
+        baseBg = transparent;
+        baseFg = c.primary;
+        isLink = true;
     }
-    return child;
+
+    // Hover/press treatment (shadcn: filled → /90 (secondary /80); outline/ghost
+    // → accent; link → underline).
+    var bg = baseBg;
+    var fg = baseFg;
+    final interacting = enabled && (_hovered || _pressed);
+    if (interacting) {
+      switch (widget.variant) {
+        case ButtonVariant.primary:
+        case ButtonVariant.destructive:
+          bg = baseBg.withValues(alpha: 0.9);
+        case ButtonVariant.secondary:
+          bg = baseBg.withValues(alpha: 0.8);
+        case ButtonVariant.outline:
+        case ButtonVariant.ghost:
+          bg = c.accent;
+          fg = c.accentForeground;
+        case ButtonVariant.link:
+          break; // underline handled below
+      }
+    }
+    final underlineNow = isLink && enabled && (_hovered || _focused);
+
+    // Content: shrink-wrap width, center vertically within the fixed height.
+    final inner =
+        widget.size == ButtonSize.icon
+            ? Center(child: widget.child)
+            : Center(widthFactor: 1.0, child: widget.child);
+
+    var box =
+        inner.tw.bg(bg).text(fg).textSize(FwFontSize.sm.px).weight(FwFontWeight.medium).roundedMd;
+
+    box = switch (widget.size) {
+      ButtonSize.sm => box.h(9).px(3),
+      ButtonSize.md => box.h(10).px(4),
+      ButtonSize.lg => box.h(11).px(8),
+      ButtonSize.icon => box.size(10),
+    };
+
+    if (borderColor != null) box = box.border(1, color: borderColor);
+    if (underlineNow) box = box.underline;
+    if (_focused && enabled) {
+      box = box.ring(2, color: c.ring, offset: 2, offsetColor: c.background);
+    }
+    if (!enabled) box = box.opacity(0.5);
+
+    return box;
   }
 
   void _set(VoidCallback f) {
@@ -104,9 +177,7 @@ class _ButtonState extends State<Button> {
           onTapDown: enabled ? (_) => _set(() => _pressed = true) : null,
           onTapUp: enabled ? (_) => _set(() => _pressed = false) : null,
           onTapCancel: enabled ? () => _set(() => _pressed = false) : null,
-          // TODO(task4): replace this pass-through with .tw visual styling
-          // driven by _hovered, _focused, _pressed.
-          child: _stateProxy(widget.child),
+          child: _styled(context),
         ),
       ),
     );
