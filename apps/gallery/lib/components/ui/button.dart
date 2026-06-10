@@ -44,11 +44,16 @@ class Button extends StatefulWidget {
 class _ButtonState extends State<Button> {
   @override
   Widget build(BuildContext context) {
+    final enabled = widget.enabled;
     return Semantics(
       button: true,
-      enabled: widget.enabled,
+      enabled: enabled,
       label: widget.semanticLabel,
-      child: widget.child,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onPressed, // null when disabled → inert
+        child: widget.child,
+      ),
     );
   }
 }
