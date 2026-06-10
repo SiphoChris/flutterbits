@@ -117,8 +117,93 @@ covered) and **No-analog** (genuinely impossible — §11a bar: no faithful Flut
 | `bg-attachment: fixed` | **No-analog** | A viewport-fixed background needs scroll-coupled paint Flutter does not model; `local`/`scroll` are the default behavior. | — |
 | `line-clamp-none` (reset inside a layer) | **Known limitation (general)** | One instance of a general rule, not a special case: the whole-field overlay has no "unset" sentinel, so a responsive/state/group layer can *override* but never *clear* a field back to unset. Fields with an inverse setter (`notItalic`/`visible`/`wrap`/`borderSolid`/`shadowNone`/`roundedNone`) can be re-set in a layer; the rest (`maxLines`/`lineClamp`, `aspectRatio`, `fit`, `blendMode`, color filters, `mouseCursor`, transforms, fractional align) are override-only in a layer — set the desired value at the base instead. Documented on `FwStyle`. | — |
 
-This list plus the headline buckets is now **exhaustive against the v4 catalog**: every Tailwind
-v4 utility is either shipped, here with a verdict + mechanism, delegated, or a stated no-analog.
+This list plus the headline buckets covers the v4 **utility** catalog. A second adversarial pass
+(below) extended the cross-check to **variants** and a set of utility micro-gaps the first pass had
+not literally enumerated — so the "nothing silently dropped" guarantee now holds for the *whole* v4
+surface, variants included.
+
+## Second exhaustive cross-check (2026-06-10 — utilities *and* variants)
+
+A five-front reconciliation took the authoritative v4 surface from tailwindcss.com and matched **every
+utility and every variant** against the code + the buckets above. It found **no broken claim** (nothing
+the engine advertises is missing) but surfaced items that were feasible/delegated/impossible yet **not
+literally bucketed anywhere** — concentrated in (1) the variant tail and (2) low-level transition
+utilities. All are recorded here with a verdict + mechanism; none touches a §3 hard rule, none is a
+daily-driver miss, and the first pass's verdicts are unchanged.
+
+### Utility micro-gaps (newly enumerated)
+
+| Utility (v4) | Verdict | Flutter mechanism / reason | Size |
+|---|---|---|---|
+| `object-position` (`object-top`/`-left`/…) | **By-demand** | `fit()` maps to `FittedBox` but hard-codes center; add an optional directional `alignment` param passed to `FittedBox.alignment`. | S |
+| `overline` (text-decoration-line) | **By-demand (trivial)** | `TextDecoration.overline` exists; the `underline`/`lineThrough` getters silently omit the third line — add an `overline` getter mirroring them via `_addDecoration`. | S |
+| `underline-offset-*` | **No-analog** | Flutter `TextStyle` exposes `decorationThickness` but **no** underline-offset; only achievable via a custom text painter. (The first pass listed decoration color/style/thickness as By-demand but omitted offset, which is actually *less* feasible.) | — / M (painter) |
+| `decoration-{color}` / `-{style}` / `-{thickness}` | **By-demand** | `TextStyle.decorationColor`/`decorationStyle`/`decorationThickness` (already noted L59-60; re-confirmed). | S |
+| `font-stretch-*` | **By-demand** | Variable fonts only: `FontVariation('wdth', pct)` via `TextStyle.fontVariations`. Static fonts have no width axis. | S |
+| `font-smoothing` (`antialiased`/`subpixel`) | **No-analog** | Flutter has no per-`TextStyle` smoothing switch (a `-webkit-`/`-moz-` rendering hint, not a portable style). | — |
+| `whitespace-pre`/`-pre-line`/`-pre-wrap`/`break-spaces` | **By-demand** | Only `whitespace-normal`(`wrap`)/`-nowrap`(`nowrap`) are built; the `pre*` family needs explicit `softWrap`/`Text` whitespace handling. (Coverage's generic "whitespace ✅" overstated — corrected.) | S–M |
+| `hyphens-none` / `-manual` | **Built/Free** | `manual` works via the soft-hyphen character; `none` is the default (no auto breaker). Only `hyphens-auto` is No-analog (already listed). | — |
+| `*-min` / `*-max` / `*-fit` (min/max/fit-content) | **By-demand** | Intrinsic sizing → `IntrinsicWidth`/`IntrinsicHeight` / `mainAxisSize.min` (layout-widget territory, not a px value). | S–M |
+| `w-screen`/`h-screen`, `*-dvw/dvh/lvh/svh`, container scale `3xs..7xl`, `*-lh` | **Free/N-A** | Arbitrary-value-first: pass the resolved px (viewport units via `MediaQuery`; `lh` = leading×fontSize). No named keyword needed. | — |
+| `m-auto` / `mx-auto` (auto-margin centering) | **Delegate → layout** | Centering/pushing is `Align`/`Spacer`/`mainAxisAlignment` on the layout widgets, not a single-box setter (like `space-*`→`gap`). | — |
+| logical **block-axis** spacing `pbs/pbe`, `mbs/mbe` | **Free/N-A** | Single (horizontal) writing mode ⇒ block-start/end ≡ `pt`/`pb`/`mt`/`mb`, already built. (Inline `ps/pe/ms/me` are the directional ones that matter.) | — |
+| `bg-repeat-space` / `bg-repeat-round` | **By-demand** | `ImageRepeat` has only `{repeat,repeatX,repeatY,noRepeat}`; `space`/`round` need a custom `DecorationImagePainter` computing whole-tile counts + gaps / rescale. | M |
+| `border-double` / `divide-double` | **By-demand** | `BorderStyle` is `{none,solid}`; add a `double` case to `FwDashedBorderPainter`/`FwBorderStyle` painting two split strokes. | S–M |
+| gradient interpolation modifiers (`/oklch`, `/longer`…) | **Free/N-A** | Flutter `Gradient` interpolates in sRGB only; no per-gradient colorspace hook (cosmetic — affects mid-tones). | — |
+| `mask-type` (alpha/luminance) | **By-demand (fold into `mask-*`)** | The blanket `mask-*` (ShaderMask) entry targets CSS `mask-image`; `mask-type` is the SVG-`<mask>` alpha-vs-luminance selector — express via `ShaderMask` + optional luminance matrix. | M |
+| `drop-shadow-*` **filter** (alpha-following) | **By-demand** | Already listed L107 (`ImageFiltered` blur+offset); re-confirmed distinct from box `shadow`. | M |
+| backdrop **color** filters (`backdrop-brightness`…`-opacity`) | **By-demand** | Already listed (L57/215); the family note covers all eight. | M |
+| **transition** utilities — `transition`/`-property`, `duration-*`, `ease-*`, `delay-*`, `transition-discrete` | **Delegate → `flutter_animate`** | The element-animation delegation (§11b) covers these, but only `animate-*` was named. The low-level sub-property utilities map to `flutter_animate`'s `duration`/`curve`/`delay` (and `Curves.*` for `ease-*`); enumerated here so they're not silently missing. | — |
+| `transform-style` (`transform-3d`/`preserve-3d`, `transform-flat`) | **By-demand** | Nested 3D composition needs a custom multi-child render object propagating the parent `Matrix4`+perspective into children. The natural completion of the shipped `rotateX/Y`+`perspective`. | L |
+| `backface-visibility` (`backface-hidden`) | **By-demand** | After a 3D rotate, cull paint when the transformed normal faces away (sign of z) — flip-card staple. | S–M |
+| `perspective-origin-*` | **By-demand** | Offset the vanishing point: translate around the `Matrix4.setEntry(3,2,…)` perspective entry; one directional setter. | S |
+| `scale-z-*` / `scale-3d` / `translate-z-*` | **By-demand** | Add z entries to the transform `Matrix4`; only meaningful under perspective (like `rotateX/Y`). Lowest-frequency 3D piece. | S |
+| `transform-gpu` / `transform-cpu` | **Free/N-A** | Flutter always composites transforms on the GPU; these are no-op hints. | — |
+| `columns` fragmentation `break-before/after/inside` | **No-analog (screen) / By-demand (in `columns`)** | Flutter models no paged/fragmentation media; within a future multi-column render object, `break-inside-avoid` is a feasible per-child hint. | M |
+| `grid-flow-col` (column auto-flow) | **By-demand** | A column-major placement pass in `RenderFwGrid._place` (row-flow + `dense` are built; column-flow is documented on `FwGrid` as a limitation — echoed here). | M |
+| `position: fixed` | **By-demand** | Viewport-pinned via `Overlay`/`OverlayEntry` or a top-level `FwStack` (companion to the `sticky` entry). | M |
+| `color-scheme` | **Free/N-A** | The light/dark `FwTokens` selection the host drives **is** color-scheme; no separate utility needed. | — |
+| `scroll-snap-stop` (`snap-always`/`-normal`) | **By-demand** | A bool on `_FwSnapPhysics` clamping the fling target to ±1 page. | S |
+| `scroll-snap-type` (`snap-mandatory`/`-proximity`/`-none`/axis) | **By-demand** | Axis = `FwScroll.axis`; `snapExtent` already implies mandatory-on-axis; proximity = a threshold in `createBallisticSimulation`; `none` = `snapExtent: null`. | S–M |
+| `scrollbar-color` | **By-demand (half-built)** | `FwScroll.thumbColor` already wired; expose `RawScrollbar.trackColor` too. | S |
+| `scrollbar-gutter` | **By-demand** | Reserve scrollbar-thickness padding (already named L58). | S |
+| `scroll-behavior` (`scroll-smooth`) | **By-demand** | Already listed L111 (`ScrollController.animateTo`). | S |
+| SVG `fill` / `stroke` / **`stroke-width`** | **Delegate / By-demand** | `fill`/`stroke` are icon theming (`Icon(color:)` / `lucide_icons_flutter`, a sanctioned dep) → flutterbits; `stroke-width` (`Paint.strokeWidth` in `CustomPaint`/`flutter_svg`) was unnamed — now recorded. | S |
+| `forced-color-adjust` | **No-analog / Free** | Flutter has no forced-colors/system-palette-override mode to opt out of (honors `MediaQuery.highContrast` only). | — |
+| `sr-only` / `not-sr-only` | **Delegate → flutterbits** (already L52) | Mechanism is engine-trivial (`Semantics(label:…, child: SizedBox.shrink())`); kept with components since it pairs with accessible component markup. | S |
+| `appearance`/`accent-color`/`caret-color`/`field-sizing`/`resize` | **Delegate → flutterbits** (already L52) | Form-control concerns. | — |
+
+### Variants (the under-documented surface)
+
+The first pass covered the **utilities** but treated variants as "done" because the daily ones are. Full
+reconciliation of the v4 variant system:
+
+**Built / first-class:** `hover` `focus` `active`(pressed) `disabled` + `whenState(WidgetState,…)` for any
+component-injected state; `sm`–`2xl` + container `@sm`–`@2xl`; `group-*`/`peer-*` (hover/focus/pressed/
+disabled, **named**); stacking (`md:hover:` ⇒ nested layers); arbitrary breakpoints (`min-[…]`, native);
+arbitrary values (`[…]`, native); RTL/LTR (directional-by-default, free). `:first/:last/:odd/:even/:nth`
+resolve at the **list-building site** (you own child order).
+
+| Variant(s) (v4) | Verdict | Flutter mechanism / reason |
+|---|---|---|
+| component-state pseudo-classes: `checked` `required` `valid`/`invalid` `open` `target` `read-only` `placeholder-shown` `indeterminate` `enabled` `default` `optional` `in-range`… | **Built (via `whenState`)** | These are component-owned booleans → inject the matching `WidgetState` and key a layer with `whenState`. Now documented as the path (was implicit). |
+| `focus-within`, `focus-visible` | **By-demand** | `focus-within` = a wrapper `Focus(onFocusChange)` feeding `groupFocus`; `focus-visible` = `FocusManager.highlightMode == traditional`. |
+| `has-*`, `group-has-*`, `peer-has-*`, `in-*` | **By-demand** | The inverse of `group-*`: a descendant→ancestor `Notification` channel mirroring `FwGroup`. |
+| `not-*` | **By-demand** | Invert a matched condition in the resolver. |
+| `aria-*`, `data-*`, `supports-*` | **By-demand** | Bridge to `whenState` (arbitrary boolean states); `supports-*` ≈ a capability check at build. |
+| media variants: `motion-safe`/`motion-reduce`, `portrait`/`landscape`, `contrast-more`/`-less`, `pointer-*`/`any-pointer-*`, `inverted-colors` | **By-demand** | A resolver `FwMediaCondition` reading `MediaQuery` (`disableAnimations`, `orientation`, `highContrast`, `navigationMode`/gesture settings). |
+| `dark` (as a per-utility variant) | **Free/N-A (by design)** | Dark mode is a whole-theme swap (`FwAnimatedTheme` + dark `FwTokens`), not a per-box `dark:` layer — the semantic-token model reskins everything from one switch. Stated as a design difference. |
+| pseudo-elements `placeholder` `marker` `selection` `first-line` `first-letter` `file` `backdrop` `details-content` | **No-analog / component** | Same class as `::before/::after` (§11a): no implicit content/pseudo-element slots; faithful idiom is explicit child composition (e.g. a placeholder is a real widget). |
+| `*` (direct children), `**` (all descendants), arbitrary `[&:…]` selectors | **No-analog (§11a)** | A bounded "style direct children" helper is feasible at a layout widget, but the open-ended selector/cascade model is the impossible set — there is no DOM/selector engine. |
+| `print` | **No-analog** | Flutter has no print-stylesheet/paged-media model. |
+| `starting` (`@starting-style`) | **Delegate → `flutter_animate`** | Enter-transition concern → the animation layer (§11b). |
+| `!important` modifier | **Free/N-A** | The typed accumulator has no specificity war; last-wins is explicit and ordered. |
+
+**Net of the second pass:** every v4 utility *and* variant now has a verdict. The engine delivers the
+daily-driver utilities **and** the daily-driver variants; the remainder is long-tail breadth — feasible
+(by-demand, mostly **S**), delegated (animation, forms, icons), or a small honest no-analog set
+(selector/cascade model, pseudo-elements, print, font-smoothing, underline-offset, `bg-attachment:
+fixed`, balanced/pretty text-wrap, auto-hyphens, `text-transform` as a render-style).
 
 ## Two things that are already "free"
 

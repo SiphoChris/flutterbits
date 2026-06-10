@@ -31,9 +31,13 @@ needs `w-[37px]`; here you just write `.w(37)`), and `bgGradient`/`shadow` are *
 
 Each has a known Flutter mechanism and is scheduled when a real need appears — none is a daily-driver
 and none is a wall: `inset-shadow`/`inset-ring`, `mask-*`, backdrop *color* filters, `columns`,
-negative margins, `scroll-margin`/`scroll-padding`/`overscroll-behavior`, `order`, `bg-clip-text`
-(gradient text), `background-blend-mode`, the `drop-shadow` *filter*, `sticky`, `text-indent`,
-`vertical-align`, `word-break`.
+negative margins, `scroll-margin`/`scroll-padding`/`overscroll-behavior`, `scroll-snap-stop`/`-type`,
+`scrollbar-color`/`-gutter`, `order`, `bg-clip-text` (gradient text), `background-blend-mode`,
+`bg-repeat-space`/`-round`, the `drop-shadow` *filter*, `sticky`, `position: fixed`, `object-position`,
+`overline`, `font-stretch`, `border-double`, `text-indent`, `vertical-align`, `word-break`, and the
+**3D-transform completion set** (`backface-visibility`, `perspective-origin`, `transform-style`/
+`preserve-3d`, `scale-z`). The full item-by-item enumeration (with Flutter mechanisms) lives in the
+engine's [coverage & roadmap spec](https://github.com/SiphoChris/flutterbits/blob/main/docs/superpowers/specs/2026-06-07-flutterwindcss-coverage-and-roadmap.md).
 
 ### ↪️ Delegated by design
 
@@ -41,14 +45,41 @@ Not the engine's job:
 
 | Want | Use instead |
 | --- | --- |
-| Element animation (`transition`, `animate-*`, enter/exit) | [`flutter_animate`](https://pub.dev/packages/flutter_animate) — a mature, Material-free chaining API |
-| `prose`, forms, table-layout, SVG fill/stroke, `user-select`, `accent-color`, `resize`… | the **flutterbits** component layer |
+| Element animation — `transition`/`duration`/`ease`/`delay`, `animate-spin`/`pulse`/`bounce`, enter/exit | [`flutter_animate`](https://pub.dev/packages/flutter_animate) — a mature, Material-free chaining API (`Curves.*` ↔ CSS easings) |
+| `prose`, forms, table-layout, SVG `fill`/`stroke`/`stroke-width`, `user-select`, `accent-color`, `caret-color`, `resize`, `sr-only`… | the **flutterbits** component layer |
 
 ### 🚫 Genuinely impossible in Flutter
 
-No faithful analog exists (a small, honest set): the true CSS **cascade**, pseudo-elements
-`::before`/`::after` + `content`, `float`/`clear`, `touch-action`, `text-wrap: balance/pretty`, `auto`
-hyphenation, `bg-attachment: fixed`, and `text-transform` as a render-time style.
+No faithful analog exists (a small, honest set): the true CSS **cascade** (and the open-ended
+child/descendant selectors `*`/`**`/`[&:…]`), pseudo-elements `::before`/`::after` + `content` (and
+`placeholder`/`marker`/`selection`/`first-line`…), `float`/`clear`, `touch-action`,
+`text-wrap: balance/pretty`, `auto` hyphenation, `bg-attachment: fixed`, `font-smoothing`,
+`underline-offset`, `print`, and `text-transform` as a render-time style.
+
+## Variants
+
+The variant system mirrors Tailwind's: you declare *when* a rule applies and the engine resolves it
+lazily. The **daily-driver variants are first-class**:
+
+<Cards>
+  <Card title="States">hover · focus · pressed (active) · disabled — Material-free sourcing</Card>
+  <Card title="Responsive">sm…2xl viewport + @sm…@2xl container queries (two distinct axes)</Card>
+  <Card title="Relations">group-* and peer-* (hover/focus/pressed/disabled), incl. named</Card>
+  <Card title="Composition">stacking (md:hover:), arbitrary values + breakpoints, RTL/LTR free</Card>
+</Cards>
+
+For states your *component* owns — `checked`, `required`, `open`, `valid`, a custom toggle — use
+[`whenState(WidgetState.…, …)`](/docs/flutterwindcss/states): it's the faithful path for any
+injected boolean state. Structural index variants (`first`/`last`/`odd`/`nth`) resolve at the
+list-building site, where you own child order.
+
+**By demand** (feasible, not yet built): `focus-within`/`focus-visible`, `has-*`/`not-*`/`in-*`,
+`aria-*`/`data-*`/`supports-*` (bridged to `whenState`), and the media variants `motion-safe`/`-reduce`,
+`portrait`/`landscape`, `contrast-more`/`-less` (a `MediaQuery`-backed resolver condition).
+
+**By design**, `dark` is **theme-level**, not a per-utility `dark:` variant — a whole-theme swap
+(`FwAnimatedTheme` + dark tokens) reskins everything from one switch, which is the semantic-token
+model's whole point.
 
 ## vs shadcn/ui
 
