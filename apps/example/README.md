@@ -1,17 +1,20 @@
-# flutterbits_example
+# flutterwindcss showcase
 
-A new Flutter project.
+The engine showcase for [`flutterwindcss`](https://pub.dev/packages/flutterwindcss) — a Material-free
+Flutter app that exercises **every** capability of the styling engine: tokens, the full `.tw` utility
+surface, the layout widgets (flex/grid/stack/scroll), interaction states, group/peer, responsive +
+container variants, transforms, filters, and animated theming.
 
-## Getting Started
+It runs on the **pure path** (`WidgetsApp` + `FwAnimatedTheme`) and includes a live **Host: Pure ⇄
+Material** toggle that re-resolves the whole showcase through the `FwThemeExtension` interop bridge,
+plus light/dark and LTR/RTL switches.
 
-This project is a starting point for a Flutter application.
+## Run
 
-A few resources to get you started if this is your first Flutter project:
+```sh
+flutter run        # any device, e.g. -d chrome / -d windows / -d macos
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+For a minimal copy-paste quickstart instead, see the package's own
+[`example/`](../../packages/flutterwindcss/example). Full docs:
+[flutterbits.vercel.app/docs/flutterwindcss](https://flutterbits.vercel.app/docs/flutterwindcss).

@@ -1,0 +1,77 @@
+---
+title: Coverage — Tailwind & shadcn
+description: What flutterwindcss covers versus Tailwind CSS and shadcn/ui — what's built, what's delegated, and the small set that's genuinely impossible in Flutter.
+---
+
+flutterwindcss re-creates Tailwind's *styling vocabulary* and shadcn's *token system* on Flutter's
+widgets layer. It deliberately doesn't clone every utility — it builds **the things that matter and
+aren't a hard add**, delegates a few to existing solutions, and is honest about the tiny set Flutter
+genuinely can't express. Here's exactly where it stands.
+
+## vs Tailwind CSS
+
+**~96% of the high-traffic, daily-use utilities are built** — verified against the full Tailwind v4
+catalog. Two properties make effective coverage even higher: **arbitrary values are native** (Tailwind
+needs `w-[37px]`; here you just write `.w(37)`), and `bgGradient`/`shadow` are **pass-through** (any
+`Gradient` or `List<BoxShadow>` works, so radial/conic gradients and arbitrary shadows already do).
+
+### ✅ Built — everything you reach for daily
+
+<Cards>
+  <Card title="Spacing & sizing">padding/margin (directional), w/h/min/max, fractional, aspect, square</Card>
+  <Card title="Color & backgrounds">bg, text color, gradients + direction sugar, bg-image</Card>
+  <Card title="Borders & radius">per-edge width/color, dashed/dotted, per-corner radius, named sugar</Card>
+  <Card title="Typography">size/weight/leading/tracking/align, family, line-clamp/truncate, text-shadow</Card>
+  <Card title="Effects & filters">shadow (+sugar), ring, opacity, blur + backdrop-blur, the 7 color filters, object-fit</Card>
+  <Card title="Transforms">2D + 3D (rotate-x/y, perspective) + skew + origin, mix-blend-mode</Card>
+  <Card title="Layout">flex, real CSS-grid, stack/positioned, scroll + scroll-snap, divide</Card>
+  <Card title="Variants">responsive + container queries, hover/focus/pressed/disabled, group/peer</Card>
+</Cards>
+
+### 🟡 Not built yet — feasible, by demand
+
+Each has a known Flutter mechanism and is scheduled when a real need appears — none is a daily-driver
+and none is a wall: `inset-shadow`/`inset-ring`, `mask-*`, backdrop *color* filters, `columns`,
+negative margins, `scroll-margin`/`scroll-padding`/`overscroll-behavior`, `order`, `bg-clip-text`
+(gradient text), `background-blend-mode`, the `drop-shadow` *filter*, `sticky`, `text-indent`,
+`vertical-align`, `word-break`.
+
+### ↪️ Delegated by design
+
+Not the engine's job:
+
+| Want | Use instead |
+| --- | --- |
+| Element animation (`transition`, `animate-*`, enter/exit) | [`flutter_animate`](https://pub.dev/packages/flutter_animate) — a mature, Material-free chaining API |
+| `prose`, forms, table-layout, SVG fill/stroke, `user-select`, `accent-color`, `resize`… | the **flutterbits** component layer |
+
+### 🚫 Genuinely impossible in Flutter
+
+No faithful analog exists (a small, honest set): the true CSS **cascade**, pseudo-elements
+`::before`/`::after` + `content`, `float`/`clear`, `touch-action`, `text-wrap: balance/pretty`, `auto`
+hyphenation, `bg-attachment: fixed`, and `text-transform` as a render-time style.
+
+## vs shadcn/ui
+
+shadcn is three layers. Here's where each lands in this project:
+
+| shadcn layer | flutterwindcss | Gap |
+| --- | --- | --- |
+| **Design tokens** (CSS variables) | **All 32** semantic tokens baked in — 19 core + `chart-1…5` + 8 `sidebar-*` | None |
+| **Theming** (semantic indirection, light/dark) | `context.fw` indirection, light/dark, `FwAnimatedTheme` crossfade — **plus theme portability**: paste any tweakcn/shadcn theme → `theme.dart` | None — this *exceeds* shadcn |
+| **Components** (button, dialog, card…) | The **flutterbits** layer (copy-paste registry + CLI) | **Not built yet** — the next track |
+
+<Callout title="The short version">
+  flutterwindcss fully covers shadcn's design-token and theming foundation — and the
+  [theme generator](/docs/flutterwindcss/theme-generator) is a trick shadcn itself doesn't have. The
+  **component library is the deliberate gap**, owned by `flutterbits` (the registry + CLI), which is
+  what's next.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Styling with .tw" href="/docs/flutterwindcss/styling" />
+  <Card title="Theme generator" href="/docs/flutterwindcss/theme-generator" />
+  <Card title="flutterbits (components)" href="/docs/flutterbits" />
+</Cards>
