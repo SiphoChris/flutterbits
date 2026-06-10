@@ -1,0 +1,30 @@
+name: flutterbits_gallery
+description: >-
+  flutterbits COMPONENT gallery — a Material-free Flutter app showcasing the
+  copy-paste components, and the golden-test + compile target for the registry.
+publish_to: none
+version: 1.0.0+1
+
+# Joins the repo's pub workspace (root pubspec.yaml `workspace:`).
+resolution: workspace
+
+environment:
+  # Match the toolchain floor (AGENTS.md §2): Flutter 3.29 / Dart 3.7.
+  sdk: '>=3.7.0 <4.0.0'
+  flutter: '>=3.29.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # The styling engine every component styles through.
+  flutterwindcss:
+    path: ../../packages/flutterwindcss
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  # Material-free: components run on the pure path (WidgetsApp + FwTheme).
+  uses-material-design: false
