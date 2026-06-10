@@ -132,6 +132,15 @@ The barrel is the convenience the dev wanted: import the whole component set fro
 - **Registry endpoint:** served by `apps/docs` (the Next.js site already plans a registry endpoint, AGENTS.md §2). The CLI's `registry` URL points at it. Each component also gets a docs page with source + a Copy button (shadcn-style).
 - **CLI package:** `packages/flutterbits_cli` (Dart), exposing the `flutterbits` command (AGENTS.md §2). The CLI **fetches components only** — it does **no** color math or theme generation (that lives solely in `apps/docs`; AGENTS.md §7).
 
+### 7.1 Component previews (how a dev sees it before copying) — decided 2026-06-10
+
+shadcn shows *live* previews because its components **are** the web; flutterbits components are Flutter, so a React reimplementation would show a **different artifact than the one copied** — **rejected** (it would be a fake). Both supported previews render the **real** component:
+
+- **(A) Golden images — the always-on default.** Every component already ships `variant × size × brightness` goldens (AGENTS.md §9). The docs surface those PNGs directly: **100% faithful** (the image *is* the CI-tested render), instant, SEO-friendly, zero runtime cost. This is the primary preview on every component page.
+- **(C) DartPad embeds — live + editable, where deps allow.** An official Flutter live-editor iframe runs the **real** Dart: `flutterwindcss` (pub-published) as a dependency + the component source inlined + a tiny demo `main`. Because the component is copy-paste source, the embed *is* the code you copy — preview and source are the same artifact. **Verify per component:** DartPad's pub support must cover that component's `pubDeps` (`flutterwindcss` is fine; confirm `go_router`/`flutter_animate`/`lucide_icons_flutter` before relying on a live embed — otherwise fall back to the golden image).
+
+**Deferred (not rejected):** (B) a single Flutter-Web gallery (one CanvasKit build, lazy iframe) for richer interaction — added by-demand if A+C prove insufficient.
+
 ---
 
 ## 8. Build/verify discipline (inherited)
