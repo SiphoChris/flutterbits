@@ -3,11 +3,17 @@ title: Overview
 description: flutterbits is shadcn/ui for Flutter — copy-paste components you own, styled entirely through flutterwindcss semantic tokens.
 ---
 
-**flutterbits** is *[shadcn/ui](https://ui.shadcn.com) for Flutter*: a registry of **copy-paste
-components** you own. You don't
+**flutterbits** is *[shadcn/ui](https://ui.shadcn.com) for Flutter* — a registry of **copy-paste
+components** you own — **plus an opinionated, intention-revealing app-structure layer**. You don't
 add a versioned widget library — you pull a component's source into your project and it's yours to
 read and edit. Every component is styled entirely through [flutterwindcss](/docs/flutterwindcss)
 semantic tokens, so a theme reskins them all.
+
+Beyond shadcn's primitives, flutterbits ships a **structure layer** — `Layout`, `Screen`, and typed
+routing that model how a Next.js/Expo developer thinks (layouts wrap screens, screens compose blocks,
+blocks compose primitives), so the code reads top-down as the rendered artifact instead of as
+`MaterialApp`/`Scaffold`/`Navigator` plumbing. flutterbits is **mobile-first** (portable to web and
+desktop, maturing there by demand).
 
 <Callout title="Components — coming soon">
   The styling engine ([flutterwindcss](/docs/flutterwindcss)) and the
@@ -21,10 +27,12 @@ semantic tokens, so a theme reskins them all.
 - **Copy-paste, not a dependency.** Components are source you own — fetched from a registry, written
   into your project (default `lib/components/ui/`). You can change anything; nothing is locked behind
   a package version. This is the model shadcn/ui pioneered.
-- **A CLI to fetch and update.** `flutterbits add <name>` writes a component's files into your app,
-  installs its package dependencies, and pulls in any other components it needs. `flutterbits diff
-  <name>` shows what changed upstream versus your copy — the survival mechanism for code you've since
-  edited.
+- **A CLI to scaffold, fetch, and update.** `flutterbits init` sets up your project (the styling
+  engine, a `theme.dart`, the components folder, and a generated barrel). `flutterbits add <name>`
+  writes a component's files into your app, installs its package dependencies, pulls in any other
+  components it needs, and regenerates the barrel so you import the whole set from one place
+  (`components/ui/ui.dart`). `flutterbits diff <name>` shows what changed upstream versus your copy —
+  the survival mechanism for code you've since edited (it shows, it never overwrites your edits).
 - **Styled through tokens.** Components reference only semantic roles (`primary`, `muted`, `border`)
   via `context.fw` — never raw colors. So a `theme.dart` generated from any tweakcn/shadcn theme
   reskins every component at once.
