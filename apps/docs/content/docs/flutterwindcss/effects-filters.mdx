@@ -55,6 +55,8 @@ These **compose** within a chain (CSS `filter: a() b()` → matrix multiply), re
 ## Object-fit
 
 `fit(BoxFit.cover)` maps Tailwind `object-cover` (etc.) for the child content — needs a bounded box.
+Pass `alignment:` for Tailwind `object-{position}` (e.g. `fit(BoxFit.cover, alignment:
+AlignmentDirectional.topStart)` ≈ `object-top object-left`, RTL-aware); defaults to center.
 
 ## Next
 

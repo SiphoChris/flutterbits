@@ -37,6 +37,7 @@ class FwScroll extends StatefulWidget {
     this.physics,
     this.reverse = false,
     this.thumbColor,
+    this.trackColor,
     this.snapExtent,
     this.snapAlign = FwSnapAlign.start,
     super.key,
@@ -74,6 +75,11 @@ class FwScroll extends StatefulWidget {
   /// Scrollbar thumb colour (defaults to [RawScrollbar]'s neutral grey). Pass a
   /// token such as `context.fw.colors.border` for a themed scrollbar.
   final Color? thumbColor;
+
+  /// Scrollbar **track** colour (the groove behind the thumb; Tailwind
+  /// `scrollbar-color`'s track half). When set, the track is shown; `null` (the
+  /// default) leaves the track hidden, matching `overflow-auto`.
+  final Color? trackColor;
 
   /// Item size in logical px to snap to (Tailwind scroll-snap / `snap-*`). When
   /// set, the scroll settles on multiples of this extent — the carousel pattern
@@ -128,8 +134,13 @@ class _FwScrollState extends State<FwScroll> {
     if (widget.showScrollbar) {
       content = RawScrollbar(
         controller: _controller,
-        thumbVisibility: widget.alwaysShowScrollbar,
+        // A visible track implies a visible thumb (a track behind no thumb is
+        // meaningless, and RawScrollbar asserts against it).
+        thumbVisibility: widget.alwaysShowScrollbar || widget.trackColor != null,
         thumbColor: widget.thumbColor,
+        trackColor: widget.trackColor,
+        // Show the track only when a colour is given (otherwise stay auto/hidden).
+        trackVisibility: widget.trackColor != null ? true : null,
         child: content,
       );
     }

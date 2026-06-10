@@ -24,9 +24,9 @@ typedef FwLayer = (FwCondition condition, FwStyle style);
 /// only *set or change* a field — it cannot reset one back to "unset". Fields with
 /// an explicit inverse setter can be re-set in a layer (`notItalic`, `visible`,
 /// `wrap`, `borderSolid`, `shadowNone`, `roundedNone`); fields without one
-/// (`maxLines`/`lineClamp`, `aspectRatio`, `fit`, `blendMode`, the color filters,
-/// `mouseCursor`, the transform fields, fractional `align`) can be *overridden* in
-/// a layer but not *cleared*. Set the desired base value on the base style instead.
+/// (`maxLines`/`lineClamp`, `aspectRatio`, `fit`/`fitAlignment`, `blendMode`, the
+/// color filters, `mouseCursor`, the transform fields, fractional `align`) can be
+/// *overridden* in a layer but not *cleared*. Set the desired base value instead.
 /// (This is why Tailwind's `line-clamp-none` has no layer-level equivalent — it is
 /// one instance of this general rule, not a special case.)
 @immutable
@@ -64,6 +64,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     this.textDecoration,
     this.textShadows,
     this.fontFamily,
+    this.fontFamilyStep,
     this.fontStyle,
     this.maxLineCount,
     this.textOverflow,
@@ -85,6 +86,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     this.colorMatrix,
     this.mixBlendMode,
     this.boxFit,
+    this.fitAlignment,
     this.mouseCursor,
     this.ignorePointer,
     this.isVisible,
@@ -197,8 +199,14 @@ class FwStyle with FwStyleOps<FwStyle> {
   /// `textShadow` (module 17).
   final List<Shadow>? textShadows;
 
-  /// Default font family (set by `font`/`fontSans`/`fontSerif`/`fontMono`).
+  /// Default font family as a literal name (set by `font(String)`).
   final String? fontFamily;
+
+  /// Named font role (set by `fontSans`/`fontSerif`/`fontMono`); resolved against
+  /// the theme's [FwTypographyTheme] into [fontFamily] by `FwStyled` at build, so
+  /// the utilities track the active theme's families. Mutually exclusive with a
+  /// literal [fontFamily] in the same node (asserts).
+  final FwFontStep? fontFamilyStep;
 
   /// Default font style (italic/normal; set by `italic`/`notItalic`).
   final FontStyle? fontStyle;
@@ -283,6 +291,11 @@ class FwStyle with FwStyleOps<FwStyle> {
   /// so the Tailwind-natural `fit` setter doesn't collide with the field).
   final BoxFit? boxFit;
 
+  /// Alignment of the fitted child within its box (Tailwind `object-{position}`;
+  /// set by the optional `alignment` of the `fit` setter). Defaults to center at
+  /// resolve time. Directional (RTL-aware) when an `AlignmentDirectional`.
+  final AlignmentGeometry? fitAlignment;
+
   /// Mouse cursor over the box (set by `cursor`; Tailwind `cursor-*`). Named
   /// `mouseCursor` so the `cursor` setter doesn't collide with the field.
   final MouseCursor? mouseCursor;
@@ -351,6 +364,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     TextDecoration? textDecoration,
     List<Shadow>? textShadows,
     String? fontFamily,
+    FwFontStep? fontFamilyStep,
     FontStyle? fontStyle,
     int? maxLineCount,
     TextOverflow? textOverflow,
@@ -372,6 +386,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     List<double>? colorMatrix,
     BlendMode? mixBlendMode,
     BoxFit? boxFit,
+    AlignmentGeometry? fitAlignment,
     MouseCursor? mouseCursor,
     bool? ignorePointer,
     bool? isVisible,
@@ -410,6 +425,7 @@ class FwStyle with FwStyleOps<FwStyle> {
       textDecoration: textDecoration ?? this.textDecoration,
       textShadows: textShadows ?? this.textShadows,
       fontFamily: fontFamily ?? this.fontFamily,
+      fontFamilyStep: fontFamilyStep ?? this.fontFamilyStep,
       fontStyle: fontStyle ?? this.fontStyle,
       maxLineCount: maxLineCount ?? this.maxLineCount,
       textOverflow: textOverflow ?? this.textOverflow,
@@ -431,6 +447,7 @@ class FwStyle with FwStyleOps<FwStyle> {
       colorMatrix: colorMatrix ?? this.colorMatrix,
       mixBlendMode: mixBlendMode ?? this.mixBlendMode,
       boxFit: boxFit ?? this.boxFit,
+      fitAlignment: fitAlignment ?? this.fitAlignment,
       mouseCursor: mouseCursor ?? this.mouseCursor,
       ignorePointer: ignorePointer ?? this.ignorePointer,
       isVisible: isVisible ?? this.isVisible,
@@ -477,6 +494,7 @@ class FwStyle with FwStyleOps<FwStyle> {
       textDecoration == other.textDecoration &&
       listEquals(textShadows, other.textShadows) &&
       fontFamily == other.fontFamily &&
+      fontFamilyStep == other.fontFamilyStep &&
       fontStyle == other.fontStyle &&
       maxLineCount == other.maxLineCount &&
       textOverflow == other.textOverflow &&
@@ -498,6 +516,7 @@ class FwStyle with FwStyleOps<FwStyle> {
       listEquals(colorMatrix, other.colorMatrix) &&
       mixBlendMode == other.mixBlendMode &&
       boxFit == other.boxFit &&
+      fitAlignment == other.fitAlignment &&
       mouseCursor == other.mouseCursor &&
       ignorePointer == other.ignorePointer &&
       isVisible == other.isVisible &&
@@ -537,6 +556,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     textDecoration,
     textShadows == null ? null : Object.hashAll(textShadows!),
     fontFamily,
+    fontFamilyStep,
     fontStyle,
     maxLineCount,
     textOverflow,
@@ -558,6 +578,7 @@ class FwStyle with FwStyleOps<FwStyle> {
     colorMatrix == null ? null : Object.hashAll(colorMatrix!),
     mixBlendMode,
     boxFit,
+    fitAlignment,
     mouseCursor,
     ignorePointer,
     isVisible,

@@ -32,12 +32,15 @@ needs `w-[37px]`; here you just write `.w(37)`), and `bgGradient`/`shadow` are *
 Each has a known Flutter mechanism and is scheduled when a real need appears — none is a daily-driver
 and none is a wall: `inset-shadow`/`inset-ring`, `mask-*`, backdrop *color* filters, `columns`,
 negative margins, `scroll-margin`/`scroll-padding`/`overscroll-behavior`, `scroll-snap-stop`/`-type`,
-`scrollbar-color`/`-gutter`, `order`, `bg-clip-text` (gradient text), `background-blend-mode`,
-`bg-repeat-space`/`-round`, the `drop-shadow` *filter*, `sticky`, `position: fixed`, `object-position`,
-`overline`, `font-stretch`, `border-double`, `text-indent`, `vertical-align`, `word-break`, and the
-**3D-transform completion set** (`backface-visibility`, `perspective-origin`, `transform-style`/
-`preserve-3d`, `scale-z`). The full item-by-item enumeration (with Flutter mechanisms) lives in the
-engine's [coverage & roadmap spec](https://github.com/SiphoChris/flutterbits/blob/main/docs/superpowers/specs/2026-06-07-flutterwindcss-coverage-and-roadmap.md).
+`scrollbar-gutter`, `order`, `bg-clip-text` (gradient text), `background-blend-mode`,
+`bg-repeat-space`/`-round`, the `drop-shadow` *filter*, `sticky`, `position: fixed`, `font-stretch`,
+`border-double`, `text-indent`, `vertical-align`, `word-break`, and the **3D-transform completion set**
+(`backface-visibility`, `perspective-origin`, `transform-style`/`preserve-3d`, `scale-z`). The full
+item-by-item enumeration (with Flutter mechanisms) lives in the engine's
+[coverage & roadmap spec](https://github.com/SiphoChris/flutterbits/blob/main/docs/superpowers/specs/2026-06-07-flutterwindcss-coverage-and-roadmap.md).
+
+> **Shipped in 1.0.3:** theme-resolved `font-sans`/`-serif`/`-mono` (+ `FwTheme` applies the theme
+> font), `overline`, `object-position` (`fit(..., alignment:)`), and the scrollbar `trackColor`.
 
 ### ↪️ Delegated by design
 

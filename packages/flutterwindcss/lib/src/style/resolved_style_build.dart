@@ -81,8 +81,9 @@ extension ResolvedStyleBuild on ResolvedStyle {
     }
 
     // Object-fit: scale the content to fit its content box (inside padding).
+    // `fitAlignment` (Tailwind object-{position}) positions it; default center.
     if (fit != null) {
-      current = FittedBox(fit: fit!, child: current);
+      current = FittedBox(fit: fit!, alignment: fitAlignment ?? Alignment.center, child: current);
     }
 
     // Inner padding.

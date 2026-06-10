@@ -84,12 +84,13 @@ class FwStyled extends StatelessWidget with FwStyleOps<FwStyled> {
   /// does NOT trigger this box's own live sourcing.
   bool get _needsRelationStates => _anyCondition((c) => c.isRelation);
 
-  /// Whether any style node (base or nested layer) carries a radius/shadow *step*
-  /// (module 15 named-scale sugar). The only thing that makes `FwStyled` read the
-  /// theme (`context.fw`) — gated so a non-sugar box stays theme-agnostic.
+  /// Whether any style node (base or nested layer) carries a radius/shadow/font
+  /// *step* (the theme-resolved sugar — `roundedMd`/`shadowMd`/`fontSans`). The
+  /// only thing that makes `FwStyled` read the theme (`context.fw`) — gated so a
+  /// non-sugar box stays theme-agnostic.
   bool get _needsTokenSteps {
     bool walk(FwStyle s) {
-      if (s.radiusStep != null || s.shadowStep != null) return true;
+      if (s.radiusStep != null || s.shadowStep != null || s.fontFamilyStep != null) return true;
       for (final (_, nested) in s.layers) {
         if (walk(nested)) return true;
       }

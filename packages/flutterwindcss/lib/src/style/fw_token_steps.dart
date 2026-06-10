@@ -69,3 +69,27 @@ enum FwShadowStep {
     FwShadowStep.xl2 => tokens.shadows.xl2,
   };
 }
+
+/// Named font roles for the `fontSans`/`fontSerif`/`fontMono` utilities
+/// (Tailwind `font-sans`/`font-serif`/`font-mono`). A role resolves against the
+/// active theme's [FwTypographyTheme] at build time, so `fontSans` tracks the
+/// theme's `sans` family exactly like `font(context.fw.typography.sans)` — this
+/// is what lets a pasted theme's fonts apply. (`font(String)` stays a literal
+/// family for an arbitrary face, e.g. `font-[Inter]`.)
+enum FwFontStep {
+  /// `context.fw.typography.sans`.
+  sans,
+
+  /// `context.fw.typography.serif`.
+  serif,
+
+  /// `context.fw.typography.mono`.
+  mono;
+
+  /// The family name for this role under [tokens].
+  String resolve(FwTokens tokens) => switch (this) {
+    FwFontStep.sans => tokens.typography.sans,
+    FwFontStep.serif => tokens.typography.serif,
+    FwFontStep.mono => tokens.typography.mono,
+  };
+}

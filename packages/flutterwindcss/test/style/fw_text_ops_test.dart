@@ -61,9 +61,16 @@ void main() {
   });
 
   group('decoration', () {
-    test('underline / lineThrough set their decoration', () {
+    test('underline / lineThrough / overline set their decoration', () {
       expect(const FwStyle().underline.textDecoration, TextDecoration.underline);
       expect(const FwStyle().lineThrough.textDecoration, TextDecoration.lineThrough);
+      expect(const FwStyle().overline.textDecoration, TextDecoration.overline);
+    });
+
+    test('overline combines with the other decoration lines', () {
+      final d = const FwStyle().underline.overline.textDecoration!;
+      expect(d.contains(TextDecoration.underline), isTrue);
+      expect(d.contains(TextDecoration.overline), isTrue);
     });
 
     test('underline + lineThrough combine (both present, order-independent)', () {
@@ -81,13 +88,18 @@ void main() {
   });
 
   group('text completeness (module 11)', () {
-    test('font writes fontFamily; named helpers map to FwFontFamily', () {
+    test('font(String) writes a literal family (last-wins); roles store a step', () {
+      // A literal family is stored directly and last-wins.
       expect(const FwStyle().font('Inter').fontFamily, 'Inter');
-      expect(const FwStyle().fontSans.fontFamily, FwFontFamily.sans);
-      expect(const FwStyle().fontSerif.fontFamily, FwFontFamily.serif);
-      expect(const FwStyle().fontMono.fontFamily, FwFontFamily.mono);
-      // last-wins
       expect(const FwStyle().font('A').font('B').fontFamily, 'B');
+
+      // fontSans/Serif/Mono store a theme role (resolved at build), NOT a literal
+      // family — so the active theme's families apply. fontFamily stays null until
+      // resolveTokenSteps runs (see fw_token_sugar_test for the role + resolution).
+      expect(const FwStyle().fontSans.fontFamily, isNull);
+      expect(const FwStyle().fontSans.fontFamilyStep, isNotNull);
+      expect(const FwStyle().fontSerif.fontFamily, isNull);
+      expect(const FwStyle().fontMono.fontFamily, isNull);
     });
 
     test('maxLines writes the cap (last-wins) and asserts > 0', () {

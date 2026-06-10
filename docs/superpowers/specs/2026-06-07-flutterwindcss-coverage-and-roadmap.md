@@ -135,8 +135,8 @@ daily-driver miss, and the first pass's verdicts are unchanged.
 
 | Utility (v4) | Verdict | Flutter mechanism / reason | Size |
 |---|---|---|---|
-| `object-position` (`object-top`/`-left`/…) | **By-demand** | `fit()` maps to `FittedBox` but hard-codes center; add an optional directional `alignment` param passed to `FittedBox.alignment`. | S |
-| `overline` (text-decoration-line) | **By-demand (trivial)** | `TextDecoration.overline` exists; the `underline`/`lineThrough` getters silently omit the third line — add an `overline` getter mirroring them via `_addDecoration`. | S |
+| `object-position` (`object-top`/`-left`/…) | **✅ BUILT (1.0.3)** | `fit(BoxFit, {alignment})` → `FittedBox.alignment` (directional, RTL-aware). | S |
+| `overline` (text-decoration-line) | **✅ BUILT (1.0.3)** | `overline` getter via `_addDecoration(TextDecoration.overline)`, combines with underline/line-through. | S |
 | `underline-offset-*` | **No-analog** | Flutter `TextStyle` exposes `decorationThickness` but **no** underline-offset; only achievable via a custom text painter. (The first pass listed decoration color/style/thickness as By-demand but omitted offset, which is actually *less* feasible.) | — / M (painter) |
 | `decoration-{color}` / `-{style}` / `-{thickness}` | **By-demand** | `TextStyle.decorationColor`/`decorationStyle`/`decorationThickness` (already noted L59-60; re-confirmed). | S |
 | `font-stretch-*` | **By-demand** | Variable fonts only: `FontVariation('wdth', pct)` via `TextStyle.fontVariations`. Static fonts have no width axis. | S |
@@ -165,7 +165,7 @@ daily-driver miss, and the first pass's verdicts are unchanged.
 | `color-scheme` | **Free/N-A** | The light/dark `FwTokens` selection the host drives **is** color-scheme; no separate utility needed. | — |
 | `scroll-snap-stop` (`snap-always`/`-normal`) | **By-demand** | A bool on `_FwSnapPhysics` clamping the fling target to ±1 page. | S |
 | `scroll-snap-type` (`snap-mandatory`/`-proximity`/`-none`/axis) | **By-demand** | Axis = `FwScroll.axis`; `snapExtent` already implies mandatory-on-axis; proximity = a threshold in `createBallisticSimulation`; `none` = `snapExtent: null`. | S–M |
-| `scrollbar-color` | **By-demand (half-built)** | `FwScroll.thumbColor` already wired; expose `RawScrollbar.trackColor` too. | S |
+| `scrollbar-color` | **✅ BUILT (1.0.3)** | `FwScroll.thumbColor` + `trackColor` → `RawScrollbar` (track implies a visible thumb). | S |
 | `scrollbar-gutter` | **By-demand** | Reserve scrollbar-thickness padding (already named L58). | S |
 | `scroll-behavior` (`scroll-smooth`) | **By-demand** | Already listed L111 (`ScrollController.animateTo`). | S |
 | SVG `fill` / `stroke` / **`stroke-width`** | **Delegate / By-demand** | `fill`/`stroke` are icon theming (`Icon(color:)` / `lucide_icons_flutter`, a sanctioned dep) → flutterbits; `stroke-width` (`Paint.strokeWidth` in `CustomPaint`/`flutter_svg`) was unnamed — now recorded. | S |
@@ -268,7 +268,7 @@ complete; the next work is Tier 2 (by demand).
 | Utility | Tailwind | Flutter mechanism | Home | Size | Status |
 |---|---|---|---|---|---|
 | **Line-clamp / truncate / text-overflow** | `line-clamp-N`, `truncate`, `text-ellipsis`, `text-clip` | `DefaultTextStyle.merge` carries `maxLines`/`overflow`/`softWrap` — fields + setters `maxLines`/`lineClamp`/`truncate`/`overflow` | `.tw` typography | **S** | ✅ module 11 |
-| **Font family** | `font-sans/serif/mono`, `font-[...]` | `TextStyle.fontFamily` via the same `DefaultTextStyle.merge` — setters `font`/`fontSans`/`fontSerif`/`fontMono` | `.tw` typography | **S** | ✅ module 11 |
+| **Font family** | `font-sans/serif/mono`, `font-[...]` | `TextStyle.fontFamily` via `DefaultTextStyle.merge` — `font(String)` literal; `fontSans`/`fontSerif`/`fontMono` are **theme-resolved** (1.0.3) and `FwTheme` applies the theme `sans` default | `.tw` typography | **S** | ✅ module 11 (theme-resolved 1.0.3) |
 | **Whitespace / wrapping** | `whitespace-nowrap`, `whitespace-normal` | `softWrap` via `DefaultTextStyle.merge` — setters `nowrap`/`wrap` | `.tw` typography | **S** | ✅ module 11 |
 | **Color filters** | `brightness/contrast/saturate/grayscale/invert/sepia/hue-rotate` | `ColorFiltered` + `ColorFilter.matrix`, composed within a chain (same render-chain slot as the existing blur `ImageFiltered`) | `.tw` effects | **M** | ✅ module 12 |
 | **Object-fit** | `object-cover/contain/fill/...` | wrap child in `FittedBox(fit: BoxFit.*)` — setter `fit` | `.tw` (`fit()`) | **S–M** | ✅ module 12 |

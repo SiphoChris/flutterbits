@@ -41,6 +41,15 @@ extension FwStyleTokenResolve on FwStyle {
       );
       out = out.copyWith(boxShadow: shadowStep!.resolve(tokens));
     }
+    if (fontFamilyStep != null) {
+      assert(
+        fontFamily == null,
+        'flutterwindcss: do not mix a font role (fontSans/Serif/Mono) with a '
+        'literal font(family) in the same chain — last-wins cannot order two '
+        'fields. Pick one.',
+      );
+      out = out.copyWith(fontFamily: fontFamilyStep!.resolve(tokens));
+    }
     return out;
   }
 }
@@ -57,6 +66,7 @@ extension FwStyleTokenResolve on FwStyle {
 bool _hasUnresolvedTokenSteps(FwStyle style) {
   if (style.radiusStep != null && style.borderRadius == null) return true;
   if (style.shadowStep != null && style.boxShadow == null) return true;
+  if (style.fontFamilyStep != null && style.fontFamily == null) return true;
   for (final (_, nested) in style.layers) {
     if (_hasUnresolvedTokenSteps(nested)) return true;
   }
@@ -176,6 +186,7 @@ extension FwStyleResolve on FwStyle {
       colorMatrix: merged.colorMatrix,
       blendMode: merged.mixBlendMode,
       fit: merged.boxFit,
+      fitAlignment: merged.fitAlignment,
       mouseCursor: merged.mouseCursor,
       ignorePointer: merged.ignorePointer,
       isVisible: merged.isVisible,
@@ -319,6 +330,7 @@ FwStyle _overlay(FwStyle base, FwStyle top) => base.copyWith(
   colorMatrix: top.colorMatrix,
   mixBlendMode: top.mixBlendMode,
   boxFit: top.boxFit,
+  fitAlignment: top.fitAlignment,
   mouseCursor: top.mouseCursor,
   ignorePointer: top.ignorePointer,
   isVisible: top.isVisible,

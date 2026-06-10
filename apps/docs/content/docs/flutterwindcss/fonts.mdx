@@ -1,0 +1,105 @@
+---
+title: Fonts
+description: How to wire the fonts a generated theme.dart names — bundle them or use google_fonts. flutterwindcss applies the theme's families automatically; you only register the font.
+---
+
+A generated `theme.dart` names the fonts the theme wants — for example:
+
+```dart
+const FwTypographyTheme _type = FwTypographyTheme(
+  sans: 'Outfit',
+  serif: 'Georgia',
+  mono: 'Geist Mono',
+);
+```
+
+These are **family-name strings**. flutterwindcss **bundles no fonts**, so there are two halves to
+getting them on screen:
+
+1. **Apply** the family to your text — *this is automatic.* `FwTheme` applies the theme's `sans`
+   family as the subtree's default, and `.tw.fontSans` / `.fontSerif` / `.fontMono` resolve to the
+   theme's families (just like `roundedMd`/`shadowMd` resolve radius/shadow). You don't wire anything.
+2. **Register** the font so Flutter actually *has* "Outfit" / "Geist Mono" — **this is your job**, and
+   it's the only step. Pick one of the two recipes below.
+
+<Callout>
+  Georgia (and other system faces) are usually already present on the OS, so they need no
+  registration. You only register custom families like *Outfit* or *Geist Mono*.
+</Callout>
+
+## Recipe 1 — bundle the font files (recommended)
+
+Predictable and offline. Drop the `.ttf`/`.otf` files in your app and declare them under the **exact**
+family names the theme uses:
+
+```yaml title="pubspec.yaml"
+flutter:
+  fonts:
+    - family: Outfit            # must match typography.sans
+      fonts:
+        - asset: assets/fonts/Outfit-Regular.ttf
+        - asset: assets/fonts/Outfit-Bold.ttf
+          weight: 700
+    - family: Geist Mono        # must match typography.mono
+      fonts:
+        - asset: assets/fonts/GeistMono-Regular.ttf
+```
+
+That's it — pass the generated theme and the fonts apply:
+
+```dart
+FwTheme(tokens: lightTheme, child: const HomeScreen());
+```
+
+The theme stays `const`, the names line up, and `.fontSerif` / `.fontMono` switch families correctly.
+
+## Recipe 2 — google_fonts (no asset files)
+
+[`google_fonts`](https://pub.dev/packages/google_fonts) fetches and caches fonts at runtime. The
+robust way to combine it with a generated theme is to build the theme's typography **from** the
+families `google_fonts` registers — so the names always match:
+
+```bash
+flutter pub add google_fonts
+```
+
+```dart title="theme.dart (edit the generated _type)"
+import 'package:google_fonts/google_fonts.dart';
+
+// Calling GoogleFonts.* registers the family and returns its name. Drop `const`
+// from _type (and the FwTokens that use it) since these aren't compile-time.
+final FwTypographyTheme _type = FwTypographyTheme(
+  sans: GoogleFonts.outfit().fontFamily!,
+  serif: GoogleFonts.ptSerif().fontFamily!,
+  mono: GoogleFonts.geistMono().fontFamily!,
+);
+```
+
+Because the theme's family strings are exactly what `google_fonts` registered, `FwTheme`'s default and
+`.fontSans` / `.fontSerif` / `.fontMono` all resolve to a font that's really there.
+
+<Callout title="Why not just hardcode the names?">
+  `google_fonts` registers each face under a family name; reading it back with `.fontFamily` (instead
+  of hardcoding `'Outfit'`) guarantees a match regardless of the package's internal naming. If you'd
+  rather keep the theme `const`, use Recipe 1.
+</Callout>
+
+## Overriding a single family
+
+`font('Inter')` sets a **literal** family for one chain (Tailwind `font-[Inter]`), independent of the
+theme — handy for a one-off. Don't combine it with `fontSans`/`fontSerif`/`fontMono` in the same chain
+(the engine asserts, since both would set the family).
+
+## Interop path (MaterialApp)
+
+On the pure path `FwTheme` applies the default family for you. Inside a `MaterialApp`, the host owns
+the default text theme, so set the family there (e.g. `ThemeData(fontFamily: lightTheme.typography.sans)`
+or a `textTheme`); `.fontSans` / `.fontSerif` / `.fontMono` still resolve to the theme via `context.fw`.
+
+## Next steps
+
+<Cards>
+  <Card title="Typography" href="/docs/flutterwindcss/typography" />
+  <Card title="Semantic tokens & theming" href="/docs/flutterwindcss/theming" />
+  <Card title="Theme generator" href="/theme-generator" />
+</Cards>
