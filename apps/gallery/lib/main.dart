@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutterwindcss/flutterwindcss.dart';
+import 'components/ui/button.dart';
 
 void main() => runApp(const GalleryApp());
 
@@ -27,7 +28,34 @@ class GalleryApp extends StatelessWidget {
           builder:
               (context) => ColoredBox(
                 color: context.fw.colors.background,
-                child: const Center(child: Text('flutterbits gallery')),
+                child: SafeArea(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (final v in ButtonVariant.values)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Wrap(
+                              spacing: 12,
+                              runSpacing: 12,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                for (final s in ButtonSize.values)
+                                  Button(
+                                    variant: v,
+                                    size: s,
+                                    onPressed: () {},
+                                    child: s == ButtonSize.icon ? const Text('+') : Text(v.name),
+                                  ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
         ),
       ),
