@@ -2,6 +2,8 @@
 
 **[Tailwind CSS](https://tailwindcss.com) v4's design system and styling vocabulary, for Flutter.**
 
+📖 **[Documentation](https://flutterbits.vercel.app/docs/flutterwindcss)** · 🎨 **[Theme generator](https://flutterbits.vercel.app/theme-generator)** · 📦 **[pub.dev](https://pub.dev/packages/flutterwindcss)**
+
 flutterwindcss gives you Tailwind's design tokens (spacing, radius, semantic colors, shadows, type)
 and a chainable, typed utility API — `.tw` — over Flutter's **primitive** widgets. It's Material-free
 (it never imports `package:flutter/material.dart`) and themes by **semantic indirection**, exactly
@@ -58,18 +60,20 @@ Use `FwAnimatedTheme` instead of `FwTheme` to crossfade on theme/brightness chan
 
 ## Theme portability
 
-Paste any [tweakcn](https://tweakcn.com)/shadcn theme into the web **theme generator** and copy a
-ready-to-use `theme.dart` (two `const FwTokens`) — colors, radius, shadows and fonts, nothing
+Paste any [tweakcn](https://tweakcn.com)/shadcn theme into the web **theme generator** at
+**[flutterbits.vercel.app/theme-generator](https://flutterbits.vercel.app/theme-generator)** and copy
+a ready-to-use `theme.dart` (two `const FwTokens`) — colors, radius, shadows and fonts, nothing
 dropped.
 
 ## Documentation
 
+📖 **Full docs: [flutterbits.vercel.app/docs/flutterwindcss](https://flutterbits.vercel.app/docs/flutterwindcss)**
+— installation, the `.tw` utility reference, theming, layout, breakpoints, and the theme generator.
+
 - **API reference** — the full dartdoc for every public type is on the
   [pub.dev package page](https://pub.dev/documentation/flutterwindcss/latest/).
-- **Guides & the theme generator** — concepts, the utility reference, theming, and layout live in the
-  docs site under [`apps/docs`](https://github.com/SiphoChris/flutterbits/tree/main/apps/docs) in the
-  [flutterbits monorepo](https://github.com/SiphoChris/flutterbits).
-- **A runnable example** is in [`example/`](example/) (and a larger showcase in `apps/example`).
+- **A runnable example** is in [`example/`](example/) (and a larger showcase in
+  [`apps/example`](https://github.com/SiphoChris/flutterbits/tree/main/apps/example)).
 
 ## License
 
