@@ -43,6 +43,23 @@
     linear-gradient(180deg, #0f1729, #1e293b);
 }
 
+/* The hero logo's wordmark ("flutter") is a pale, light-on-dark colour, so on the
+   soft LIGHT hero it would wash out. Sit it on a contained dark card in light
+   mode; in dark mode the hero is already dark, so drop the card and let the logo
+   sit directly on it. */
+.hero-logo-card {
+  display: inline-flex;
+  border-radius: 1.5rem;
+  background: linear-gradient(180deg, #1e293b, #0f1729);
+  padding: 1.75rem 2.25rem;
+  box-shadow: 0 24px 48px -16px rgb(15 23 42 / 0.45);
+}
+.dark .hero-logo-card {
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
 /* Center the primary nav links in the home navbar. The row is
    [logo] [links] [actions(flex-1, right)]; absolutely centering the links list
    keeps the logo left and the actions right while the links sit dead-center.

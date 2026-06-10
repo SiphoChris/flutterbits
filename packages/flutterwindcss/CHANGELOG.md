@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1
+
+- **Docs** — the documentation site is live at
+  [flutterbits.vercel.app](https://flutterbits.vercel.app/docs/flutterwindcss); the README and links
+  now point to it (guides, the `.tw` utility reference, theming, layout, and the theme generator).
+  No API or behaviour changes.
+
 ## 1.0.0
 
 Initial release.

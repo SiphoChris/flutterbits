@@ -11,14 +11,16 @@ export default function HomePage() {
       {/* Hero — a soft brand wash that blends into the site (light + dark). */}
       <section className="brand-hero text-fd-foreground">
         <div className="mx-auto max-w-5xl px-4 py-20 text-center sm:py-24">
-          <Image
-            src="/flutterwindcss-image2-no-bg.png"
-            alt="flutterbits"
-            width={677}
-            height={369}
-            priority
-            className="mx-auto h-auto w-[min(440px,82%)]"
-          />
+          <div className="hero-logo-card mx-auto">
+            <Image
+              src="/flutterwindcss-image2-no-bg.png"
+              alt="flutterbits"
+              width={677}
+              height={369}
+              priority
+              className="h-auto w-[min(360px,72vw)]"
+            />
+          </div>
           <h1 className="mt-10 text-4xl font-bold tracking-tight sm:text-5xl">
             Tailwind &amp; shadcn/ui, <span className="brand-gradient-text">for Flutter</span>
           </h1>
