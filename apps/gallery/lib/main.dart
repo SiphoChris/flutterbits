@@ -24,10 +24,11 @@ class GalleryApp extends StatelessWidget {
           );
         },
         home: Builder(
-          builder: (context) => ColoredBox(
-            color: context.fw.colors.background,
-            child: const Center(child: Text('flutterbits gallery')),
-          ),
+          builder:
+              (context) => ColoredBox(
+                color: context.fw.colors.background,
+                child: const Center(child: Text('flutterbits gallery')),
+              ),
         ),
       ),
     );
