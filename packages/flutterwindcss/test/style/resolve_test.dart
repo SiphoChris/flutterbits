@@ -4,7 +4,9 @@ import 'package:flutterwindcss/src/style/fw_border_spec.dart';
 import 'package:flutterwindcss/src/style/fw_layer.dart';
 import 'package:flutterwindcss/src/style/fw_ring.dart';
 import 'package:flutterwindcss/src/style/fw_style.dart';
+import 'package:flutterwindcss/src/style/fw_token_steps.dart';
 import 'package:flutterwindcss/src/style/resolve.dart';
+import 'package:flutterwindcss/src/tokens/tokens.dart';
 
 const _a = Color(0xFFAAAAAA);
 const _b = Color(0xFFBBBBBB);
@@ -25,6 +27,35 @@ void main() {
   test('later matching layer wins among equals', () {
     final style = const FwStyle().hover((h) => h.bg(_a)).hover((h) => h.bg(_b));
     expect(style.resolve(<WidgetState>{WidgetState.hovered}).background, _b);
+  });
+
+  group('token-step resolution contract', () {
+    test('resolve() asserts when a radius/shadow step is still unresolved', () {
+      // A step set without its concrete value means resolveTokenSteps() never ran;
+      // resolve() would silently drop it (ResolvedStyle carries no step).
+      expect(
+        () => const FwStyle(radiusStep: FwRadiusStep.md).resolve(const <WidgetState>{}),
+        throwsAssertionError,
+      );
+      expect(
+        () => const FwStyle(shadowStep: FwShadowStep.md).resolve(const <WidgetState>{}),
+        throwsAssertionError,
+      );
+      // A nested layer's unresolved step is caught too.
+      expect(
+        () => const FwStyle()
+            .hover((h) => const FwStyle(radiusStep: FwRadiusStep.lg))
+            .resolve(const <WidgetState>{}),
+        throwsAssertionError,
+      );
+    });
+
+    test('resolveTokenSteps() first → resolve() succeeds and carries the value', () {
+      final r = const FwStyle(
+        radiusStep: FwRadiusStep.md,
+      ).resolveTokenSteps(FwTokens.light).resolve(const <WidgetState>{});
+      expect(r.borderRadius, isNotNull); // step resolved to the theme radii.md
+    });
   });
 
   test('disabled suppresses hover/focus/pressed regardless of order', () {

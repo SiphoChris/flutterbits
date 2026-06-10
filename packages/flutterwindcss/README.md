@@ -64,9 +64,12 @@ dropped.
 
 ## Documentation
 
-Full docs — concepts, the utility reference, theming, layout, and the theme generator — are at the
-project documentation site. Source lives in the
-[flutterbits monorepo](https://github.com/SiphoChris/flutterbits).
+- **API reference** — the full dartdoc for every public type is on the
+  [pub.dev package page](https://pub.dev/documentation/flutterwindcss/latest/).
+- **Guides & the theme generator** — concepts, the utility reference, theming, and layout live in the
+  docs site under [`apps/docs`](https://github.com/SiphoChris/flutterbits/tree/main/apps/docs) in the
+  [flutterbits monorepo](https://github.com/SiphoChris/flutterbits).
+- **A runnable example** is in [`example/`](example/) (and a larger showcase in `apps/example`).
 
 ## License
 

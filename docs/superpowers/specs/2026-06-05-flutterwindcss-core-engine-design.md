@@ -92,7 +92,7 @@ The **32** shadcn semantic tokens (the full vocabulary — the contract the gene
 
 ### 4.3 `FwRadii` (`tokens/radii.dart`)
 Built two ways:
-- `FwRadii.fromBase(double base)` — derives the shadcn-style set used by components: `sm = base×0.6, md = base×0.8, lg = base×1.0, xl = base×1.4`, plus `none = 0` and `full = Radius.circular(9999)`.
+- `FwRadii.fromBase(double base)` — derives the shadcn-style set used by components: `sm = base×0.6, md = base×0.8, lg = base×1.0, xl = base×1.4`, plus `none = 0` and `full = 9999` (a logical-px `double`, the pill sentinel — callers wrap it in `Radius.circular`).
 - The full Tailwind v4 named scale (`xs .125rem, sm .25rem, md .375rem, lg .5rem, xl .75rem, 2xl 1rem, 3xl 1.5rem, 4xl 2rem`) lives on the separate `FwRadiusScale` (an `abstract final class`) for utility use — **not** on `FwRadii` itself.
 Values are `Radius`/`double`; `lerp` provided.
 
@@ -217,27 +217,34 @@ Tailwind's `group-*`/`peer-*` variants let a widget react to **another** widget'
 A new sealed member, `FwGroupCondition(FwRelation relation, WidgetState state, {String? name})`, matches against two name-keyed maps (`null` = the default/unnamed channel) threaded through `resolve(... , groupStates, peerStates)` — every other condition ignores them. `FwStyled` reads the nearest scope (only when a relation layer is present, so no spurious dependency) and builds the maps: the group map keys `null` to the **nearest** group (unnamed `group-*` binds nearest) and each ancestor's `name` to its state (nearest-wins); the peer map is the nearest scope's aggregate (multiple same-named peers union). **Disabled suppression is applied per channel**, exactly like the box's own states. **Precedence:** `FwGroupCondition` ranks in the **state tier** (above all breakpoints), declaration order breaking ties against own-state layers — so `group-hover:` behaves like `hover:` in the cascade. Setters: `groupHover`/`groupFocus`/`groupPressed`/`groupDisabled`/`groupState` and the `peer*` mirror (Tailwind `*-active:` ↔ `*Pressed`). Scope plumbing is callback-up (a stable controller descendant `FwPeer`s write to, with a scheduler-phase guard so a write during build/dispose defers to the post-frame) + immutable-model-down (an `InheritedWidget` reactors depend on); cross-scope named-group updates fall out of the normal rebuild. Full design: `2026-06-07-flutterwindcss-m14-group-peer-design.md`.
 
 ### 6.4 Render chain (`ResolvedStyle.build`)
-Hand-composed primitives, **fixed order, asserted by widget tests**, outer→inner; each wrapper emitted only if its inputs are set. Note the decoration **splits into a shadow layer and a surface layer** so that backdrop-blur (which must be clipped) does not clip away the shadow:
+Hand-composed primitives, **fixed order, asserted by widget tests** (`render_chain_test.dart`; the live source of truth is the outer→inner doc on `ResolvedStyleBuild.build`), outer→inner; each wrapper emitted only if its inputs are set. Note the decoration **splits into a shadow layer and a surface layer** so that backdrop-blur (which must be clipped) does not clip away the shadow. The chain below includes the wrappers added by later modules — interactivity (cursor/pointer-events/visibility, module 13), color-filter + object-fit (module 12), and mix-blend-mode + 3D transforms (module 17):
 ```
 Padding(margin, EdgeInsetsDirectional)                       ← margin is outermost
-  → ConstrainedBox(min/max)  ⊕  SizedBox(width/height)       ← sizing rules below
-    → AspectRatio(aspectRatio)
-      → FractionallySizedBox(widthFactor/heightFactor, alignment: factorAlignment)
-        → Transform(scale/rotate/translate)                  ← transforms the rendered result incl. shadow
-          → ImageFiltered(blur)                              ← CONTENT blur: filters the WHOLE element
-            → Opacity(opacity)                               ← only when group opacity is needed (else folded)
-              → _ShadowBox(boxShadow only, UNCLIPPED)        ← shadow paints here, outside any clip
-                → _Surface:
-                    IF backdropBlur set:
-                      ClipRRect(borderRadius)                ← clips the backdrop to the box shape
-                        → BackdropFilter(backdropBlur)       ← blurs content painted BEHIND the box
-                          → DecoratedBox(gradient|color, border, radius)   ← composites ON TOP of backdrop
-                    ELSE:
-                      DecoratedBox(gradient|color, border, radius)
-                  → ClipRRect(borderRadius INSET by borderWidth, if clipBehavior != none)  ← clips CONTENT
-                    → Padding(padding, EdgeInsetsDirectional)
-                      → DefaultTextStyle.merge + IconTheme.merge (foreground, font*, align, decoration)
-                        → child
+  → MouseRegion(cursor)                                      ← cursor (module 13)
+    → IgnorePointer(ignorePointer)                           ← pointer-events:none (module 13)
+      → Visibility(maintainSize, if isVisible == false)      ← visibility:hidden (module 13)
+        → ConstrainedBox(min/max)  ⊕  tight (width/height)   ← sizing rules below
+          → AspectRatio(aspectRatio)
+            → FractionallySizedBox(w/hFactor, alignment: factorAlignment)
+              → FwBlendMode(blendMode)                        ← mix-blend-mode (module 17)
+                → Transform(scale/rotate/translate/skew/rotateX/Y + perspective)  ← 2D/3D, transforms the rendered result incl. shadow
+                  → ColorFiltered(colorMatrix)                ← CSS filter color fns (module 12), outside content blur
+                    → ImageFiltered(blur)                     ← CONTENT blur: filters the WHOLE element
+                      → Opacity(opacity)                      ← only when group opacity is needed (else folded)
+                        → _ShadowBox(boxShadow + ring, UNCLIPPED)   ← shadow paints here, outside any clip
+                          → CustomPaint(FwDashedBorderPainter, if dashed/dotted)  ← painted over the surface (module 15)
+                            → _Surface:
+                                IF backdropBlur set:
+                                  ClipRRect(borderRadius)            ← clips the backdrop to the box shape
+                                    → BackdropFilter(backdropBlur)   ← blurs content painted BEHIND the box
+                                      → DecoratedBox(gradient|color|image, border, radius)  ← composites ON TOP of backdrop
+                                ELSE:
+                                  DecoratedBox(gradient|color|image, border, radius)
+                              → ClipRRect(borderRadius INSET by borderWidth, if clipBehavior != none)  ← clips CONTENT
+                                → Padding(padding, EdgeInsetsDirectional)
+                                  → FittedBox(fit)                   ← object-fit (module 12)
+                                    → DefaultTextStyle.merge + IconTheme.merge (foreground, font*, align, decoration, textShadows)
+                                      → child
 ```
 `borderSpec` resolves to `Border.fromBorderSide(side)` (uniform — all four edges equal) or `BorderDirectional(start/end/top/bottom)` (per-side) — Finding #5. **Flutter limitation (as-built, module 5):** Flutter's painter rounds a border **only** when it is uniform; a per-side `BorderDirectional` combined with a `borderRadius` throws in `BorderDirectional.paint`. The render chain surfaces this as a **clear debug `assert`** at build time (rather than Flutter's cryptic paint-time crash) — "use a uniform border when rounding, or drop the radius." The content **clip** may still round freely under a per-side border; the limitation is only the decoration's stroke. Per-side *rounded* borders would need a custom `RenderObject` and are out of v1 scope (AGENTS.md §11 spirit). Specifics the tests pin (because the order is asserted):
 

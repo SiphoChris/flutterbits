@@ -1,14 +1,15 @@
 import Link from 'next/link';
 import Image from 'next/image';
 
-/// The site landing. A dark brand hero (the logo on its native slate ground)
-/// over a short "two products" section that routes into each. Brand colour comes
-/// from the retinted Fumadocs tokens + the `.brand-*` utilities in global.css.
+/// The site landing. A soft, brand-tinted hero (the transparent logo over a faint
+/// blue wash) over a short "two products" section that routes into each. Brand
+/// colour comes from the retinted Fumadocs tokens + the `.brand-*` utilities in
+/// global.css; the hero uses theme tokens so it reads in both light and dark.
 export default function HomePage() {
   return (
     <main className="flex flex-1 flex-col">
-      {/* Hero — always-dark band, independent of the site light/dark theme. */}
-      <section className="brand-hero text-white">
+      {/* Hero — a soft brand wash that blends into the site (light + dark). */}
+      <section className="brand-hero text-fd-foreground">
         <div className="mx-auto max-w-5xl px-4 py-20 text-center sm:py-24">
           <Image
             src="/flutterwindcss-image2-no-bg.png"
@@ -16,15 +17,18 @@ export default function HomePage() {
             width={677}
             height={369}
             priority
-            className="mx-auto h-auto w-[min(440px,82%)] drop-shadow-2xl"
+            className="mx-auto h-auto w-[min(440px,82%)]"
           />
           <h1 className="mt-10 text-4xl font-bold tracking-tight sm:text-5xl">
             Tailwind &amp; shadcn/ui, <span className="brand-gradient-text">for Flutter</span>
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-balance text-white/70">
+          <p className="mx-auto mt-4 max-w-2xl text-balance text-fd-muted-foreground">
             A Tailwind-style styling engine and a shadcn-style component registry — with the trick no
             other Flutter UI library has: paste any tweakcn/shadcn theme and get a working Flutter{' '}
-            <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/90">theme.dart</code>.
+            <code className="rounded bg-fd-primary/10 px-1.5 py-0.5 text-fd-foreground">
+              theme.dart
+            </code>
+            .
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
@@ -35,7 +39,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/theme-generator"
-              className="rounded-lg border border-white/20 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
+              className="rounded-lg border border-fd-border px-5 py-2.5 text-sm font-medium text-fd-foreground transition-colors hover:bg-fd-muted"
             >
               Try the theme generator
             </Link>

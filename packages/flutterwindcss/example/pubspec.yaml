@@ -1,0 +1,26 @@
+name: flutterwindcss_example
+description: >-
+  A minimal, runnable example for flutterwindcss — a Material-free app showing
+  the theme (`context.fw`), the `.tw` utility chain, and the layout widgets.
+publish_to: none
+version: 1.0.0+1
+
+# Joins the repo's pub workspace (root pubspec.yaml `workspace:`), so it shares
+# the single lockfile and resolves `flutterwindcss` from source — mirroring
+# apps/example. The path dependency makes the example self-contained when the
+# package is published (it points at the package root in the archive).
+resolution: workspace
+
+environment:
+  # Match the engine's toolchain floor (AGENTS.md §2): Flutter 3.29 / Dart 3.7.
+  sdk: '>=3.7.0 <4.0.0'
+  flutter: '>=3.29.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutterwindcss:
+    path: ../
+
+dev_dependencies:
+  flutter_lints: ^5.0.0

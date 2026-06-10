@@ -743,6 +743,12 @@ class RenderFwGrid extends RenderBox
       final pd = children[i].parentData! as FwGridParentData;
       if (pd.columnStart != null && pd.rowStart != null) {
         final colSpan = pd.columnSpan.clamp(1, colCount);
+        assert(
+          pd.columnStart! <= colCount - colSpan + 1,
+          'flutterwindcss: FwGridItem.columnStart (${pd.columnStart}) places a '
+          'span-$colSpan item past the last of $colCount columns; it will be '
+          'clamped to fit. Reduce columnStart/columnSpan or add columns.',
+        );
         final c = (pd.columnStart! - 1).clamp(0, colCount - colSpan);
         final r = pd.rowStart! - 1;
         occupy(r, c, colSpan, pd.rowSpan);
@@ -763,6 +769,12 @@ class RenderFwGrid extends RenderBox
       int c;
       if (pd.columnStart != null) {
         // Locked column; first free row.
+        assert(
+          pd.columnStart! <= colCount - colSpan + 1,
+          'flutterwindcss: FwGridItem.columnStart (${pd.columnStart}) places a '
+          'span-$colSpan item past the last of $colCount columns; it will be '
+          'clamped to fit. Reduce columnStart/columnSpan or add columns.',
+        );
         c = (pd.columnStart! - 1).clamp(0, colCount - colSpan);
         r = 0;
         while (!fits(r, c, colSpan, rowSpan)) {

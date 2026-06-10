@@ -28,11 +28,19 @@
   color: transparent;
 }
 
-/* The dark hero band — the logo lives on its native slate ground. */
+/* The hero band — a soft, brand-tinted wash that blends into the (light) site
+   rather than a hard dark band. A faint blue glow sits behind the logo; the
+   gradient settles into a barely-there blue. Flips to a soft deep slate (not
+   black) in dark mode so it still reads as one continuous surface. */
 .brand-hero {
   background:
-    radial-gradient(60% 120% at 50% -10%, rgb(37 99 235 / 0.35), transparent 70%),
-    linear-gradient(180deg, #11151c, var(--brand-slate));
+    radial-gradient(60% 120% at 50% -10%, rgb(37 99 235 / 0.12), transparent 70%),
+    linear-gradient(180deg, #ffffff, #eef2ff);
+}
+.dark .brand-hero {
+  background:
+    radial-gradient(60% 120% at 50% -10%, rgb(96 165 250 / 0.16), transparent 70%),
+    linear-gradient(180deg, #0f1729, #1e293b);
 }
 
 /* Center the primary nav links in the home navbar. The row is

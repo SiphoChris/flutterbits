@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutterwindcss/src/style/fw_border_spec.dart';
@@ -81,6 +83,32 @@ void main() {
     expect(xf.alignment, Alignment.topLeft);
     // scaleX=2 ⇒ matrix [0][0] == 2.
     expect(xf.transform.entry(0, 0), moreOrLessEquals(2, epsilon: 1e-9));
+  });
+
+  testWidgets('skewY writes matrix entry [1][0]; directional origin flows through', (t) async {
+    // skewY (radians) lands in the vertical-shear slot — distinct from skewX's
+    // [0][1]. Matrix4.skew applies tan() to the angle.
+    await _pump(t, const ResolvedStyle(skewY: 0.3));
+    final xf = t.widget<Transform>(find.byType(Transform));
+    expect(xf.transform.entry(1, 0), moreOrLessEquals(math.tan(0.3), epsilon: 1e-9));
+
+    // A directional transform origin is passed through unresolved, so Transform
+    // resolves it against the ambient direction (start = right under RTL).
+    await t.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.rtl,
+        child: const ResolvedStyle(
+          scaleX: 2,
+          transformAlignment: AlignmentDirectional.centerStart,
+        ).build(const SizedBox()),
+      ),
+    );
+    final rtl = t.widget<Transform>(find.byType(Transform));
+    expect(rtl.alignment, AlignmentDirectional.centerStart);
+    expect(
+      (rtl.alignment! as AlignmentDirectional).resolve(TextDirection.rtl),
+      Alignment.centerRight, // start → right under RTL
+    );
   });
 
   testWidgets('fontStyle flows into DefaultTextStyle (module 13)', (t) async {

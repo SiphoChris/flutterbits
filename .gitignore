@@ -7,5 +7,8 @@ pubspec.lock
 node_modules/
 .next/
 
+# Golden-test failure artifacts (auto-written by `flutter test` on a golden diff)
+test/**/failures/
+
 # Local Claude Code settings (per-machine)
 .claude/settings.local.json

@@ -8,4 +8,5 @@ environment:
 
 workspace:
   - packages/flutterwindcss
+  - packages/flutterwindcss/example
   - apps/example

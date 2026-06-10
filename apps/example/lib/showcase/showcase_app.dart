@@ -1,7 +1,13 @@
 // The showcase shell: a Material-free WidgetsApp on the pure path, an animated
 // semantic-theme switcher (Default ⇄ Claude) + light/dark + LTR/RTL switch, a
-// category tab bar, and the selected section in a scroll view. Every pixel is
-// styled through `.tw` + `context.fw`, so one theme swap reskins everything.
+// pure/Material host switch (proving the interop path), a category tab bar, and
+// the selected section in a scroll view. Every pixel is styled through `.tw` +
+// `context.fw`, so one theme swap reskins everything.
+//
+// This is the example's ONE Material import — used solely to demo the *interop
+// path* (`Theme` + `FwThemeExtension` on `ThemeData`). The engine itself never
+// imports Material (AGENTS §3.5); the example may, to show it works under both.
+import 'package:flutter/material.dart' show Theme, ThemeData;
 import 'package:flutter/widgets.dart';
 import 'package:flutterwindcss/flutterwindcss.dart';
 
@@ -32,12 +38,26 @@ class ShowcaseApp extends StatefulWidget {
 class _ShowcaseAppState extends State<ShowcaseApp> {
   bool _dark = false;
   bool _rtl = false;
+  bool _material = false; // host: false = pure FwTheme path, true = Material interop.
   int _themeIndex = 0; // index into kDemoThemes; the active semantic theme.
   ShowcaseCategory _category = ShowcaseCategory.tokens;
 
   @override
   Widget build(BuildContext context) {
     final theme = kDemoThemes[_themeIndex];
+    final tokens = theme.resolve(isDark: _dark);
+    final shell = _Shell(
+      dark: _dark,
+      rtl: _rtl,
+      material: _material,
+      themeName: theme.name,
+      category: _category,
+      onToggleDark: () => setState(() => _dark = !_dark),
+      onToggleRtl: () => setState(() => _rtl = !_rtl),
+      onToggleHost: () => setState(() => _material = !_material),
+      onCycleTheme: () => setState(() => _themeIndex = (_themeIndex + 1) % kDemoThemes.length),
+      onSelect: (c) => setState(() => _category = c),
+    );
     return WidgetsApp(
       title: 'flutterwindcss showcase',
       color: const Color(0xFF000000),
@@ -48,22 +68,19 @@ class _ShowcaseAppState extends State<ShowcaseApp> {
           pageBuilder: (context, _, _) => builder(context),
         );
       },
-      // FwAnimatedTheme tweens between bundles, so switching theme OR brightness
-      // crossfades every context.fw-styled descendant — proof that semantic
-      // tokens reskin the whole app from one swap.
-      home: FwAnimatedTheme(
-        tokens: theme.resolve(isDark: _dark),
-        child: _Shell(
-          dark: _dark,
-          rtl: _rtl,
-          themeName: theme.name,
-          category: _category,
-          onToggleDark: () => setState(() => _dark = !_dark),
-          onToggleRtl: () => setState(() => _rtl = !_rtl),
-          onCycleTheme: () => setState(() => _themeIndex = (_themeIndex + 1) % kDemoThemes.length),
-          onSelect: (c) => setState(() => _category = c),
-        ),
-      ),
+      home:
+          _material
+              // Interop path: tokens come from a `ThemeData` extension and there
+              // is NO `FwTheme` ancestor, so every `context.fw` read below
+              // resolves via the `FwThemeExtension` fallback — the SAME shell and
+              // sections, proving they render identically under Material
+              // (AGENTS §3.4). (Theme changes snap here; the crossfade is a
+              // pure-path `FwAnimatedTheme` feature.)
+              ? Theme(data: ThemeData(extensions: [FwThemeExtension(tokens: tokens)]), child: shell)
+              // Pure path: `FwAnimatedTheme` tweens between bundles, so switching
+              // theme OR brightness crossfades every `context.fw`-styled
+              // descendant — proof that semantic tokens reskin from one swap.
+              : FwAnimatedTheme(tokens: tokens, child: shell),
     );
   }
 }
@@ -72,20 +89,24 @@ class _Shell extends StatelessWidget {
   const _Shell({
     required this.dark,
     required this.rtl,
+    required this.material,
     required this.themeName,
     required this.category,
     required this.onToggleDark,
     required this.onToggleRtl,
+    required this.onToggleHost,
     required this.onCycleTheme,
     required this.onSelect,
   });
 
   final bool dark;
   final bool rtl;
+  final bool material;
   final String themeName;
   final ShowcaseCategory category;
   final VoidCallback onToggleDark;
   final VoidCallback onToggleRtl;
+  final VoidCallback onToggleHost;
   final VoidCallback onCycleTheme;
   final ValueChanged<ShowcaseCategory> onSelect;
 
@@ -106,9 +127,11 @@ class _Shell extends StatelessWidget {
               _Header(
                 dark: dark,
                 rtl: rtl,
+                material: material,
                 themeName: themeName,
                 onToggleDark: onToggleDark,
                 onToggleRtl: onToggleRtl,
+                onToggleHost: onToggleHost,
                 onCycleTheme: onCycleTheme,
               ),
               _TabBar(category: category, onSelect: onSelect),
@@ -146,17 +169,21 @@ class _Header extends StatelessWidget {
   const _Header({
     required this.dark,
     required this.rtl,
+    required this.material,
     required this.themeName,
     required this.onToggleDark,
     required this.onToggleRtl,
+    required this.onToggleHost,
     required this.onCycleTheme,
   });
 
   final bool dark;
   final bool rtl;
+  final bool material;
   final String themeName;
   final VoidCallback onToggleDark;
   final VoidCallback onToggleRtl;
+  final VoidCallback onToggleHost;
   final VoidCallback onCycleTheme;
 
   @override
@@ -174,7 +201,9 @@ class _Header extends StatelessWidget {
               'flutterwindcss',
             ).tw.textSize(FwFontSize.xl.px).weight(FwFontWeight.extrabold),
             Text(
-              'every capability · Material-free · pure path',
+              material
+                  ? 'interop path · context.fw via FwThemeExtension on ThemeData'
+                  : 'every capability · Material-free · pure path',
             ).tw.textSize(FwFontSize.xs.px).text(t.colors.mutedForeground),
           ],
         ),
@@ -184,6 +213,8 @@ class _Header extends StatelessWidget {
           children: <Widget>[
             // Cycles the semantic theme; the whole app reskins on tap.
             _PillButton(label: 'Theme: $themeName', onTap: onCycleTheme, filled: true),
+            // Swaps the token host: pure FwTheme path ⇄ Material interop.
+            _PillButton(label: material ? 'Host: Material' : 'Host: Pure', onTap: onToggleHost),
             _PillButton(label: rtl ? 'RTL' : 'LTR', onTap: onToggleRtl),
             _PillButton(label: dark ? 'Dark' : 'Light', onTap: onToggleDark),
           ],

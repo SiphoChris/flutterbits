@@ -174,19 +174,37 @@ class UtilitiesSection extends StatelessWidget {
           description:
               'divideWidth/divideColor — a border BETWEEN flex children (Tailwind divide).',
           children: <Widget>[
-            DemoTile(
-              label: 'FwColumn divide (rows)',
-              child: FwColumn(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                divideWidth: 1,
-                divideColor: t.colors.border,
-                children: <Widget>[
-                  for (final s in const <String>['Profile', 'Billing', 'Team', 'Logout'])
-                    Text(s).tw.px(3).py(3).text(t.colors.foreground),
-                ],
-              ),
-            ).tw.bg(t.colors.card).rounded(t.radii.md).border(1, color: t.colors.border).clip(),
+            FwWrap(
+              gap: 8,
+              runGap: 8,
+              children: <Widget>[
+                DemoTile(
+                  label: 'FwColumn divide (rows, divide-y)',
+                  child: FwColumn(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    divideWidth: 1,
+                    divideColor: t.colors.border,
+                    children: <Widget>[
+                      for (final s in const <String>['Profile', 'Billing', 'Team', 'Logout'])
+                        Text(s).tw.px(3).py(3).text(t.colors.foreground),
+                    ],
+                  ),
+                ).tw.bg(t.colors.card).rounded(t.radii.md).border(1, color: t.colors.border).clip(),
+                DemoTile(
+                  label: 'FwRow divide (nav, divide-x · RTL-aware)',
+                  child: FwRow(
+                    mainAxisSize: MainAxisSize.min,
+                    divideWidth: 1,
+                    divideColor: t.colors.border,
+                    children: <Widget>[
+                      for (final s in const <String>['Home', 'Docs', 'Pricing', 'About'])
+                        Text(s).tw.px(4).py(3).text(t.colors.foreground),
+                    ],
+                  ),
+                ).tw.bg(t.colors.card).rounded(t.radii.md).border(1, color: t.colors.border).clip(),
+              ],
+            ),
           ],
         ),
         ShowcaseSection(
@@ -235,6 +253,17 @@ class UtilitiesSection extends StatelessWidget {
                       .rounded(t.radii.md)
                       .perspective(260)
                       .rotateY(38),
+                ),
+                DemoTile(
+                  label: 'perspective + rotateX',
+                  child: Center(child: const Text('3D').tw.text(t.colors.primaryForeground)).tw
+                      .w(20)
+                      .h(16)
+                      .bg(t.colors.accent)
+                      .text(t.colors.accentForeground)
+                      .rounded(t.radii.md)
+                      .perspective(260)
+                      .rotateX(38),
                 ),
                 DemoTile(
                   label: 'text-shadow',

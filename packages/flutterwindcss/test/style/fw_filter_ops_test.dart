@@ -60,6 +60,36 @@ void main() {
       expect(m[1].abs() + m[2].abs(), greaterThan(0.1));
     });
 
+    test('invert(1) negates the diagonal and biases by 255 (full inversion)', () {
+      final m = const FwStyle().invert(1).colorMatrix!;
+      expect(m[0], moreOrLessEquals(-1, epsilon: 1e-9)); // R diagonal: 1 - 2·1
+      expect(m[6], moreOrLessEquals(-1, epsilon: 1e-9)); // G diagonal
+      expect(m[12], moreOrLessEquals(-1, epsilon: 1e-9)); // B diagonal
+      expect(m[4], moreOrLessEquals(255, epsilon: 1e-6)); // R bias: 255·1
+      expect(m[9], moreOrLessEquals(255, epsilon: 1e-6)); // G bias
+      expect(m[14], moreOrLessEquals(255, epsilon: 1e-6)); // B bias
+    });
+
+    test('invert(0) is the identity (no inversion)', () {
+      final m = const FwStyle().invert(0).colorMatrix!;
+      expect(m[0], moreOrLessEquals(1, epsilon: 1e-9));
+      expect(m[4], moreOrLessEquals(0, epsilon: 1e-9)); // no bias
+    });
+
+    test('sepia(1) applies the published sepia coefficients on the R row', () {
+      final m = const FwStyle().sepia(1).colorMatrix!;
+      expect(m[0], moreOrLessEquals(0.393, epsilon: 1e-6));
+      expect(m[1], moreOrLessEquals(0.769, epsilon: 1e-6));
+      expect(m[2], moreOrLessEquals(0.189, epsilon: 1e-6));
+    });
+
+    test('sepia(0) is the identity (R row is 1,0,0)', () {
+      final m = const FwStyle().sepia(0).colorMatrix!;
+      expect(m[0], moreOrLessEquals(1, epsilon: 1e-9));
+      expect(m[1], moreOrLessEquals(0, epsilon: 1e-9));
+      expect(m[2], moreOrLessEquals(0, epsilon: 1e-9));
+    });
+
     test('guards: grayscale/invert/sepia are 0..1; brightness/contrast/saturate >= 0', () {
       expect(() => const FwStyle().grayscale(2), throwsAssertionError);
       expect(() => const FwStyle().invert(-0.1), throwsAssertionError);

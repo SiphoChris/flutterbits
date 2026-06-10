@@ -40,12 +40,34 @@ void main() {
       expect(b.top!.width, 3);
     });
 
-    test('borderS/E/T/B set one edge and merge with the others (last-wins)', () {
+    test('borderS sets the start edge and merges with the others (last-wins)', () {
       final spec = const FwStyle().border(1, color: _c).borderS(width: 4, color: _d).borderSpec!;
       expect(spec.start!.width, 4);
       expect(spec.start!.color, _d);
       expect(spec.end!.width, 1); // untouched
       expect(spec.resolve(), isA<BorderDirectional>());
+    });
+
+    test('borderE/borderT/borderB each set only their own edge', () {
+      // Each edge setter must touch exactly its edge — a copy-paste bug (e.g.
+      // borderB writing `top`) would otherwise slip through, since they mirror
+      // borderS structurally.
+      final e = const FwStyle().border(1, color: _c).borderE(width: 5, color: _d).borderSpec!;
+      expect(e.end!.width, 5);
+      expect(e.end!.color, _d);
+      expect(e.start!.width, 1); // others untouched
+      expect(e.top!.width, 1);
+      expect(e.bottom!.width, 1);
+
+      final t = const FwStyle().border(1, color: _c).borderT(width: 6, color: _d).borderSpec!;
+      expect(t.top!.width, 6);
+      expect(t.top!.color, _d);
+      expect(t.bottom!.width, 1); // not the opposite edge
+
+      final b = const FwStyle().border(1, color: _c).borderB(width: 7, color: _d).borderSpec!;
+      expect(b.bottom!.width, 7);
+      expect(b.bottom!.color, _d);
+      expect(b.top!.width, 1); // not the opposite edge
     });
 
     test('per-edge color only keeps the existing width', () {

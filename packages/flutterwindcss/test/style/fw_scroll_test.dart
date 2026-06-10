@@ -109,6 +109,43 @@ void main() {
     expect(offset % 50, moreOrLessEquals(0, epsilon: 0.5), reason: 'snapped to a 50px boundary');
   });
 
+  testWidgets('snapExtent accounts for leading padding (padded carousel aligns)', (t) async {
+    // With a 20px leading inset, item k's edge sits at 20 + k·50 — so the rest
+    // offset must satisfy (offset − 20) % 50 == 0, NOT offset % 50. Without the
+    // padding-aware math every item would rest 20px off.
+    const lead = 20.0;
+    await t.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: MediaQuery(
+          data: const MediaQueryData(size: Size(200, 200)),
+          child: Center(
+            child: SizedBox(
+              width: 100,
+              height: 100,
+              child: FwScroll(
+                snapExtent: 50,
+                padding: const EdgeInsets.only(top: lead),
+                child: Column(
+                  children: List<Widget>.generate(40, (i) => const SizedBox(height: 50)),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.drag(find.byType(FwScroll), const Offset(0, -130));
+    await t.pumpAndSettle();
+    final offset =
+        t.widget<SingleChildScrollView>(find.byType(SingleChildScrollView)).controller!.offset;
+    expect(
+      (offset - lead) % 50,
+      moreOrLessEquals(0, epsilon: 0.5),
+      reason: 'snapped to a 50px boundary measured from the leading padding',
+    );
+  });
+
   testWidgets('snapExtent must be > 0', (t) async {
     expect(() => FwScroll(snapExtent: 0, child: const SizedBox()), throwsA(isA<AssertionError>()));
   });

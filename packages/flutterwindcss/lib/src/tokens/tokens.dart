@@ -20,7 +20,7 @@ class FwTokens {
     required this.shadows,
     required this.typography,
     required this.radiusBase,
-  });
+  }) : assert(radiusBase >= 0, 'flutterwindcss: radiusBase must be non-negative');
 
   /// Semantic colors for this theme.
   final FwColors colors;

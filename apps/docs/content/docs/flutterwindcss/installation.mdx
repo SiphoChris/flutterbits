@@ -9,6 +9,18 @@ flutterwindcss targets **Flutter ≥ 3.29 / Dart ≥ 3.7** (it uses the wide-gam
 `Row`/`Column` `spacing` parameter). Older toolchains won't compile. If you don't have Flutter yet,
 follow the [official install guide](https://docs.flutter.dev/get-started/install).
 
+## Platforms
+
+flutterwindcss is **pure widgets-layer code** — no platform channels, no `dart:io`, no
+platform-specific branches. It runs on **every Flutter target**:
+
+| iOS | Android | Web (incl. WASM) | macOS | Windows | Linux |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+There is nothing to configure per platform, and the result is identical on the pure path or inside a
+`MaterialApp`.
+
 ## Add the dependency
 
 ```bash

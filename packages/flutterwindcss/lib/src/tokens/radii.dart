@@ -1,8 +1,14 @@
 import 'package:flutter/foundation.dart' show immutable;
 
-/// Border-radius tokens. The `sm/md/lg/xl` set is derived from one shadcn
-/// `--radius` base (spec §4.3): `sm ×0.6, md ×0.8, lg ×1.0, xl ×1.4`. The
-/// Tailwind v4 named scale is also exposed for utility use.
+/// Border-radius tokens — a five-step set (`base` plus `sm/md/lg/xl`) the theme
+/// resolves for `rounded*` utilities.
+///
+/// How the steps relate to a single shadcn `--radius` depends on the
+/// constructor: [FwRadii.fromBase] derives them with the stock ×-factors
+/// (`sm ×0.6, md ×0.8, lg ×1.0, xl ×1.4`), while the default constructor takes
+/// **explicit, independent** per-step values (what generated/additive themes
+/// use — see the constructor docs). The two only coincide at the 10px default.
+/// The Tailwind v4 named scale ([FwRadiusScale]) is also exposed for utility use.
 @immutable
 class FwRadii {
   /// Creates a radius set from explicit per-step values.
@@ -19,7 +25,12 @@ class FwRadii {
     required this.md,
     required this.lg,
     required this.xl,
-  });
+  }) : assert(
+         base >= 0 && sm >= 0 && md >= 0 && lg >= 0 && xl >= 0,
+         'flutterwindcss: radii must be non-negative — a negative corner radius '
+         'asserts deep in the framework at paint time. The additive derivation '
+         '(sm = base − 4) goes negative for base < 4; clamp at >= 0 when emitting.',
+       );
 
   /// Derives the shadcn-style set from a single [base] radius (logical px).
   ///
@@ -27,7 +38,8 @@ class FwRadii {
   /// keeping the derived values in lockstep with [base] instead of restating
   /// them as literals that could drift.
   const FwRadii.fromBase(this.base)
-    : sm = base * 0.6,
+    : assert(base >= 0, 'flutterwindcss: radius base must be non-negative'),
+      sm = base * 0.6,
       md = base * 0.8,
       lg = base * 1.0,
       xl = base * 1.4;
@@ -35,16 +47,20 @@ class FwRadii {
   /// The shadcn `--radius` this set was derived from.
   final double base;
 
-  /// `base ×0.6`.
+  /// `sm` step (logical px). `base ×0.6` via [FwRadii.fromBase]; an explicit
+  /// value (e.g. additive `base − 4`) via the default constructor.
   final double sm;
 
-  /// `base ×0.8`.
+  /// `md` step (logical px). `base ×0.8` via [FwRadii.fromBase]; an explicit
+  /// value (e.g. additive `base − 2`) via the default constructor.
   final double md;
 
-  /// `base ×1.0`.
+  /// `lg` step (logical px). `base ×1.0` via [FwRadii.fromBase]; an explicit
+  /// value (e.g. additive `base`) via the default constructor.
   final double lg;
 
-  /// `base ×1.4`.
+  /// `xl` step (logical px). `base ×1.4` via [FwRadii.fromBase]; an explicit
+  /// value (e.g. additive `base + 4`) via the default constructor.
   final double xl;
 
   /// No rounding.

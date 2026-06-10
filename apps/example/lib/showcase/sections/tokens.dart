@@ -108,7 +108,10 @@ class TokensSection extends StatelessWidget {
         ),
         ShowcaseSection(
           title: 'Radius scale',
-          description: 'Derived from one base value: sm ×0.6, md ×0.8, lg ×1, xl ×1.4.',
+          description:
+              'Five steps from the theme base. Stock themes derive via fromBase '
+              '(×0.6/0.8/1.0/1.4); generated themes emit explicit additive values '
+              '(base−4/−2/+0/+4), which coincide only at the 10px default.',
           children: <Widget>[
             FwWrap(
               gap: 4,
