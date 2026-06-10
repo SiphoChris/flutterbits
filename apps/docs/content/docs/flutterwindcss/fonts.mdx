@@ -84,11 +84,17 @@ Because the theme's family strings are exactly what `google_fonts` registered, `
   rather keep the theme `const`, use Recipe 1.
 </Callout>
 
-## Overriding a single family
+## Overriding a single family — and using fonts with no theme
 
 `font('Inter')` sets a **literal** family for one chain (Tailwind `font-[Inter]`), independent of the
-theme — handy for a one-off. Don't combine it with `fontSans`/`fontSerif`/`fontMono` in the same chain
-(the engine asserts, since both would set the family).
+theme — handy for a one-off, and it needs **no `FwTheme`** at all. Don't combine it with
+`fontSans`/`fontSerif`/`fontMono` in the same chain (the engine asserts, since both would set the
+family).
+
+You're not forced into a theme: with no `FwTheme` present, `fontSans`/`fontSerif`/`fontMono` fall back
+to the stock `FwTokens.light` families (the generic `sans-serif`/`serif`/`monospace`) rather than
+crash. So `font('YourFont')` is the no-theme path for a custom face; the role getters are the
+theme-aware path. (See [You're not forced into a theme](/docs/flutterwindcss/theming#youre-not-forced-into-a-theme).)
 
 ## Interop path (MaterialApp)
 

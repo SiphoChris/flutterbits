@@ -36,4 +36,12 @@ extension FwContext on BuildContext {
       ),
     ]);
   }
+
+  /// Like [fw] but returns `null` instead of throwing when no theme is present.
+  ///
+  /// Use this when a theme is *optional* — e.g. reading tokens in a widget that
+  /// must also work with the raw palette and no `FwTheme`. (The engine uses it so
+  /// the `fontSans`/`roundedMd`/`shadowMd` sugars fall back to [FwTokens.light]'s
+  /// stock values rather than crash when there is no theme.)
+  FwTokens? get fwOrNull => FwTheme.maybeOf(this) ?? FwThemeExtension.maybeOf(this);
 }

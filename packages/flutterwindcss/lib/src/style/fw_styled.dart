@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../theme/context_fw.dart';
+import '../tokens/tokens.dart';
 import 'fw_group.dart';
 import 'fw_layer.dart';
 import 'fw_style.dart';
@@ -117,11 +118,14 @@ class FwStyled extends StatelessWidget with FwStyleOps<FwStyled> {
     final viewportWidth =
         _anyCondition((c) => c.isViewport) ? MediaQuery.maybeOf(context)?.size.width : null;
 
-    // Named-scale sugar (module 15): resolve radius/shadow steps against the
+    // Named-scale sugar (module 15): resolve radius/shadow/font steps against the
     // active theme into concrete values BEFORE resolve(), which stays
     // context-free. Gated so a non-sugar box never reads the theme. Conditions
     // are unchanged by this pass, so the *needs* checks below read the original.
-    final effectiveStyle = _needsTokenSteps ? style.resolveTokenSteps(context.fw) : style;
+    // Falls back to FwTokens.light's stock values when there is no theme, so the
+    // sugars never *force* a theme on the developer (they just use the defaults).
+    final effectiveStyle =
+        _needsTokenSteps ? style.resolveTokenSteps(context.fwOrNull ?? FwTokens.light) : style;
 
     // Read the nearest FwGroup scope only when a group/peer layer is present
     // (otherwise no dependency is created). Sourcing is the FwGroup/FwPeer's job;
