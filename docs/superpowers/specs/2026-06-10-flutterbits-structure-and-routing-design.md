@@ -40,7 +40,7 @@ An earlier sketch had `Screen` as a **base class** whose `build` returned a *des
 - `Layout` is "the better `MaterialApp`" — you return `Layout(theme:, routes:, shell:)`; there is no `LayoutConfig` return object.
 - A screen's **identity** comes from its file + its route, **not** a base class. So there is no `ScreenSpec`, no `extends Screen`, nothing un-Flutter.
 
-**Why this is the strongest design:** zero new return-type concepts; plays with `const`; the slots read like semantic HTML; defaults are semantic-token-aware; everything stays a plain widget droppable anywhere. The "framework feel" comes from the *vocabulary*, not from inheritance.
+**Why this is the strongest design:** zero new return-type concepts; plays with `const`; the slots read like semantic HTML; defaults are semantic-token-aware; `Screen`s stay plain widgets droppable anywhere (the root `Layout` is the one exception — it hosts the app + router, see §3.1). The "framework feel" comes from the *vocabulary*, not from inheritance.
 
 No base class is introduced in v1 (no lifecycle hooks, no view-model binding — that is the deferred state-management decision, charter §9). A screen is an ordinary `StatelessWidget`/`StatefulWidget` that returns a `Screen`.
 
@@ -77,7 +77,9 @@ class AppLayout extends StatelessWidget {
 - `theme` — the `FwTokens` light/dark bundle; `Layout` owns the light↔dark swap and drives the engine's `FwAnimatedTheme` so a toggle crossfades every `context.fw`-styled descendant.
 - `shell` — an optional nested `Layout` (`TabsLayout`/`SidebarLayout`) providing persistent chrome. Maps to `go_router`'s `ShellRoute`.
 - `routes` — the explicit route table (a plain `const` list of `FwRoutePattern`s; no codegen).
-- `Layout` internally constructs the `go_router` configuration and the root `WidgetsApp`-family widget (Material-free).
+- **Root `Layout`** constructs the `go_router` configuration **and** the root `WidgetsApp.router`-family widget (Material-free). `runApp(const AppLayout())` works directly — the root `Layout` *is* the app.
+- **Nested `Layout`** (one passed as `shell:`) is a **different role**: it compiles to a `go_router` `ShellRoute`/`StatefulShellRoute` **builder** that wraps the routed child with persistent chrome. It **must not** re-host a router or app widget. (The `shell:` value is a `Layout`-typed *description* the root translates into a `ShellRoute` builder; it is not itself a second app.)
+- **Invariant (MUST):** exactly **one** root `Layout` hosts the app + router; every other `Layout` is a shell builder. The shared `Layout` name is deliberate vocabulary, but the two roles are distinct and the implementation keeps them separate. A `Layout` is therefore *not* "droppable anywhere" — it is either the root or a shell; only `Screen`s and below are freely composable. (Resolves the earlier ambiguity flagged in review — a returned widget that *is* the root router cannot also be an arbitrary child.)
 
 ### 3.2 `Screen` (destination) — slots
 
@@ -103,7 +105,7 @@ class HomeScreen extends StatelessWidget {
 | `header` | top region (title, actions, back) | `<header>` — a `TopBar`, or any widget |
 | `body` | the screen's main content | `<main>` |
 | `footer` | bottom region (CTA bar, nav) | `<footer>` |
-| `statusBar` | `FwStatusBar` style enum | system UI overlay style (Material-free) |
+| `statusBar` | `FwStatusBar` style enum | system-UI overlay style via `services.dart` (a flutterbits concern, Material-free) |
 | `background` | screen fill (semantic token) | the page background |
 
 `Screen` owns **safe-area insets**, scroll ownership conventions, and status-bar styling so the dev declares intent, not plumbing.
@@ -118,8 +120,8 @@ class HomeScreen extends StatelessWidget {
 | Persistent bottom-nav shell | `TabsLayout` (a `Layout`) | nested layout = persistent chrome |
 | Sidebar shell (by-demand) | `SidebarLayout` (a `Layout`) | desktop/web; charter §4 |
 | Slots | `header` / `body` / `footer` | web-native; reads as the artifact |
-| Status-bar style | `FwStatusBar` | engine-level enum (`Fw`) |
-| Back affordance | `BackButton` | unprefixed component; typed `pop` |
+| Status-bar style | `FwStatusBar` | flutterbits structure value type (`Fw`, like `FwPresentation`); wraps `services.dart` `SystemUiOverlayStyle` — flutterbits's, **not** the engine's |
+| Back affordance | `BackButton` | unprefixed; typed `pop`. *Clashes with Material's `BackButton` under interop → resolve via the barrel namespace (charter §5.1).* |
 | Sheet grabber | `SheetHandle` | used by sheet-presented screens |
 
 ---
@@ -150,7 +152,7 @@ class ProfileRoute extends FwRoute {
 ```
 
 - `FwRoute` (instance) = the typed navigation token. Carries args, exposes `location`, and the navigation verbs (§4.2).
-- `FwRoutePattern` (static `pattern`) = the registration-time definition: `path`, `builder` (parses `FwRouteState` → `Screen` widget), and the optional `present` / `transition` / `guard` (§4.3–§4.5). One home for route facts; no redundancy between instance and definition.
+- `FwRoutePattern` (static `pattern`) = the registration-time definition: `path`, `builder` (parses `FwRouteState` → `Screen` widget), the optional `present` / `transition` / `guard` (§4.3–§4.5), and `children:` for **nested** routes (§4.3.1 — required for sheets that layer over a parent). One home for route facts; no redundancy between instance and definition.
 - The hand-written cost is honest: ~3 lines per screen (`location` + `pattern` + the param-parse). In exchange: **zero build step**, a **self-contained copy-paste unit** (the `Screen` and its route in one file), a **readable route table**, and a **visible param-parse** you can customize. (The trade vs codegen is recorded in the charter; this is the chosen side.)
 
 ### 4.2 Navigation verbs
@@ -163,6 +165,8 @@ context.pop();                              // BackButton calls this; auto-hidde
 ```
 
 `push<T>` returns a typed `Future<T?>`; a presented screen returns a value with `context.pop(result)`.
+
+**Wiring:** the verbs are thin typed wrappers over `go_router` — `route.go(context)` ≡ `context.go(route.location)`, `route.push<T>(context)` ≡ `context.push<T>(route.location)`. The instance only needs its `location`; the matching `FwRoutePattern` (and its `present`/`transition`) is resolved by **path-match in the router**, not by the instance. **Web caveat (a genuine limitation, not effort):** a typed `push<T>` result requires a live in-app push that the user returns *from*. A cold deep-link, a browser refresh, or browser-back to a route has no pusher, so `await …push<T>()` may complete `null` on web — design result-bearing flows to also work without a result.
 
 ### 4.3 Presentations — "a sheet is a `Screen` mounted differently" (the feel-good core)
 
@@ -192,8 +196,9 @@ class EditProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Identical Screen API. Because the route mounts it as a sheet, the
-    // presentation supplies the grabber, scrim, safe-area insets & rounded top.
+    // Identical Screen API. Because the route mounts it as a sheet, the sheet
+    // PRESENTATION (a custom Material-free PopupRoute — see below) supplies the
+    // grabber, scrim, safe-area insets, rounded top & drag-to-dismiss.
     return Screen(
       header: const SheetHandle(),
       body: EditProfileForm(userId: userId),
@@ -212,16 +217,36 @@ class EditProfileScreen extends StatelessWidget {
 }
 ```
 
-Call site reads like a sentence, and deep-link behavior is free:
+Call site reads like a sentence:
 
 ```dart
 final saved = await EditProfileRoute(userId: 7).push<bool>(context);
 if (saved ?? false) showToast(context, 'Profile updated');
 ```
 
-> Navigating to `/profile/7/edit` — from a link, the browser bar, or a push notification — opens the profile screen with the edit sheet **over** it, and system/browser **back closes the sheet**. Zero extra code: `go_router` builds the right `Page` from `present`.
+> Navigating to `/profile/7/edit` — from a link, the browser bar, or a push notification — opens the profile screen with the edit sheet **over** it, and system/browser **back closes the sheet** (the route pops). For the parent to render *underneath* on a cold deep-link, the sheet route MUST be a **child** of the parent route (§4.3.1), not a sibling.
 
-**`FwPresentation`** values: `page` (default, full destination), `sheet` (bottom sheet — grabber, scrim, rounded top, safe-area), `dialog` (centered modal), `fullScreen` (full-screen cover, e.g. iOS modal). Implemented via `go_router` `pageBuilder` returning the matching `Page` subclass.
+**`FwPresentation`** values: `page` (default, full destination), `sheet` (bottom sheet), `dialog` (centered modal), `fullScreen` (full-screen cover, e.g. iOS modal).
+
+**Honest scope (not "free"):** `go_router` ships only `MaterialPage`/`CupertinoPage`/`NoTransitionPage`. flutterbits is Material-free, so it **authors custom Material-free `Page`s** — `FwSheetPage` / `FwDialogPage` / `FwFullScreenPage`, each returning a custom `PopupRoute` returned from `go_router`'s `pageBuilder`. Those custom routes **own the scrim, safe-area insets, rounded top, the `SheetHandle` grabber, and drag-to-dismiss** — real, scheduled work (feasible — §11b "feasible, scoped" — **not** free). What *is* free from `go_router`: the route **pop** on back and the URL addressability. The gesture/scrim/chrome is flutterbits's to build.
+
+#### 4.3.1 Deep-linkable sheets require nested routes
+
+For `/profile/7/edit` to open the sheet *over* the profile screen on a **cold** deep-link, `EditProfileRoute` must be registered as a **child** of `ProfileRoute`, so the router builds the parent beneath the sheet page:
+
+```dart
+FwRoutePattern(
+  '/profile/:userId',
+  builder: (s) => ProfileScreen(userId: int.parse(s.params['userId']!)),
+  children: [
+    FwRoutePattern('edit',                       // → '/profile/:userId/edit'
+      present: FwPresentation.sheet,
+      builder: (s) => EditProfileScreen(userId: int.parse(s.params['userId']!))),
+  ],
+);
+```
+
+A flat *sibling* registration would **replace** the profile screen instead of layering the sheet over it. `FwRoutePattern.children` maps to `go_router`'s nested `routes:`. (The `EditProfileRoute` navigation token in §4.3 is unchanged; only the registration nests.)
 
 ### 4.4 Imperative overlays — for ephemera not worth a URL
 
@@ -230,7 +255,7 @@ Routable presentation (§4.3) is for screens that deserve a URL/deep link. For t
 ```dart
 final ok = await showConfirm(context,
   title: 'Delete track?', message: 'This can’t be undone.',
-  confirm: 'Delete', tone: FwTone.destructive);
+  confirm: 'Delete', tone: Tone.destructive);   // Tone = the shared normal/destructive intent enum
 
 final picked = await showSheet<Color>(context, (_) => const ColorPickerSheet());
 showToast(context, 'Saved');   // via the Toaster overlay host
@@ -240,22 +265,22 @@ Both worlds coexist by design: **routable** when it deserves a URL, **imperative
 
 ### 4.5 Guards / auth
 
-Two ergonomic levels, both intention-revealing. A guard returns a redirect target, or `null` to allow:
+Two ergonomic levels, both intention-revealing. A guard is `FutureOr<String?> Function(BuildContext, FwRouteState)` — it returns a redirect target, or `null` to allow. It is **async-capable** (so token checks / silent refreshes work), mapping directly onto `go_router`'s async `redirect`:
 
 ```dart
-// Per-route:
+// Per-route (async-capable):
 static final pattern = FwRoutePattern(
   '/dashboard',
-  guard: (c, s) => auth.isLoggedIn ? null : LoginRoute(next: s.location).location,
+  guard: (c, s) async => (await auth.isLoggedIn) ? null : LoginRoute(next: s.location).location,
   builder: (_) => const DashboardScreen(),
 );
 
 // Or global, on Layout (cross-cutting):
-String? _authRedirect(BuildContext c, FwRouteState s) =>
+FutureOr<String?> _authRedirect(BuildContext c, FwRouteState s) =>
     (!auth.isLoggedIn && s.location.startsWith('/app')) ? LoginRoute().location : null;
 ```
 
-Both map to `go_router`'s route-level and top-level `redirect`.
+Both map to `go_router`'s route-level and top-level `redirect` (both `FutureOr<String?>`).
 
 ### 4.6 Transitions
 

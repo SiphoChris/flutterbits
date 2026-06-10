@@ -91,7 +91,7 @@ Command (⌘K palette), Combobox, DataTable (Flutter wants a different idiom tha
 
 Popover, DropdownMenu, Tooltip, Select, Combobox, and ContextMenu all sit on the **same** behavioral plumbing — an **anchored overlay** (`OverlayPortal` + `CompositedTransformFollower` + edge-flip positioning, floating above the screen, dismiss-on-outside-tap). This is flutterbits' equivalent of shadcn's Radix dependency.
 
-It is built **once** as a shared **lib util** (`anchor`) — the flutterbits analog of shadcn's `cn.ts`: a predictable, pasted-once file every overlay component imports. It must be built **before** the components that depend on it. (Install mechanics in the registry/CLI spec.)
+It is built **once** as a shared **lib util** (`anchor`) — the flutterbits analog of shadcn's `cn.ts`: a predictable, pasted-once file every overlay component imports. It must be built **before** the components that depend on it. (Install mechanics in the registry/CLI spec.) The anchored positioning itself — measuring available space and flipping/shifting placement at viewport edges — is **real work the eventual `anchor` spec owns** (feasible, not free; §12). `OverlayPortal`/`CompositedTransformFollower` are in `widgets.dart`, so the substrate is buildable Material-free.
 
 ---
 
@@ -103,7 +103,7 @@ It is built **once** as a shared **lib util** (`anchor`) — the flutterbits ana
 - **Portable, not exclusive.** Every component still *runs* on web/desktop (they are plain widgets) and keeps full **keyboard + focus-ring + `Semantics` accessibility** (AGENTS.md §6 requires this regardless of platform). They are simply not *optimized* for desktop density/hover.
 - **Hover is enhancement-only** — never required to operate anything, so touch loses nothing.
 - **Catalog impact.** `TabsLayout`/`BottomNav` are v1 core; `SidebarLayout` and the desktop-centric shadcn set (§3.5) are **by-demand**, not v1.
-- **Tablets / large phones** are handled by the engine's existing responsive + container-query variants — no new work.
+- **Tablets / large phones** — *styling* reuses the engine's existing responsive + container-query variants (no new work there). Adaptive *navigation* (rail/sidebar, multi-pane, master-detail) is **structure-layer work, by-demand** — `.tw` breakpoint variants restyle a box, they do not restructure the shell — see `SidebarLayout`. (Corrected 2026-06-10: an earlier "no new work" blanket was a silent scope reduction — §12.)
 - **Maturation.** Desktop/web become first-class "with need" — the §11b "feasible, scheduled" framing, not a "can't."
 
 **Boundary (no drift):** this is a **flutterbits** stance only. **`flutterwindcss` stays fully platform-agnostic** (the universal styling engine), and the **web theme generator is unaffected** (a build-time web tool). Mobile-first describes how the *components* are designed, not the engine.
@@ -113,20 +113,22 @@ It is built **once** as a shared **lib util** (`anchor`) — the flutterbits ana
 ## 5. Naming — unprefixed components, `Fw` engine
 
 - **flutterbits components are unprefixed**: `Button`, `Card`, `Badge`, `Screen`, `Layout`. This is the shadcn DX, and these are **source you own** (copied into your project), so they need no namespace.
-- **`flutterwindcss` engine types stay `Fw`-prefixed**: `FwColumn`, `FwTokens`, `FwStatusBar`, `FwRoute`. When you see `Fw` in a flutterbits component, that is the engine showing through.
+- **`flutterwindcss` engine types stay `Fw`-prefixed**: `FwColumn`, `FwTokens`, `FwBreakpoint`. The **flutterbits structure *value types*** that ship as library code also carry `Fw` (they are not components a dev composes): `FwRoute`, `FwRoutePattern`, `FwPresentation`, `FwTransition`, `FwStatusBar`. `FwStatusBar` is a **flutterbits** type — it wraps `package:flutter/services.dart`'s system-UI overlay style; it is **not** an engine type (the engine never touches `services.dart`). When you see `Fw` in a flutterbits component, that is the engine *or* a structure value type showing through — never a component.
 
 > **AGENTS.md §4 reconciliation.** "Public types are prefixed `Fw`" is an **engine** rule (`flutterwindcss`). It does **not** apply to flutterbits *components*, which are deliberately unprefixed (copy-paste, shadcn-style). The routing/structure *base types* that ship as library code (e.g. `FwRoute`, `FwPresentation`) keep `Fw`; the *components* a dev composes (`Screen`, `Layout`, `Button`) do not.
 
-### 5.1 The Material name-clash, resolved
+### 5.1 The name-clash, handled honestly
 
-Material defines many of these nouns (`Card`, `Badge`, `Switch`, `Slider`, `Checkbox`, `Drawer`, `Tooltip`, `BackButton`). But they live in `package:flutter/material.dart`, **not** `package:flutter/widgets.dart`. A flutterbits app is Material-free by design (imports `widgets.dart` + flutterwindcss), so **in the intended world there are zero clashes**.
+There are **two** clash surfaces — and an earlier draft of this section wrongly claimed only one existed. Corrected 2026-06-10 (verified against the Flutter SDK):
 
-For the supported-but-rare interop case (a dev mixing Material in — possible because flutterwindcss can theme Material via the `FwThemeExtension` bridge):
+1. **`package:flutter/widgets.dart` itself** — which *every* flutterbits app imports — exports some common nouns: `Form`/`FormField`, `Icon`, `Image`, `Table`, `Title`, `Navigator`, `Page`, `Visibility`, `Spacer`, `Semantics`, `Builder`, `Actions`, `Overlay`, `OverlayPortal`, `Banner`. A component named `Form`/`Icon`/`Image`/`Table` **would collide even in a Material-free app**. (The prior "zero clashes in the intended world" claim was false.)
+2. **`package:flutter/material.dart`** additionally defines `Card`, `Badge`, `Switch`, `Slider`, `Checkbox`, `Drawer`, `Tooltip`, `BackButton`. These clash **only** in the rare Material-interop case (possible because flutterwindcss can theme Material via the `FwThemeExtension` bridge). Verified **absent** from `widgets.dart` (so clash-free in a pure app): `Button`, `Card`, `Badge`, `Input`, `Dialog`, `Sheet`, `Switch`, `Slider`, `Checkbox`, `Tooltip`, `Tabs`, `Layout`, `Screen`.
 
-- The **barrel** (`ui.dart`) is also the **clash escape hatch**: `import 'components/ui/ui.dart' as ui;` → `ui.Card`, `ui.Button`. Explicit namespacing on demand, with no `Fw` noise forced on the 99% case.
-- When authoring, each component name is **checked against `widgets.dart`**; any genuine collision there is renamed.
+**Hard authoring rule (MUST):** every component name is checked against `package:flutter/widgets.dart` **before it ships**. A name that collides there is **renamed** — the dev cannot avoid importing `widgets.dart`, so `widgets.dart` wins (e.g. an icon wrapper is `Lucide`/`Img`, not `Icon`/`Image`; a data grid is `DataTable`, not `Table`; there is no `Form` component — auth screens compose `Input`s directly). The shadcn set is overwhelmingly clash-free; the handful that aren't get a distinct name. (This is why the catalog §3.2/§3.5 names `DataTable`, never `Table`, and lists no `Form`/`Icon`/`Image` component.)
 
-This is strictly better than prefixing every component `Fw` (which would make the engine and components look identical and kill the shadcn feel).
+**Material interop** is then handled by the **barrel** (`ui.dart`) as an escape hatch: `import 'components/ui/ui.dart' as ui;` → `ui.Card`, `ui.Button` — explicit namespacing on demand, with no `Fw` noise forced on the common case.
+
+This is still better than prefixing every component `Fw` (which would make the engine and components look identical and kill the shadcn feel); the cost is a naming-discipline rule, not a global prefix.
 
 ---
 
@@ -138,7 +140,7 @@ This is strictly better than prefixing every component `Fw` (which would make th
   - **`flutter_animate`** (sanctioned, AGENTS.md §11b) — the motion layer. Toast slide-in, Skeleton shimmer, Accordion/Collapsible expand, Splash, the `ThemeToggle` icon crossfade compose it. The engine deliberately ships no element-animation subsystem; components own their state machines and animate with `flutter_animate`.
   - **`go_router`** (newly sanctioned — see §6.1) — the routing engine the structure layer wraps.
   - **`flutter_svg`** — **by-demand**, only on blocks that render real SVG illustrations (illustrated `EmptyState`, onboarding art). Not core; most things use lucide or simple shapes.
-- **The payoff:** `add button` installs zero deps; `add toast` installs `flutter_animate`; `add layout` installs `go_router`. Every component is honest about exactly what it costs.
+- **The payoff:** `add button` installs zero deps; `add toast` installs `flutter_animate`; `add layout` installs `go_router` (+ `lucide_icons_flutter` and `flutter_animate` — the structure layer's full `pubDeps` set; see structure spec §7). Every component is honest about exactly what it costs.
 
 ### 6.1 `go_router` — newly sanctioned dependency (justification)
 

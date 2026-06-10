@@ -51,6 +51,7 @@ In shadcn, `cn()` lives in a predictable `lib/utils.ts` every project has, and c
 - `type`/`target` per **file** lets one item ship files to different predictable locations; `target: null` uses the type default (§2). A `target` override allows custom paths for advanced cases.
 - `registryDeps` resolves inter-item needs recursively (e.g. `dialog` → `button`; `popover` → `anchor`). `pubDeps` are real pub packages.
 - Manifests are produced by `tooling/build_registry.dart` **from** `registry/*.dart` — `content` is never hand-edited (AGENTS.md §8).
+- **Versioning (recorded decision, 2026-06-10).** v1 manifests carry **no** revision/version field, and `diff` (§5.3) compares the dev's copy against the **current** registry source — the same model, and the same limitation, as shadcn. There is no recorded baseline of "which upstream revision I copied from," so `diff` cannot perfectly separate *upstream changes since I copied* from *my own edits*; it shows the full delta and the dev judges. Accepted for v1; a per-file `revision` hash may be added later (capability-raising, not required now). This is a deliberate scope bound, not an oversight.
 
 ---
 
@@ -79,7 +80,7 @@ Scaffolds a flutterbits-ready project:
 
 1. Ensures `flutterwindcss` is a dependency (`flutter pub add flutterwindcss`).
 2. Creates `lib/components/ui/` and `lib/components/ui/_utils/`.
-3. Writes a starter `theme.dart` at the configured `theme` path (a default `FwTokens` light/dark, or prompts the dev to paste a tweakcn theme via the generator).
+3. Writes a starter `theme.dart` at the configured `theme` path — a default `FwTokens` light/dark in **exactly the shape the `apps/docs` generator emits** (AGENTS.md §7), so that regenerating from a pasted tweakcn theme is a **drop-in file replacement** at `flutterbits.json.theme`, requiring no component edits (AGENTS.md §7's "drop-in" guarantee). The CLI never does color math (that lives only in `apps/docs`); it just writes the default file.
 4. Writes an initial barrel `ui.dart` (empty export list, with the generated-file header).
 5. Optionally scaffolds a starter `Layout` (root wiring) so `runApp` is intention-revealing from line one.
 6. Writes `flutterbits.json`.
@@ -119,7 +120,8 @@ The barrel is the convenience the dev wanted: import the whole component set fro
   ```
 - **Exports `exported: true` items only** — every `component`, plus dev-facing `util`s. **Internal utils** (`anchor`) are imported directly by the components that need them and are **not** in the barrel (keeps plumbing out of the public surface, so no `show`-clause gymnastics are needed).
 - **Usage:** `import 'package:my_app/components/ui/ui.dart';` — one import for all installed components.
-- **Interop escape hatch (charter §5.1):** a dev mixing Material in can namespace the whole set — `import '.../ui/ui.dart' as ui;` → `ui.Card`, `ui.Button` — resolving any Material name clash explicitly, with no `Fw` prefix forced on the common case. The barrel thus doubles as the clash resolver.
+- **No barrel name collisions.** The hard authoring rule (charter §5.1) guarantees **no exported component name collides with `package:flutter/widgets.dart`** (the rule that bans a `Form`/`Icon`/`Image`/`Table` component), so a wildcard `export` is always safe to import alongside `widgets.dart`. Registry item names are unique, so two components never export the same top-level symbol either. (If a future exception ever forced it, the barrel would emit `export 'x.dart' hide <sym>;` — but the standing rule is to **rename at authoring time**, not paper over with `hide`.)
+- **Interop escape hatch (charter §5.1):** a dev mixing Material in can namespace the whole set — `import '.../ui/ui.dart' as ui;` → `ui.Card`, `ui.Button` — resolving any *Material* name clash explicitly, with no `Fw` prefix forced on the common case. The barrel thus doubles as the Material-clash resolver.
 
 ---
 
@@ -143,5 +145,5 @@ The barrel is the convenience the dev wanted: import the whole component set fro
 
 1. **Registry plumbing first** — `tooling/build_registry.dart`, the manifest schema (§3), `flutterbits.json` (§4), and the `apps/docs` registry endpoint.
 2. **CLI** — `init`, `add` (with recursive `registryDeps` + barrel regen), `diff`. `remove` by-demand.
-3. **First vertical slice** (charter §8) — `Layout` + `Screen` + routing + `Button` + `ThemeToggle`, installed via the real CLI into `apps/example`, proving manifest → fetch → place → barrel → compile → golden end-to-end.
+3. **First vertical slice** (charter §8) — `Layout` + `Screen` + routing + `Button` + `ThemeToggle`, installed via the real CLI into `apps/example`, proving manifest → fetch → place → barrel → compile → golden end-to-end. (`apps/example` is today the *engine* showcase, AGENTS.md §2; this slice is where it **gains a `flutterbits.json` and becomes the component compile + golden target** alongside that role — a real transition, not an assumed-done state.)
 4. **The overlay `anchor` util** before any overlay component (Popover/Dropdown/Tooltip/Select/Combobox/ContextMenu).
