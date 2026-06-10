@@ -68,7 +68,7 @@ class _ButtonState extends State<Button> {
     late Color baseBg;
     late Color baseFg;
     Color? borderColor;
-    var isLink = false;
+    final isLink = widget.variant == ButtonVariant.link;
     switch (widget.variant) {
       case ButtonVariant.primary:
         baseBg = c.primary;
@@ -89,11 +89,13 @@ class _ButtonState extends State<Button> {
       case ButtonVariant.link:
         baseBg = transparent;
         baseFg = c.primary;
-        isLink = true;
     }
 
     // Hover/press treatment (shadcn: filled → /90 (secondary /80); outline/ghost
     // → accent; link → underline).
+    // Note: the `/90` alpha dimming is faithful to shadcn's modifier but is
+    // translucent — place the button on a `background`-coloured surface, or the
+    // surface beneath (card, popover, etc.) will bleed through on hover.
     var bg = baseBg;
     var fg = baseFg;
     final interacting = enabled && (_hovered || _pressed);
@@ -115,10 +117,11 @@ class _ButtonState extends State<Button> {
     final underlineNow = isLink && enabled && (_hovered || _focused);
 
     // Content: shrink-wrap width, center vertically within the fixed height.
-    final inner =
-        widget.size == ButtonSize.icon
-            ? Center(child: widget.child)
-            : Center(widthFactor: 1.0, child: widget.child);
+    // widthFactor: null (icon) = fill available width; 1.0 = shrink-wrap to child.
+    final inner = Center(
+      widthFactor: widget.size == ButtonSize.icon ? null : 1.0,
+      child: widget.child,
+    );
 
     var box =
         inner.tw.bg(bg).text(fg).textSize(FwFontSize.sm.px).weight(FwFontWeight.medium).roundedMd;
@@ -132,6 +135,10 @@ class _ButtonState extends State<Button> {
 
     if (borderColor != null) box = box.border(1, color: borderColor);
     if (underlineNow) box = box.underline;
+    // `_focused` comes from FocusableActionDetector.onShowFocusHighlight, which
+    // internally gates on _canShowHighlight (false for FocusHighlightMode.touch,
+    // true for traditional/keyboard).  This is already focus-visible semantics —
+    // no additional highlightMode check is needed or correct here.
     if (_focused && enabled) {
       box = box.ring(2, color: c.ring, offset: 2, offsetColor: c.background);
     }
